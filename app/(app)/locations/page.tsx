@@ -17,12 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Location, LocationType } from "@/lib/types";
+import { useLocations } from "@/hooks/use-locations";
 
 const ALL_TYPES = "__all__";
 
 export default function LocationsPage() {
   const [type, setType] = useState<string>(ALL_TYPES);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const { data: allLocations } = useLocations({ includeInactive: true });
+
+  const parentOptions = useMemo(
+    () =>
+      (allLocations ?? [])
+        .filter((l) => l.type !== "BIN" && l.isActive !== false)
+        .map((l) => ({ value: l.id, label: `${l.name} (${l.type})` })),
+    [allLocations],
+  );
 
   const activeFilterCount = useMemo(
     () =>
@@ -30,7 +40,7 @@ export default function LocationsPage() {
         type !== ALL_TYPES ? type : "",
         includeInactive,
       ]),
-    [type, includeInactive]
+    [type, includeInactive],
   );
 
   return (
@@ -39,7 +49,7 @@ export default function LocationsPage() {
       endpoint="/locations"
       readPermission="locations.read"
       writePermission="locations.write"
-      emptyDescription="Create warehouse and showroom locations."
+      emptyDescription="Create warehouse, showroom, and bin locations."
       listParams={{
         type: type === ALL_TYPES ? undefined : (type as LocationType),
         includeInactive: includeInactive || undefined,
@@ -60,6 +70,7 @@ export default function LocationsPage() {
                 <SelectItem value={ALL_TYPES}>All types</SelectItem>
                 <SelectItem value="WAREHOUSE">Warehouse</SelectItem>
                 <SelectItem value="SHOWROOM">Showroom</SelectItem>
+                <SelectItem value="BIN">Bin</SelectItem>
               </SelectContent>
             </Select>
           </FilterField>
@@ -88,9 +99,16 @@ export default function LocationsPage() {
           options: [
             { value: "WAREHOUSE", label: "Warehouse" },
             { value: "SHOWROOM", label: "Showroom" },
+            { value: "BIN", label: "Bin" },
           ],
         },
         { name: "address", label: "Address", type: "textarea" },
+        {
+          name: "parentId",
+          label: "Parent (required for Bin)",
+          type: "select",
+          options: parentOptions,
+        },
       ]}
       columns={[
         { key: "name", header: "Name", cell: (r) => r.name },
@@ -98,6 +116,12 @@ export default function LocationsPage() {
           key: "type",
           header: "Type",
           cell: (r) => <Badge variant="outline">{r.type}</Badge>,
+        },
+        {
+          key: "parent",
+          header: "Parent",
+          cell: (r) =>
+            r.parent?.name ?? (r.parentId ? r.parentId.slice(0, 8) : "—"),
         },
         {
           key: "address",

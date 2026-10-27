@@ -1,6 +1,11 @@
 import type { Currency } from "@/lib/currency";
 
-export type LocationType = "WAREHOUSE" | "SHOWROOM";
+export type LocationType = "WAREHOUSE" | "SHOWROOM" | "BIN";
+export type StocktakeStatus =
+  | "DRAFT"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
 export type PaymentMethod = "CASH" | "BANK" | "CREDIT";
 export type BankAccountType = "CASH" | "BANK";
 export type BankTransactionType =
@@ -35,7 +40,8 @@ export type StockMovementType =
   | "PRODUCTION_RECEIPT"
   | "PRODUCTION_REVERSE"
   | "OPENING"
-  | "IMPORT";
+  | "IMPORT"
+  | "STOCKTAKE";
 export type ItemType = "RAW" | "SEMI" | "FINISHED" | "OTHER";
 export type ProductionOrderStatus =
   | "DRAFT"
@@ -133,6 +139,39 @@ export interface Location {
   type: LocationType;
   address?: string;
   isActive?: boolean;
+  parentId?: string | null;
+  parent?: Location | null;
+}
+
+export interface StockLot {
+  id: string;
+  locationId: string;
+  itemId: string;
+  lotNumber: string;
+  expiryDate?: string | null;
+  quantity: string;
+  item?: Item;
+  location?: Location;
+}
+
+export interface StocktakeLine {
+  id: string;
+  itemId: string;
+  systemQty: string;
+  countedQty?: string | null;
+  item?: Item;
+}
+
+export interface Stocktake {
+  id: string;
+  locationId: string;
+  status: StocktakeStatus;
+  notes?: string | null;
+  completedAt?: string | null;
+  createdAt?: string;
+  location?: Location;
+  createdBy?: { id: string; fullName: string };
+  lines?: StocktakeLine[];
 }
 
 export interface Item {
@@ -748,6 +787,8 @@ export interface UserAdmin {
   roleId?: string;
   role?: Role;
   isActive?: boolean;
+  /** Empty = all locations. */
+  locationIds?: string[];
 }
 
 export interface ApiError {

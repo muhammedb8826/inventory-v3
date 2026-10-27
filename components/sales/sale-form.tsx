@@ -367,6 +367,7 @@ export function SaleForm({ sale }: { sale?: Sale }) {
         const res = await api<Sale & { stockWarnings?: string[] }>("/sales", {
           method: "POST",
           body,
+          idempotent: true,
         });
         if (res.stockWarnings?.length) {
           toast.warning(res.stockWarnings.join("; "));

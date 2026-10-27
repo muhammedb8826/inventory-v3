@@ -64,12 +64,16 @@ export interface DocumentLineInput {
   itemId: string;
   quantity: string | number;
   unitPrice?: string | number;
+  lotNumber?: string;
+  expiryDate?: string;
 }
 
 export interface DocumentLineBody {
   itemId: string;
   quantity: number;
   unitPrice: number;
+  lotNumber?: string;
+  expiryDate?: string;
 }
 
 export function parseDocumentLines(
@@ -101,7 +105,12 @@ export function parseDocumentLines(
     if (Number.isNaN(unitPrice) || unitPrice < 0) {
       return { error: "Enter a valid unit price for each line." };
     }
-    parsed.push({ itemId, quantity, unitPrice });
+    const row: DocumentLineBody = { itemId, quantity, unitPrice };
+    const lotNumber = line.lotNumber?.trim();
+    if (lotNumber) row.lotNumber = lotNumber;
+    const expiryDate = line.expiryDate?.trim();
+    if (expiryDate) row.expiryDate = expiryDate;
+    parsed.push(row);
   }
 
   if (parsed.length === 0) {

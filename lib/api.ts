@@ -80,17 +80,34 @@ async function refreshAccessToken(): Promise<string | null> {
 export type ApiRequestInit = Omit<RequestInit, "body"> & {
   body?: unknown;
   auth?: boolean;
+  /** Send Idempotency-Key (UUID) for safe retries on create/return POSTs. */
+  idempotent?: boolean;
 };
 
 export async function api<T>(
   path: string,
   init: ApiRequestInit = {}
 ): Promise<T> {
-  const { body, auth = true, headers: initHeaders, ...rest } = init;
+  const {
+    body,
+    auth = true,
+    idempotent = false,
+    headers: initHeaders,
+    ...rest
+  } = init;
   const headers = new Headers(initHeaders);
 
   if (body !== undefined && !(body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
+  }
+
+  if (idempotent && !headers.has("Idempotency-Key")) {
+    headers.set(
+      "Idempotency-Key",
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
   }
 
   if (auth) {

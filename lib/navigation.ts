@@ -16,10 +16,12 @@ import {
   UserCog,
   BarChart3,
   ClipboardList,
+  ClipboardCheck,
   Factory,
   MessageSquare,
   MessagesSquare,
   Palette,
+  Warehouse,
 } from "lucide-react";
 
 export interface NavItem {
@@ -60,6 +62,18 @@ export const mainNav: NavItem[] = [
     href: "/stock-transfers",
     icon: ArrowLeftRight,
     permission: "stock_transfer.read",
+  },
+  {
+    title: "Stocktakes",
+    href: "/stocktakes",
+    icon: ClipboardCheck,
+    permission: "stocktake.read",
+  },
+  {
+    title: "Putaway / Pick",
+    href: "/warehouse",
+    icon: Warehouse,
+    permission: "inventory.write",
   },
   {
     title: "Purchases",

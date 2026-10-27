@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +9,7 @@ import {
   PageFormCard,
   PageFormSection,
 } from "@/components/shared/page-form";
+import { SaleReturnDialog } from "@/components/sales/sale-return-dialog";
 import { SaleDocumentActions } from "@/components/transactions/document-actions";
 import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { documentTotal } from "@/lib/document-utils";
@@ -18,6 +20,8 @@ import {
   saleRepUser,
 } from "@/lib/sale-utils";
 import type { Sale, SaleLine } from "@/lib/types";
+import { useAuth } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 
 function DetailField({
   label,
@@ -57,6 +61,9 @@ function lineAmount(line: SaleLine) {
 }
 
 export function SaleDetail({ sale }: { sale: Sale }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const canWrite = hasPermission(user, "sales.write");
   const lines = sale.lines ?? [];
   const paymentLabel = sale.paymentMethod.replace("_", " ");
   const isVoided = sale.status === "VOIDED";
@@ -84,6 +91,12 @@ export function SaleDetail({ sale }: { sale: Sale }) {
           ) : (
             <Badge variant="outline">{paymentLabel}</Badge>
           )}
+          {canWrite && !isVoided ? (
+            <SaleReturnDialog
+              sale={sale}
+              onSuccess={() => router.refresh()}
+            />
+          ) : null}
           <SaleDocumentActions saleId={sale.id} status={sale.status} />
         </div>
       </div>

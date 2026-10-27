@@ -62,6 +62,8 @@ interface LineRow {
   itemId: string;
   quantity: string;
   unitPrice: string;
+  lotNumber?: string;
+  expiryDate?: string;
   item?: Item;
 }
 
@@ -72,12 +74,14 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
       itemId,
       quantity: l.quantity,
       unitPrice: l.unitPrice,
+      lotNumber: "",
+      expiryDate: "",
       item: l.item ? resolveItem(itemId, l.item) : undefined,
     };
   });
   return rows.length > 0
     ? rows
-    : [{ itemId: "", quantity: "1", unitPrice: "" }];
+    : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }];
 }
 
 export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
@@ -98,7 +102,9 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
   );
   const [notes, setNotes] = useState(purchase?.notes ?? "");
   const [lines, setLines] = useState<LineRow[]>(() =>
-    purchase ? linesFromPurchase(purchase) : [{ itemId: "", quantity: "1", unitPrice: "" }]
+    purchase
+      ? linesFromPurchase(purchase)
+      : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }]
   );
   const [saving, setSaving] = useState(false);
 
@@ -263,6 +269,7 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
         const created = await api<Purchase>("/purchases", {
           method: "POST",
           body,
+          idempotent: true,
         });
         toast.success("Purchase recorded");
         requestNotificationsRefresh();
@@ -430,17 +437,19 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
               </Link>
             </div>
             <div className="overflow-hidden rounded-xl border">
-              <div className="hidden grid-cols-[minmax(0,1fr)_7rem_8rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+              <div className="hidden grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] gap-2 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
                 <span>Item</span>
                 <span>Qty</span>
                 <span>Rate</span>
+                <span>Lot</span>
+                <span>Expiry</span>
                 <span className="sr-only">Remove</span>
               </div>
               <div className="divide-y">
                 {lines.map((line, i) => (
                   <div
                     key={i}
-                    className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.5rem] sm:items-center"
+                    className="grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] sm:items-center"
                   >
                     <ItemSearchSelect
                       value={line.itemId}
@@ -474,6 +483,22 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
                       }
                       required
                     />
+                    <Input
+                      className="h-10"
+                      placeholder="Lot #"
+                      value={line.lotNumber ?? ""}
+                      onChange={(e) =>
+                        updateLine(i, { lotNumber: e.target.value })
+                      }
+                    />
+                    <Input
+                      type="date"
+                      className="h-10"
+                      value={line.expiryDate ?? ""}
+                      onChange={(e) =>
+                        updateLine(i, { expiryDate: e.target.value })
+                      }
+                    />
                     <Button
                       type="button"
                       size="icon"
@@ -499,7 +524,13 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
                   onClick={() =>
                     setLines((prev) => [
                       ...prev,
-                      { itemId: "", quantity: "1", unitPrice: "" },
+                      {
+                        itemId: "",
+                        quantity: "1",
+                        unitPrice: "",
+                        lotNumber: "",
+                        expiryDate: "",
+                      },
                     ])
                   }
                 >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -39,6 +39,7 @@ import { buildUsersListPath } from "@/lib/list-query";
 import { hasPermission } from "@/lib/permissions";
 import type { Role, UserAdmin } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
+import { useLocations } from "@/hooks/use-locations";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { toast } from "sonner";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
@@ -228,16 +229,32 @@ function UserDialog({
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [roleId, setRoleId] = useState(user?.roleId ?? user?.role?.id ?? "");
+  const [locationIds, setLocationIds] = useState<string[]>(
+    user?.locationIds ?? [],
+  );
   const [saving, setSaving] = useState(false);
   const { data: roles } = useFetch(() => apiList<Role>("/roles"), [], {
     enabled: open && canLoadRoles,
   });
+  const { data: locations } = useLocations();
+  const { data: detail } = useFetch(
+    () =>
+      mode === "edit" && user?.id && open
+        ? api<UserAdmin>(`/users/${user.id}`)
+        : Promise.resolve(null),
+    [mode, user?.id, open],
+  );
 
-  function resetForm() {
-    setEmail(user?.email ?? "");
-    setPassword("");
-    setFullName(user?.fullName ?? "");
-    setRoleId(user?.roleId ?? user?.role?.id ?? "");
+  useEffect(() => {
+    if (open && detail?.locationIds) {
+      setLocationIds(detail.locationIds);
+    }
+  }, [open, detail]);
+
+  function toggleLocation(id: string) {
+    setLocationIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -251,7 +268,7 @@ function UserDialog({
       if (mode === "create") {
         await api("/users", {
           method: "POST",
-          body: { email, password, fullName, roleId },
+          body: { email, password, fullName, roleId, locationIds },
         });
         toast.success("User created");
       } else if (user) {
@@ -260,7 +277,8 @@ function UserDialog({
           fullName: string;
           roleId: string;
           password?: string;
-        } = { fullName, roleId };
+          locationIds: string[];
+        } = { fullName, roleId, locationIds };
         if (password) body.password = password;
         await api(`/users/${user.id}`, { method: "PATCH", body });
         toast.success("User updated");
@@ -283,7 +301,13 @@ function UserDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) resetForm();
+        if (next) {
+          setEmail(user?.email ?? "");
+          setPassword("");
+          setFullName(user?.fullName ?? "");
+          setRoleId(user?.roleId ?? user?.role?.id ?? "");
+          setLocationIds(user?.locationIds ?? []);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -361,6 +385,30 @@ function UserDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Location access</Label>
+              <p className="text-xs text-muted-foreground">
+                Leave none selected for all locations. Admins with
+                locations.all always see everything.
+              </p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
+                {(locations ?? [])
+                  .filter((l) => l.type !== "BIN")
+                  .map((l) => (
+                    <label
+                      key={l.id}
+                      className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-muted/50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={locationIds.includes(l.id)}
+                        onChange={() => toggleLocation(l.id)}
+                      />
+                      {l.name}
+                    </label>
+                  ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
