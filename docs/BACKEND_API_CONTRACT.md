@@ -2,7 +2,7 @@
 
 This document is the **canonical REST contract** for the NestJS backend (`inventory-api`). The Next.js frontend consumes these endpoints via `NEXT_PUBLIC_API_URL`.
 
-**Base URL:** `http://localhost:3001/api` (backend `PORT`; frontend override: `NEXT_PUBLIC_API_URL` in `.env.local`)
+**Base URL:** `http://localhost:3001/api/v1` (backend `PORT`; frontend override: `NEXT_PUBLIC_API_URL` in `.env.local`)
 
 ### Currency
 
@@ -1070,7 +1070,7 @@ NestJS default:
 
 ## Health
 
-`GET /api/health` — no auth.
+`GET /api/v1/health` — readiness · `GET /api/v1/health/live` — liveness · no auth.
 
 ```json
 {
@@ -1192,7 +1192,7 @@ The frontend loads currency from `/health` on startup (defaults to ETB / `Br`) a
 2. Run `database/schema.sql` **or** set `DB_SYNCHRONIZE=true` for dev only.
 3. Set `.env` (`DB_PASSWORD` must be a string; empty breaks pg SASL auth).
 4. `DB_SEED=true` on first run → roles, permissions, admin, default warehouse, **Main Bank** + **Cash** accounts.
-5. `npm run start:dev` → `http://localhost:3001/api`
+5. `npm run start:dev` → `http://localhost:3001/api/v1`
 
 Default admin: `admin@stock.local` / `Admin@123` (override with `SEED_ADMIN_*`).
 
@@ -1202,7 +1202,7 @@ Default admin: `admin@stock.local` / `Admin@123` (override with `SEED_ADMIN_*`).
 
 ```bash
 cp .env.example .env.local
-# NEXT_PUBLIC_API_URL=http://localhost:3001/api
+# NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 npm install && npm run dev
 ```
 

@@ -15,11 +15,11 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   supportingText: DEFAULT_SUPPORTING_TEXT,
 };
 
-/** API origin without trailing `/api` (for uploaded asset URLs). */
+/** API host origin without `/api` or `/api/vN` (for `/uploads/...` asset URLs). */
 export function getApiOrigin(): string {
   const base =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
-  return base.replace(/\/api\/?$/, "");
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+  return base.replace(/\/api(?:\/v\d+)?\/?$/, "");
 }
 
 /**
