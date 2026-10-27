@@ -37,14 +37,14 @@ export function AppShell({
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--sidebar-width": "17rem",
           "--header-height": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }
     >
       <TooltipProvider>
         <AppSidebar variant="inset" />
-        <SidebarInset className="flex flex-col bg-background">
+        <SidebarInset className="flex flex-col overflow-hidden bg-[var(--frappe-desk)] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:border md:peer-data-[variant=inset]:border-[var(--frappe-border)] md:peer-data-[variant=inset]:shadow-[var(--frappe-shadow-lg)]">
           {isFrappe ? (
             <div className="frappe-page flex min-h-0 flex-1 flex-col">
               {variant !== "plain" ? (

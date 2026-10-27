@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Factory,
   MessageSquare,
+  MessagesSquare,
   Palette,
 } from "lucide-react";
 
@@ -77,6 +78,12 @@ export const mainNav: NavItem[] = [
     href: "/inquiries",
     icon: MessageSquare,
     permission: "inquiries.read",
+  },
+  {
+    title: "Messages",
+    href: "/messages",
+    icon: MessagesSquare,
+    permissions: ["messages.read", "messages.write"],
   },
   {
     title: "Credits",

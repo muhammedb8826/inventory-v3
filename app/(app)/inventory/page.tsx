@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { api } from "@/lib/api";
 import { buildInventoryListPath, buildLowStockListPath } from "@/lib/list-query";
-import { isLowStockRow } from "@/lib/inventory-stock";
 import { resolveItemImageUrl } from "@/lib/inventory-media";
 import { formatMoney, formatQty, errorMessage } from "@/lib/format";
 import type {
@@ -60,6 +59,7 @@ import { InventoryMovementsPanel } from "@/components/inventory/inventory-moveme
 import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { StockDetailDialog } from "@/components/inventory/stock-detail-dialog";
 import { StockFormDialog } from "@/components/inventory/stock-form-dialog";
+import { StockLevelBar } from "@/components/inventory/stock-level-bar";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -130,11 +130,11 @@ export default function InventoryPage() {
 
   return (
     <AppShell
-      title="Stock Ledger"
-      subtitle="Warehouse and showroom quantities"
+      title="Inventory"
+      subtitle="Products, quantities, and stock health across locations"
       breadcrumbs={[
-        { label: "Stock", href: "/dashboard" },
-        { label: "Stock Ledger" },
+        { label: "Operations", href: "/dashboard" },
+        { label: "Inventory" },
       ]}
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -164,10 +164,16 @@ export default function InventoryPage() {
     >
       <PermissionGate permission="inventory.read" showDenied>
         <Tabs defaultValue="stock" className="gap-4">
-          <TabsList>
-            <TabsTrigger value="stock">Stock</TabsTrigger>
-            <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
-            <TabsTrigger value="movements">Movements</TabsTrigger>
+          <TabsList className="h-11 rounded-xl bg-[var(--frappe-surface)] p-1 shadow-[var(--frappe-shadow)]">
+            <TabsTrigger value="stock" className="rounded-lg px-4">
+              All products
+            </TabsTrigger>
+            <TabsTrigger value="adjustments" className="rounded-lg px-4">
+              Adjustments
+            </TabsTrigger>
+            <TabsTrigger value="movements" className="rounded-lg px-4">
+              Movements
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="stock" className="mt-0 space-y-0">
         <FrappeFilterBar>
@@ -289,7 +295,7 @@ export default function InventoryPage() {
                           type="button"
                           className="flex max-w-full items-center gap-3 text-left"
                         >
-                          <div className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded border">
+                          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)] shadow-sm">
                             {imageSrc ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -298,59 +304,49 @@ export default function InventoryPage() {
                                 className="size-full object-cover"
                               />
                             ) : (
-                              <ImageIcon className="text-muted-foreground size-4" />
+                              <ImageIcon className="size-4 text-[var(--frappe-text-muted)]" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-[var(--frappe-primary)] hover:underline">
+                            <p className="font-semibold text-[var(--frappe-text)] transition-colors hover:text-[var(--frappe-primary)]">
                               {r.item.description}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {[
-                                r.item.sku ? `SKU: ${r.item.sku}` : null,
-                                r.item.itemType
-                                  ? itemTypeLabel(r.item.itemType)
-                                  : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ") || null}
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {r.item.sku ? (
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-md px-1.5 py-0 font-mono text-[10px] font-normal"
+                                >
+                                  {r.item.sku}
+                                </Badge>
+                              ) : null}
+                              {r.item.itemType ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="rounded-md px-1.5 py-0 text-[10px] font-normal"
+                                >
+                                  {itemTypeLabel(r.item.itemType)}
+                                </Badge>
+                              ) : null}
+                            </div>
                           </div>
                         </button>
                       }
                     />
                   );
                 },
-              },              {
+              },
+              {
                 key: "qty",
-                header: "Quantity",
-                className: "w-28 text-right tabular-nums",
-                cell: (r) => {
-                  const lowRow = r as LowStockRecord;
-                  const showLowBadge =
-                    isLowStockView || isLowStockRow(r as StockRecord);
-                  return (
-                    <div className="flex flex-col items-end gap-1">
-                      <span>{formatQty(r.quantity)}</span>
-                      {showLowBadge ? (
-                        <Badge
-                          variant={
-                            lowRow.status === "OUT_OF_STOCK" ||
-                            parseFloat(r.quantity) <= 0
-                              ? "destructive"
-                              : "secondary"
-                          }
-                          className="text-[10px] font-normal"
-                        >
-                          {lowRow.status === "OUT_OF_STOCK" ||
-                          parseFloat(r.quantity) <= 0
-                            ? "Out of stock"
-                            : "Low stock"}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  );
-                },
+                header: "Current stock",
+                className: "min-w-[9rem]",
+                cell: (r) => (
+                  <StockLevelBar
+                    quantity={r.quantity}
+                    reorderPoint={r.reorderPoint}
+                    unit={r.item.unit}
+                  />
+                ),
               },
               {
                 key: "reorder",

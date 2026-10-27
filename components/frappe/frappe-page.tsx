@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { MessagesBell } from "@/components/messages/messages-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { FrappeBreadcrumbs } from "./frappe-breadcrumbs";
 
 export interface FrappeBreadcrumb {
@@ -26,28 +28,33 @@ export function FrappePageHead({
   return (
     <header
       className={cn(
-        "frappe-page-head shrink-0 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)]",
+        "frappe-page-head sticky top-0 z-20 shrink-0 border-b border-[var(--frappe-border)]/80",
         className
       )}
     >
-      <div className="flex items-start gap-3 px-4 py-4 lg:px-6 lg:py-5">
-        <SidebarTrigger className="mt-0.5 size-8 shrink-0 text-[var(--frappe-text-muted)] hover:text-[var(--frappe-text)]" />
+      <div className="flex items-start gap-3 px-4 py-3.5 lg:px-6 lg:py-4">
+        <SidebarTrigger className="mt-1 size-8 shrink-0 rounded-lg text-[var(--frappe-text-muted)] hover:bg-[var(--frappe-section-head)] hover:text-[var(--frappe-text)]" />
         <div className="min-w-0 flex-1">
           {breadcrumbs && breadcrumbs.length > 0 ? (
-            <FrappeBreadcrumbs items={breadcrumbs} className="mb-2.5" />
+            <FrappeBreadcrumbs items={breadcrumbs} className="mb-1.5" />
           ) : null}
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
             <div className="min-w-0">
-              <h1 className="font-heading truncate text-xl font-semibold tracking-tight text-[var(--frappe-text)] lg:text-2xl">
+              <h1 className="font-heading truncate text-xl font-semibold tracking-tight text-[var(--frappe-text)] lg:text-[1.65rem]">
                 {title}
               </h1>
               {subtitle ? (
-                <p className="mt-1 text-sm text-[var(--frappe-text-muted)]">
+                <p className="mt-0.5 text-sm text-[var(--frappe-text-muted)]">
                   {subtitle}
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <ThemeToggle
+                variant="ghost"
+                className="size-9 rounded-xl text-[var(--frappe-text-muted)] hover:bg-[var(--frappe-section-head)] hover:text-[var(--frappe-text)]"
+              />
+              <MessagesBell />
               <NotificationBell />
               {actions ? (
                 <div className="flex flex-wrap items-center gap-2">{actions}</div>
@@ -92,7 +99,7 @@ export function FrappeFilterBar({
   return (
     <div
       className={cn(
-        "mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 py-3 shadow-sm",
+        "mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 py-3.5 shadow-[var(--frappe-shadow)]",
         className
       )}
     >

@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useBranding } from "@/components/branding/branding-provider";
-import { Package2 } from "lucide-react";
+import { BoxesIcon } from "lucide-react";
 import { errorMessage } from "@/lib/format";
 
 export default function LoginPage() {
@@ -63,53 +63,75 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center bg-muted/30 p-4">
-      <div className="absolute right-4 top-4">
+    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden p-4">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(15,118,110,0.18), transparent 55%), radial-gradient(ellipse 70% 50% at 90% 80%, rgba(240,113,103,0.12), transparent 50%), linear-gradient(180deg, #eef2f6 0%, #e8eef5 100%)",
+        }}
+      />
+      <div className="absolute right-4 top-4 z-10">
         <ThemeToggle />
       </div>
-      <div className="mb-8 flex items-center gap-2">
-        <Package2 className="size-8" />
-        <span className="font-heading text-xl font-semibold">{appName}</span>
+      <div className="relative z-10 mb-8 flex items-center gap-3">
+        <span className="flex size-11 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-600/25">
+          <BoxesIcon className="size-6" />
+        </span>
+        <div>
+          <p className="font-heading text-xl font-semibold tracking-tight text-slate-900">
+            {appName}
+          </p>
+          <p className="text-xs text-slate-500">Stock management system</p>
+        </div>
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+      <Card className="relative z-10 w-full max-w-md rounded-2xl border-slate-200/80 shadow-[0_16px_48px_rgba(15,23,42,0.08)]">
+        <CardHeader className="space-y-1 pb-4">
+          <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
-            Use your account credentials. Default admin: admin@stock.local
+            Sign in to manage inventory, sales, and cash.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <div className="grid gap-2">
+          <form onSubmit={onSubmit} className="space-y-4">
+            {loginMessage ? (
+              <p className="rounded-xl bg-teal-500/10 px-3 py-2 text-sm text-teal-800">
+                {loginMessage}
+              </p>
+            ) : null}
+            {error ? (
+              <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-700">
+                {error}
+              </p>
+            ) : null}
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                autoComplete="email"
-                placeholder="admin@stock.local"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-11 rounded-xl"
               />
             </div>
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <PasswordInput
                 id="password"
                 autoComplete="current-password"
-                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-11 rounded-xl"
               />
             </div>
-            {error ? (
-              <p className="text-sm text-destructive">{error}</p>
-            ) : null}
-            {loginMessage ? (
-              <p className="text-sm text-muted-foreground">{loginMessage}</p>
-            ) : null}
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button
+              type="submit"
+              className="h-11 w-full rounded-xl bg-teal-700 text-white hover:bg-teal-600"
+              disabled={loading}
+            >
               {loading ? <Spinner className="size-4" /> : "Sign in"}
             </Button>
           </form>

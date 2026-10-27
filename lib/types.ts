@@ -777,6 +777,29 @@ export interface NotificationUnreadCount {
   count: number;
 }
 
+export interface InternalMessageUser {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+export interface InternalMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  isRead: boolean;
+  readAt?: string | null;
+  sender?: InternalMessageUser;
+  recipient?: InternalMessageUser;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface MessageUnreadCount {
+  count: number;
+}
+
 export type InquiryStatus =
   | "NEW"
   | "IN_PROGRESS"

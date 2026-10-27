@@ -14,12 +14,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
 import { adminNav, mainNav, masterNav, type NavItem } from "@/lib/navigation";
 import { useBranding } from "@/components/branding/branding-provider";
-import { CommandIcon } from "lucide-react";
+import { BoxesIcon } from "lucide-react";
 
 function filterNav(
   items: NavItem[],
@@ -45,16 +46,21 @@ function NavItems({
   if (visible.length === 0) return null;
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-0.5">
       {visible.map((item) => {
         const Icon = item.icon;
         const active =
           pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+            <SidebarMenuButton
+              asChild
+              isActive={active}
+              tooltip={item.title}
+              className="h-10 rounded-xl px-3 text-[13px] font-medium"
+            >
               <Link href={item.href}>
-                <Icon />
+                <Icon className="size-4 opacity-90" />
                 <span>{item.title}</span>
               </Link>
             </SidebarMenuButton>
@@ -73,45 +79,57 @@ export function AppSidebar({
   const adminVisible = filterNav(adminNav, user);
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="border-b border-white/5 p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              size="lg"
+              className="h-12 rounded-xl px-2.5 hover:bg-white/5 data-[slot=sidebar-menu-button]:p-2!"
             >
               <Link href="/dashboard">
-                <CommandIcon className="size-5!" />
-                <span className="text-base font-semibold">{appName}</span>
+                <span className="flex size-9 items-center justify-center rounded-xl bg-teal-500/20 text-teal-300 ring-1 ring-teal-400/30">
+                  <BoxesIcon className="size-5" />
+                </span>
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
+                  <span className="truncate text-[15px] font-semibold tracking-tight text-slate-50">
+                    {appName}
+                  </span>
+                  <span className="truncate text-[11px] text-slate-400">
+                    Stock operations
+                  </span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Operations</SidebarGroupLabel>
+      <SidebarContent className="px-2 py-3">
+        <SidebarGroup className="p-0">
+          <SidebarGroupLabel className="mb-1 px-3">Operations</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavItems items={mainNav} user={user} />
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Master data</SidebarGroupLabel>
+        <SidebarGroup className="mt-4 p-0">
+          <SidebarGroupLabel className="mb-1 px-3">Master data</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavItems items={masterNav} user={user} />
           </SidebarGroupContent>
         </SidebarGroup>
         {adminVisible.length > 0 ? (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroup className="mt-4 p-0">
+            <SidebarGroupLabel className="mb-1 px-3">
+              Administration
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <NavItems items={adminNav} user={user} />
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-white/5 p-2">
         {user ? (
           <NavUser
             user={{
@@ -122,6 +140,7 @@ export function AppSidebar({
           />
         ) : null}
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

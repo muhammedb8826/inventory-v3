@@ -43,7 +43,7 @@ export function DataCardTable<T extends { id: string }>({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-[var(--frappe-shadow)]">
       <div className="overflow-x-auto">
         <table className="frappe-list-table w-full">
           <thead>
