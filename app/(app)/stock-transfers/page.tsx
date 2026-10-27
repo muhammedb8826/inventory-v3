@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import { EntitySelectField } from "@/components/shared/entity-select-field";
 import { ItemSearchSelect } from "@/components/shared/item-search-select";
@@ -87,9 +86,9 @@ export default function StockTransfersPage() {
             toLocationId: toLocationId || undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [from, to, debouncedSearch, status, fromLocationId, toLocationId]
+      [from, to, debouncedSearch, status, fromLocationId, toLocationId],
     );
 
   return (
@@ -102,120 +101,118 @@ export default function StockTransfersPage() {
       }
     >
       <PermissionGate permission="stock_transfer.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search transfers..."
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          <Select
-            value={status || "__all__"}
-            onValueChange={(v) =>
-              setStatus(v === "__all__" ? "" : (v as TransferStatus))
-            }
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All statuses</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={fromLocationId || "__all__"}
-            onValueChange={(v) =>
-              setFromLocationId(v === "__all__" ? "" : v)
-            }
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="From location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">From any location</SelectItem>
-              {(locations ?? []).map((l) => (
-                <SelectItem key={l.id} value={l.id}>
-                  {l.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={toLocationId || "__all__"}
-            onValueChange={(v) => setToLocationId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="To location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">To any location</SelectItem>
-              {(locations ?? []).map((l) => (
-                <SelectItem key={l.id} value={l.id}>
-                  {l.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FrappeFilterBar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No transfers"
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "id",
-                header: "ID",
-                cell: (r) => (
-                  <Link
-                    href={`/stock-transfers/${r.id}`}
-                    className="font-medium text-[var(--frappe-primary)] hover:underline"
-                  >
-                    {r.id.slice(0, 8)}…
-                  </Link>
-                ),
-              },
-              {
-                key: "from",
-                header: "From",
-                cell: (r) => r.fromLocation?.name ?? "—",
-              },
-              {
-                key: "to",
-                header: "To",
-                cell: (r) => r.toLocation?.name ?? "—",
-              },
-              {
-                key: "status",
-                header: "Status",
-                cell: (r) => <Badge variant="outline">{r.status}</Badge>,
-              },
-              {
-                key: "date",
-                header: "Date",
-                cell: (r) =>
-                  r.createdAt
-                    ? new Date(r.createdAt).toLocaleDateString()
-                    : "—",
-              },
-            ]}
-          />
-        )}
+        <DataCardTable
+          storageKey="stock-transfers-list"
+          rows={rows}
+          loading={loading}
+          filters={
+            <FrappeFilterBar>
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search transfers..."
+              />
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+              />
+              <Select
+                value={status || "__all__"}
+                onValueChange={(v) =>
+                  setStatus(v === "__all__" ? "" : (v as TransferStatus))
+                }
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All statuses</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={fromLocationId || "__all__"}
+                onValueChange={(v) =>
+                  setFromLocationId(v === "__all__" ? "" : v)
+                }
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="From location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">From any location</SelectItem>
+                  {(locations ?? []).map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={toLocationId || "__all__"}
+                onValueChange={(v) => setToLocationId(v === "__all__" ? "" : v)}
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="To location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">To any location</SelectItem>
+                  {(locations ?? []).map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FrappeFilterBar>
+          }
+          emptyTitle="No transfers"
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "id",
+              header: "ID",
+              cell: (r) => (
+                <Link
+                  href={`/stock-transfers/${r.id}`}
+                  className="font-medium text-[var(--frappe-primary)] hover:underline"
+                >
+                  {r.id.slice(0, 8)}…
+                </Link>
+              ),
+            },
+            {
+              key: "from",
+              header: "From",
+              cell: (r) => r.fromLocation?.name ?? "—",
+            },
+            {
+              key: "to",
+              header: "To",
+              cell: (r) => r.toLocation?.name ?? "—",
+            },
+            {
+              key: "status",
+              header: "Status",
+              cell: (r) => <Badge variant="outline">{r.status}</Badge>,
+            },
+            {
+              key: "date",
+              header: "Date",
+              cell: (r) =>
+                r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—",
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );
@@ -244,7 +241,7 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
       fromLocationId
         ? fetchInventoryForLocation(fromLocationId)
         : Promise.resolve([]),
-    [fromLocationId]
+    [fromLocationId],
   );
 
   const locationOptions = (locations ?? []).map((l) => ({
@@ -266,8 +263,8 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
     const idx = emptyIdx >= 0 ? emptyIdx : 0;
     setLines((prev) =>
       prev.map((row, i) =>
-        i === idx ? { ...row, itemId: productItemId(record) } : row
-      )
+        i === idx ? { ...row, itemId: productItemId(record) } : row,
+      ),
     );
   }
 
@@ -336,8 +333,8 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
               Stock transfer
             </DialogTitle>
             <DialogDescription className="text-xs text-[var(--frappe-text-muted)]">
-              Move inventory between locations. Stock is deducted from the source
-              when the transfer is created.
+              Move inventory between locations. Stock is deducted from the
+              source when the transfer is created.
             </DialogDescription>
           </DialogHeader>
 
@@ -437,8 +434,8 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
                         onValueChange={(v) =>
                           setLines((prev) =>
                             prev.map((row, idx) =>
-                              idx === i ? { ...row, itemId: v } : row
-                            )
+                              idx === i ? { ...row, itemId: v } : row,
+                            ),
                           )
                         }
                         options={itemOptions}
@@ -462,8 +459,8 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
                             prev.map((row, idx) =>
                               idx === i
                                 ? { ...row, quantity: e.target.value }
-                                : row
-                            )
+                                : row,
+                            ),
                           )
                         }
                         required
@@ -477,9 +474,7 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
                         className="size-8 text-[var(--frappe-text-muted)] hover:text-[var(--frappe-red)]"
                         disabled={lines.length === 1}
                         onClick={() =>
-                          setLines((prev) =>
-                            prev.filter((_, idx) => idx !== i)
-                          )
+                          setLines((prev) => prev.filter((_, idx) => idx !== i))
                         }
                         aria-label="Remove line"
                       >
@@ -497,10 +492,7 @@ function TransferDialog({ onSuccess }: { onSuccess: () => void }) {
                   size="sm"
                   className="h-8 text-xs text-[var(--frappe-primary)] hover:text-[var(--frappe-primary-hover)]"
                   onClick={() =>
-                    setLines((prev) => [
-                      ...prev,
-                      { itemId: "", quantity: "1" },
-                    ])
+                    setLines((prev) => [...prev, { itemId: "", quantity: "1" }])
                   }
                 >
                   <PlusIcon className="size-3.5" />

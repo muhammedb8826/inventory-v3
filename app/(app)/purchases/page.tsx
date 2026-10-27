@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
@@ -110,100 +109,103 @@ export default function PurchasesPage() {
       }
     >
       <PermissionGate permission="purchase.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search purchases..."
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          <div className="flex items-center gap-2">
-            <Switch
-              id="purchase-include-voided"
-              checked={includeVoided}
-              onCheckedChange={setIncludeVoided}
-            />
-            <Label
-              htmlFor="purchase-include-voided"
-              className="text-sm font-normal text-[var(--frappe-text)]"
-            >
-              Include voided
-            </Label>
-          </div>
-          <Select
-            value={supplierId || "__all__"}
-            onValueChange={(v) => setSupplierId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All suppliers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All suppliers</SelectItem>
-              {(suppliers ?? []).map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={locationId || "__all__"}
-            onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All locations</SelectItem>
-              {(locations ?? []).map((l) => (
-                <SelectItem key={l.id} value={l.id}>
-                  {l.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={paymentMethod || "__all__"}
-            onValueChange={(v) =>
-              setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
-            }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Payment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All payments</SelectItem>
-              <SelectItem value="CASH">Cash</SelectItem>
-              <SelectItem value="BANK">Bank</SelectItem>
-              <SelectItem value="CREDIT">Credit</SelectItem>
-            </SelectContent>
-          </Select>
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} record{meta.total === 1 ? "" : "s"}
-          </span>
-          {totals ? (
-            <ListPageTotals
-              items={[
-                { label: "Subtotal", value: formatMoney(totals.subtotal) },
-                { label: "Total", value: formatMoney(totals.total) },
-              ]}
-            />
-          ) : null}
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
           <DataCardTable
+            storageKey="purchases-list"
             rows={rows}
+            loading={loading}
             emptyTitle="Nothing to show"
             emptyDescription="Create your first purchase to receive stock."
+            leading={
+              <FrappeListToolbar>
+                <span>
+                  {meta.total} record{meta.total === 1 ? "" : "s"}
+                </span>
+                {totals ? (
+                  <ListPageTotals
+                    items={[
+                      { label: "Subtotal", value: formatMoney(totals.subtotal) },
+                      { label: "Total", value: formatMoney(totals.total) },
+                    ]}
+                  />
+                ) : null}
+              </FrappeListToolbar>
+            }
+            filters={
+              <FrappeFilterBar>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search purchases..."
+                />
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="purchase-include-voided"
+                    checked={includeVoided}
+                    onCheckedChange={setIncludeVoided}
+                  />
+                  <Label
+                    htmlFor="purchase-include-voided"
+                    className="text-sm font-normal"
+                  >
+                    Include voided
+                  </Label>
+                </div>
+                <Select
+                  value={supplierId || "__all__"}
+                  onValueChange={(v) => setSupplierId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-9 w-[200px]">
+                    <SelectValue placeholder="All suppliers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All suppliers</SelectItem>
+                    {(suppliers ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={locationId || "__all__"}
+                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-9 w-[180px]">
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All locations</SelectItem>
+                    {(locations ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={paymentMethod || "__all__"}
+                  onValueChange={(v) =>
+                    setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
+                  }
+                >
+                  <SelectTrigger className="h-9 w-[150px]">
+                    <SelectValue placeholder="Payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All payments</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="BANK">Bank</SelectItem>
+                    <SelectItem value="CREDIT">Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FrappeFilterBar>
+            }
             pagination={{
               meta,
               onPageChange: setPage,
@@ -214,6 +216,8 @@ export default function PurchasesPage() {
               {
                 key: "id",
                 header: "ID",
+                hideable: false,
+                mobilePriority: 4,
                 cell: (r) => (
                   <Link
                     href={`/purchases/${r.id}`}
@@ -226,11 +230,14 @@ export default function PurchasesPage() {
               {
                 key: "date",
                 header: "Date",
+                mobilePriority: 3,
                 cell: (r) => formatDate(r.createdAt),
               },
               {
                 key: "supplier",
                 header: "Supplier",
+                hideable: false,
+                mobilePriority: 1,
                 cell: (r) =>
                   r.supplier?.name ? (
                     <Link
@@ -267,11 +274,11 @@ export default function PurchasesPage() {
                 key: "total",
                 header: "Amount",
                 className: "text-right",
+                mobilePriority: 2,
                 cell: (r) => formatMoney(documentTotal(r)),
               },
             ]}
           />
-        )}
       </PermissionGate>
     </AppShell>
   );

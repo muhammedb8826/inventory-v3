@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import {
   FrappeFilterBar,
@@ -66,9 +65,9 @@ export default function NotificationsPage() {
             module: moduleFilter || undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [from, to, debouncedSearch, readFilter, moduleFilter]
+      [from, to, debouncedSearch, readFilter, moduleFilter],
     );
 
   async function handleMarkAllRead() {
@@ -79,7 +78,9 @@ export default function NotificationsPage() {
       await refreshUnreadCount();
       reload();
       toast.success(
-        updated > 0 ? `${updated} notification(s) marked read` : "All caught up"
+        updated > 0
+          ? `${updated} notification(s) marked read`
+          : "All caught up",
       );
     } catch (err) {
       toast.error(errorMessage(err));
@@ -128,165 +129,163 @@ export default function NotificationsPage() {
         </FrappeButtonPrimary>
       }
     >
-      <FrappeFilterBar>
-        <ListSearchField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search title or message…"
-        />
-        <DateRangeFilter
-          from={from}
-          to={to}
-          onFromChange={setFrom}
-          onToChange={setTo}
-        />
-        <Select
-          value={readFilter || "__all__"}
-          onValueChange={(v) =>
-            setReadFilter(v === "__all__" ? "" : (v as ReadFilter))
-          }
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All</SelectItem>
-            <SelectItem value="false">Unread</SelectItem>
-            <SelectItem value="true">Read</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={moduleFilter || "__all__"}
-          onValueChange={(v) =>
-            setModuleFilter(v === "__all__" ? "" : v)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Module" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All modules</SelectItem>
-            {NOTIFICATION_MODULES.map((m) => (
-              <SelectItem key={m.value} value={m.value}>
-                {m.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FrappeFilterBar>
-
-      <FrappeListToolbar>
-        <span className="text-[var(--frappe-text-muted)]">
-          {meta.total} notification{meta.total === 1 ? "" : "s"}
-        </span>
-      </FrappeListToolbar>
-
-      {loading ? (
-        <PageLoading />
-      ) : (
-        <DataCardTable
-          rows={rows}
-          emptyTitle="No notifications"
-          emptyDescription="New alerts appear when you record sales, purchases, or stock transfers. Low-stock warnings are sent to users with inventory access."
-          pagination={{
-            meta,
-            onPageChange: setPage,
-            onLimitChange: setLimit,
-            disabled: loading,
-          }}
-          columns={[
-            {
-              key: "status",
-              header: "",
-              className: "w-8",
-              cell: (n) =>
-                !n.isRead ? (
-                  <span
-                    className="inline-block size-2 rounded-full bg-[var(--frappe-primary)]"
-                    title="Unread"
-                  />
-                ) : null,
-            },
-            {
-              key: "title",
-              header: "Notification",
-              cell: (n) => (
-                <Link
-                  href={notificationDetailPath(n.id)}
-                  className="block max-w-md text-left hover:text-[var(--frappe-primary)]"
-                >
-                  <p className="font-medium text-[var(--frappe-text)]">
-                    {n.title}
-                  </p>
-                  <p className="mt-0.5 line-clamp-2 text-xs text-[var(--frappe-text-muted)]">
-                    {n.message}
-                  </p>
-                </Link>
-              ),
-            },
-            {
-              key: "module",
-              header: "Module",
-              cell: (n) => (
-                <Badge variant="outline" className="text-xs capitalize">
-                  {n.module.replace(/_/g, " ")}
-                </Badge>
-              ),
-            },
-            {
-              key: "type",
-              header: "Type",
-              cell: (n) => (
-                <Badge variant="secondary" className="text-xs font-normal">
-                  {n.type.replace(/_/g, " ")}
-                </Badge>
-              ),
-            },
-            {
-              key: "when",
-              header: "When",
-              cell: (n) => (
+      <DataCardTable
+        storageKey="notifications-list"
+        rows={rows}
+        loading={loading}
+        leading={
+          <FrappeListToolbar>
+            <span className="text-[var(--frappe-text-muted)]">
+              {meta.total} notification{meta.total === 1 ? "" : "s"}
+            </span>
+          </FrappeListToolbar>
+        }
+        filters={
+          <FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search title or message…"
+            />
+            <DateRangeFilter
+              from={from}
+              to={to}
+              onFromChange={setFrom}
+              onToChange={setTo}
+            />
+            <Select
+              value={readFilter || "__all__"}
+              onValueChange={(v) =>
+                setReadFilter(v === "__all__" ? "" : (v as ReadFilter))
+              }
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All</SelectItem>
+                <SelectItem value="false">Unread</SelectItem>
+                <SelectItem value="true">Read</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={moduleFilter || "__all__"}
+              onValueChange={(v) => setModuleFilter(v === "__all__" ? "" : v)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Module" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All modules</SelectItem>
+                {NOTIFICATION_MODULES.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FrappeFilterBar>
+        }
+        emptyTitle="No notifications"
+        emptyDescription="New alerts appear when you record sales, purchases, or stock transfers. Low-stock warnings are sent to users with inventory access."
+        pagination={{
+          meta,
+          onPageChange: setPage,
+          onLimitChange: setLimit,
+          disabled: loading,
+        }}
+        columns={[
+          {
+            key: "status",
+            header: "",
+            className: "w-8",
+            cell: (n) =>
+              !n.isRead ? (
                 <span
-                  className="text-sm text-[var(--frappe-text-muted)]"
-                  title={formatDate(n.createdAt)}
-                >
-                  {formatRelativeDate(n.createdAt)}
-                </span>
-              ),
-            },
-            {
-              key: "actions",
-              header: "",
-              className: "w-28 text-right",
-              cell: (n) => (
-                <div className="flex justify-end gap-1">
-                  {!n.isRead ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => void handleMarkRead(n.id)}
-                    >
-                      Read
-                    </Button>
-                  ) : null}
+                  className="inline-block size-2 rounded-full bg-[var(--frappe-primary)]"
+                  title="Unread"
+                />
+              ) : null,
+          },
+          {
+            key: "title",
+            header: "Notification",
+            cell: (n) => (
+              <Link
+                href={notificationDetailPath(n.id)}
+                className="block max-w-md text-left hover:text-[var(--frappe-primary)]"
+              >
+                <p className="font-medium text-[var(--frappe-text)]">
+                  {n.title}
+                </p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-[var(--frappe-text-muted)]">
+                  {n.message}
+                </p>
+              </Link>
+            ),
+          },
+          {
+            key: "module",
+            header: "Module",
+            cell: (n) => (
+              <Badge variant="outline" className="text-xs capitalize">
+                {n.module.replace(/_/g, " ")}
+              </Badge>
+            ),
+          },
+          {
+            key: "type",
+            header: "Type",
+            cell: (n) => (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {n.type.replace(/_/g, " ")}
+              </Badge>
+            ),
+          },
+          {
+            key: "when",
+            header: "When",
+            cell: (n) => (
+              <span
+                className="text-sm text-[var(--frappe-text-muted)]"
+                title={formatDate(n.createdAt)}
+              >
+                {formatRelativeDate(n.createdAt)}
+              </span>
+            ),
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-28 text-right",
+            cell: (n) => (
+              <div className="flex justify-end gap-1">
+                {!n.isRead ? (
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon"
-                    className="size-8 text-[var(--frappe-text-muted)] hover:text-destructive"
-                    onClick={() => void handleDismiss(n.id)}
-                    aria-label="Dismiss"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => void handleMarkRead(n.id)}
                   >
-                    <Trash2Icon className="size-4" />
+                    Read
                   </Button>
-                </div>
-              ),
-            },
-          ]}
-        />
-      )}
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-[var(--frappe-text-muted)] hover:text-destructive"
+                  onClick={() => void handleDismiss(n.id)}
+                  aria-label="Dismiss"
+                >
+                  <Trash2Icon className="size-4" />
+                </Button>
+              </div>
+            ),
+          },
+        ]}
+      />
     </AppShell>
   );
 }

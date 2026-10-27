@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
+import { ListSearchField } from "@/components/shared/list-search-field";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
+import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
 import {
   Card,
   CardDescription,
@@ -19,6 +21,7 @@ import { buildListPath } from "@/lib/list-query";
 import type { Currency, ProfitLossItem } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import { useClientPaginatedList } from "@/hooks/use-client-paginated-list";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 interface PnlSummary {
   revenue: string;
@@ -32,6 +35,8 @@ interface PnlSummary {
 export default function ProfitLossPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const dateParams = {
     from: from || undefined,
     to: to || undefined,
@@ -40,40 +45,33 @@ export default function ProfitLossPage() {
   const { data: summary, loading: sl } = useFetch(
     () =>
       api<PnlSummary>(
-        buildListPath("/profit-loss/summary", { params: dateParams })
+        buildListPath("/profit-loss/summary", { params: dateParams }),
       ).then((res) => {
         applyCurrencyFromResponse(res);
         return res;
       }),
-    [from, to]
+    [from, to],
   );
   const { data: byItem, loading: il } = useFetch(
     () =>
       api<ProfitLossItem[]>(
-        buildListPath("/profit-loss/by-item", { params: dateParams })
+        buildListPath("/profit-loss/by-item", { params: dateParams }),
       ),
-    [from, to]
+    [from, to],
   );
-  const byItemRows = useMemo(
-    () => (byItem ?? []).map((r) => ({ ...r, id: r.itemId })),
-    [byItem]
-  );
-  const { rows, meta, setPage, setLimit } = useClientPaginatedList(
+  const byItemRows = useMemo(() => {
+    const mapped = (byItem ?? []).map((r) => ({ ...r, id: r.itemId }));
+    const q = debouncedSearch.trim().toLowerCase();
+    if (!q) return mapped;
+    return mapped.filter((r) => r.description.toLowerCase().includes(q));
+  }, [byItem, debouncedSearch]);
+  const { rows, meta, setPage, setLimit } = useClientPaginatedList(byItemRows, [
     byItemRows,
-    [byItemRows]
-  );
+  ]);
 
   return (
     <AppShell title="Profit & Loss">
       <PermissionGate permission="profit_loss.read" showDenied>
-        <div className="mb-4">
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-        </div>
         {sl ? (
           <PageLoading />
         ) : summary ? (
@@ -96,56 +94,84 @@ export default function ProfitLossPage() {
             ))}
           </div>
         ) : null}
-        {il ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No sales data"
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-            }}
-            columns={[
-              {
-                key: "item",
-                header: "Item",
-                cell: (r) => r.description,
-              },
-              {
-                key: "qty",
-                header: "Qty sold",
-                className: "text-right",
-                cell: (r) => r.quantitySold,
-              },
-              {
-                key: "revenue",
-                header: "Revenue",
-                className: "text-right",
-                cell: (r) => formatMoney(r.revenue),
-              },
-              {
-                key: "cost",
-                header: "Cost",
-                className: "text-right",
-                cell: (r) => formatMoney(r.cost),
-              },
-              {
-                key: "profit",
-                header: "Profit",
-                className: "text-right",
-                cell: (r) => formatMoney(r.profit),
-              },
-              {
-                key: "margin",
-                header: "Margin %",
-                className: "text-right",
-                cell: (r) => `${r.marginPercent}%`,
-              },
-            ]}
-          />
-        )}
+
+        <DataCardTable
+          storageKey="profit-loss-by-item"
+          rows={rows}
+          loading={il}
+          leading={
+            <FrappeListToolbar>
+              <span className="text-[var(--frappe-text-muted)]">
+                {meta.total} item{meta.total === 1 ? "" : "s"}
+              </span>
+            </FrappeListToolbar>
+          }
+          filters={
+            <FrappeFilterBar>
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search items…"
+              />
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+              />
+            </FrappeFilterBar>
+          }
+          emptyTitle="No sales data"
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+          }}
+          columns={[
+            {
+              key: "item",
+              header: "Item",
+              hideable: false,
+              mobilePriority: 1,
+              cell: (r) => r.description,
+            },
+            {
+              key: "qty",
+              header: "Qty sold",
+              className: "text-right",
+              mobilePriority: 3,
+              cell: (r) => r.quantitySold,
+            },
+            {
+              key: "revenue",
+              header: "Revenue",
+              className: "text-right",
+              mobilePriority: 2,
+              cell: (r) => formatMoney(r.revenue),
+            },
+            {
+              key: "cost",
+              header: "Cost",
+              className: "text-right",
+              defaultVisible: false,
+              cell: (r) => formatMoney(r.cost),
+            },
+            {
+              key: "profit",
+              header: "Profit",
+              className: "text-right",
+              mobilePriority: 4,
+              cell: (r) => formatMoney(r.profit),
+            },
+            {
+              key: "margin",
+              header: "Margin %",
+              className: "text-right",
+              defaultVisible: false,
+              cell: (r) => `${r.marginPercent}%`,
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

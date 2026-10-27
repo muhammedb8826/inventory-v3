@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeButtonPrimary,
@@ -57,9 +56,9 @@ export default function ProductionOrdersPage() {
             to: to || undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [debouncedSearch, status, locationId, from, to]
+      [debouncedSearch, status, locationId, from, to],
     );
 
   return (
@@ -82,132 +81,134 @@ export default function ProductionOrdersPage() {
       }
     >
       <PermissionGate permission="production.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search orders…"
-          />
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              Location
-            </Label>
-            <Select value={locationId} onValueChange={setLocationId}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="All locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All locations</SelectItem>
-                {(locations ?? []).map((loc) => (
-                  <SelectItem key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              Status
-            </Label>
-            <Select
-              value={status || ALL}
-              onValueChange={(v) =>
-                setStatus(v === ALL ? "" : (v as ProductionOrderStatus))
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All statuses</SelectItem>
-                {PRODUCTION_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} order{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No production orders"
-            emptyDescription="Create an order from an active BOM."
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "id",
-                header: "Order",
-                cell: (r) => (
-                  <Link
-                    href={`/production-orders/${r.id}`}
-                    className="font-medium text-[var(--frappe-primary)] hover:underline"
-                  >
-                    {r.id.slice(0, 8)}…
-                  </Link>
-                ),
-              },
-              {
-                key: "bom",
-                header: "BOM",
-                cell: (r) => r.bom?.name ?? "—",
-              },
-              {
-                key: "finished",
-                header: "Finished item",
-                cell: (r) =>
-                  r.finishedItem?.description ??
-                  r.bom?.finishedItem?.description ??
-                  "—",
-              },
-              {
-                key: "location",
-                header: "Location",
-                cell: (r) => r.location?.name ?? "—",
-              },
-              {
-                key: "qty",
-                header: "Planned",
-                className: "text-right tabular-nums",
-                cell: (r) => formatQty(r.quantityPlanned),
-              },
-              {
-                key: "status",
-                header: "Status",
-                cell: (r) => (
-                  <Badge variant="outline">
-                    {productionStatusLabel(r.status)}
-                  </Badge>
-                ),
-              },
-              {
-                key: "date",
-                header: "Created",
-                cell: (r) => formatDate(r.createdAt),
-              },
-            ]}
-          />
-        )}
+        <DataCardTable
+          storageKey="production-orders-list"
+          rows={rows}
+          loading={loading}
+          leading={
+            <FrappeListToolbar>
+              <span className="text-[var(--frappe-text-muted)]">
+                {meta.total} order{meta.total === 1 ? "" : "s"}
+              </span>
+            </FrappeListToolbar>
+          }
+          filters={
+            <FrappeFilterBar>
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search orders…"
+              />
+              <div className="grid gap-2">
+                <Label className="text-sm text-[var(--frappe-text-muted)]">
+                  Location
+                </Label>
+                <Select value={locationId} onValueChange={setLocationId}>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>All locations</SelectItem>
+                    {(locations ?? []).map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm text-[var(--frappe-text-muted)]">
+                  Status
+                </Label>
+                <Select
+                  value={status || ALL}
+                  onValueChange={(v) =>
+                    setStatus(v === ALL ? "" : (v as ProductionOrderStatus))
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>All statuses</SelectItem>
+                    {PRODUCTION_STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+              />
+            </FrappeFilterBar>
+          }
+          emptyTitle="No production orders"
+          emptyDescription="Create an order from an active BOM."
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "id",
+              header: "Order",
+              cell: (r) => (
+                <Link
+                  href={`/production-orders/${r.id}`}
+                  className="font-medium text-[var(--frappe-primary)] hover:underline"
+                >
+                  {r.id.slice(0, 8)}…
+                </Link>
+              ),
+            },
+            {
+              key: "bom",
+              header: "BOM",
+              cell: (r) => r.bom?.name ?? "—",
+            },
+            {
+              key: "finished",
+              header: "Finished item",
+              cell: (r) =>
+                r.finishedItem?.description ??
+                r.bom?.finishedItem?.description ??
+                "—",
+            },
+            {
+              key: "location",
+              header: "Location",
+              cell: (r) => r.location?.name ?? "—",
+            },
+            {
+              key: "qty",
+              header: "Planned",
+              className: "text-right tabular-nums",
+              cell: (r) => formatQty(r.quantityPlanned),
+            },
+            {
+              key: "status",
+              header: "Status",
+              cell: (r) => (
+                <Badge variant="outline">
+                  {productionStatusLabel(r.status)}
+                </Badge>
+              ),
+            },
+            {
+              key: "date",
+              header: "Created",
+              cell: (r) => formatDate(r.createdAt),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

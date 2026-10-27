@@ -65,19 +65,16 @@ export default function UsersPage() {
 function UsersPageContent() {
   const { user } = useAuth();
   const canWrite = hasPermission(user, "users.write");
-  const canLoadRoles =
-    canWrite || hasPermission(user, "roles.read");
+  const canLoadRoles = canWrite || hasPermission(user, "roles.read");
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [roleId, setRoleId] = useState("");
   const [activeFilter, setActiveFilter] = useState<"" | "true" | "false">("");
   const debouncedSearch = useDebouncedValue(search);
-  const { data: roles } = useFetch(
-    () => apiList<Role>("/roles"),
-    [],
-    { enabled: canLoadRoles }
-  );
+  const { data: roles } = useFetch(() => apiList<Role>("/roles"), [], {
+    enabled: canLoadRoles,
+  });
   const { rows, meta, setPage, setLimit, loading, reload } =
     usePaginatedList<UserAdmin>(
       (page, limit) =>
@@ -90,9 +87,9 @@ function UsersPageContent() {
             isActive: activeFilter ? activeFilter === "true" : undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [from, to, debouncedSearch, roleId, activeFilter]
+      [from, to, debouncedSearch, roleId, activeFilter],
     );
 
   return (
@@ -102,84 +99,84 @@ function UsersPageContent() {
         canWrite ? <UserDialog mode="create" onSuccess={reload} /> : null
       }
     >
-      <FrappeFilterBar>
-        <ListSearchField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search users..."
-        />
-        <DateRangeFilter
-          from={from}
-          to={to}
-          onFromChange={setFrom}
-          onToChange={setTo}
-        />
-        <Select
-          value={roleId || "__all__"}
-          onValueChange={(v) => setRoleId(v === "__all__" ? "" : v)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All roles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All roles</SelectItem>
-            {(roles ?? []).map((r) => (
-              <SelectItem key={r.id} value={r.id}>
-                {r.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={activeFilter || "__all__"}
-          onValueChange={(v) =>
-            setActiveFilter(v === "__all__" ? "" : (v as "true" | "false"))
-          }
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All users</SelectItem>
-            <SelectItem value="true">Active</SelectItem>
-            <SelectItem value="false">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </FrappeFilterBar>
-      {loading ? (
-        <PageLoading />
-      ) : (
-        <DataCardTable
-          rows={rows}
-          emptyTitle="No users"
-          pagination={{
-            meta,
-            onPageChange: setPage,
-            onLimitChange: setLimit,
-          }}
-          columns={[
-            { key: "name", header: "Name", cell: (r) => r.fullName },
-            { key: "email", header: "Email", cell: (r) => r.email },
-            {
-              key: "role",
-              header: "Role",
-              cell: (r) => r.role?.name ?? "—",
-            },
-            {
-              key: "actions",
-              header: "",
-              className: "w-24 text-right",
-              cell: (r) =>
-                canWrite ? (
-                  <div className="flex justify-end gap-1">
-                    <UserDialog mode="edit" user={r} onSuccess={reload} />
-                    <DeleteUserButton user={r} onSuccess={reload} />
-                  </div>
-                ) : null,
-            },
-          ]}
-        />
-      )}
+      <DataCardTable
+        storageKey="users-list"
+        rows={rows}
+        loading={loading}
+        emptyTitle="No users"
+        filters={
+          <FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search users..."
+            />
+            <DateRangeFilter
+              from={from}
+              to={to}
+              onFromChange={setFrom}
+              onToChange={setTo}
+            />
+            <Select
+              value={roleId || "__all__"}
+              onValueChange={(v) => setRoleId(v === "__all__" ? "" : v)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All roles</SelectItem>
+                {(roles ?? []).map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={activeFilter || "__all__"}
+              onValueChange={(v) =>
+                setActiveFilter(v === "__all__" ? "" : (v as "true" | "false"))
+              }
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All users</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </FrappeFilterBar>
+        }
+        pagination={{
+          meta,
+          onPageChange: setPage,
+          onLimitChange: setLimit,
+        }}
+        columns={[
+          { key: "name", header: "Name", cell: (r) => r.fullName },
+          { key: "email", header: "Email", cell: (r) => r.email },
+          {
+            key: "role",
+            header: "Role",
+            cell: (r) => r.role?.name ?? "�",
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-24 text-right",
+            cell: (r) =>
+              canWrite ? (
+                <div className="flex justify-end gap-1">
+                  <UserDialog mode="edit" user={r} onSuccess={reload} />
+                  <DeleteUserButton user={r} onSuccess={reload} />
+                </div>
+              ) : null,
+          },
+        ]}
+      />
     </AppShell>
   );
 }
@@ -202,11 +199,9 @@ function UserDialog({
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [roleId, setRoleId] = useState(user?.roleId ?? user?.role?.id ?? "");
   const [saving, setSaving] = useState(false);
-  const { data: roles } = useFetch(
-    () => apiList<Role>("/roles"),
-    [],
-    { enabled: open && canLoadRoles }
-  );
+  const { data: roles } = useFetch(() => apiList<Role>("/roles"), [], {
+    enabled: open && canLoadRoles,
+  });
 
   function resetForm() {
     setEmail(user?.email ?? "");

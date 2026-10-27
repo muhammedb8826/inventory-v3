@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
+import { ListSearchField } from "@/components/shared/list-search-field";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
@@ -13,6 +13,7 @@ import {
 } from "@/components/frappe";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Select,
   SelectContent,
@@ -28,15 +29,9 @@ import {
 } from "@/components/ui/card";
 import { apiList } from "@/lib/list-response";
 import { buildCommissionsSummaryPath } from "@/lib/list-query";
-import {
-  firstDayOfMonthIso,
-  todayIso,
-} from "@/lib/sales-query";
+import { firstDayOfMonthIso, todayIso } from "@/lib/sales-query";
 import { formatMoney } from "@/lib/format";
-import {
-  commissionRowRepName,
-  commissionRowSubtotal,
-} from "@/lib/sale-utils";
+import { commissionRowRepName, commissionRowSubtotal } from "@/lib/sale-utils";
 import type { SalesCommissionSummaryRow, UserAdmin } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
@@ -49,15 +44,17 @@ export default function SalesCommissionsPage() {
   const [from, setFrom] = useState(firstDayOfMonthIso);
   const [to, setTo] = useState(todayIso);
   const [soldByUserId, setSoldByUserId] = useState("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
 
   const { data: users } = useFetch(
     () => (canFilterRep ? apiList<UserAdmin>("/users") : Promise.resolve([])),
-    [canFilterRep]
+    [canFilterRep],
   );
 
   const activeUsers = useMemo(
     () => (users ?? []).filter((u) => u.isActive !== false),
-    [users]
+    [users],
   );
 
   const { rows, allRows, meta, setPage, setLimit, loading } =
@@ -70,9 +67,9 @@ export default function SalesCommissionsPage() {
             soldByUserId: soldByUserId || undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [from, to, soldByUserId]
+      [from, to, soldByUserId],
     );
 
   const totals = useMemo(() => {
@@ -87,6 +84,15 @@ export default function SalesCommissionsPage() {
     return { count, sales, commission };
   }, [allRows]);
 
+  const displayRows = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
+    const source = rows.map((r) => ({ ...r, id: r.soldByUserId }));
+    if (!q) return source;
+    return source.filter((r) =>
+      commissionRowRepName(r).toLowerCase().includes(q),
+    );
+  }, [rows, debouncedSearch]);
+
   return (
     <AppShell
       title="Sales commissions"
@@ -96,57 +102,9 @@ export default function SalesCommissionsPage() {
         { label: "Sales Invoice", href: "/sales" },
         { label: "Commissions" },
       ]}
-      actions={
-        <FrappeButtonLink href="/sales">← Sales list</FrappeButtonLink>
-      }
+      actions={<FrappeButtonLink href="/sales">← Sales list</FrappeButtonLink>}
     >
       <PermissionGate permission="sales.read" showDenied>
-        <FrappeFilterBar className="items-end">
-          <div className="grid gap-2">
-            <Label htmlFor="comm-from">From</Label>
-            <Input
-              id="comm-from"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-[160px]"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="comm-to">To</Label>
-            <Input
-              id="comm-to"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-[160px]"
-            />
-          </div>
-          {canFilterRep ? (
-            <div className="grid gap-2">
-              <Label>Sales rep</Label>
-              <Select
-                value={soldByUserId || "__all__"}
-                onValueChange={(v) =>
-                  setSoldByUserId(v === "__all__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue placeholder="All reps" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All reps</SelectItem>
-                  {activeUsers.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
-        </FrappeFilterBar>
-
         <div className="mb-4 grid gap-4 sm:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
@@ -174,64 +132,120 @@ export default function SalesCommissionsPage() {
           </Card>
         </div>
 
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} rep{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows.map((r) => ({ ...r, id: r.soldByUserId }))}
-            emptyTitle="No commission data"
-            emptyDescription="No sales in this date range for the selected filters."
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "rep",
-                header: "Sales rep",
-                cell: (r) => commissionRowRepName(r),
-              },
-              {
-                key: "count",
-                header: "Sales",
-                className: "text-right tabular-nums",
-                cell: (r) => r.saleCount,
-              },
-              {
-                key: "sales",
-                header: "Subtotal",
-                className: "text-right tabular-nums",
-                cell: (r) => formatMoney(commissionRowSubtotal(r)),
-              },
-              {
-                key: "commission",
-                header: "Commission",
-                className: "text-right tabular-nums",
-                cell: (r) => formatMoney(r.totalCommission),
-              },
-              {
-                key: "view",
-                header: "",
-                cell: (r) => (
-                  <Link
-                    href={`/sales?soldByUserId=${r.soldByUserId}&from=${from}&to=${to}`}
-                    className="text-sm text-[var(--frappe-primary)] hover:underline"
+        <DataCardTable
+          storageKey="sales-commissions"
+          rows={displayRows}
+          loading={loading}
+          leading={
+            <FrappeListToolbar>
+              <span className="text-[var(--frappe-text-muted)]">
+                {meta.total} rep{meta.total === 1 ? "" : "s"}
+              </span>
+            </FrappeListToolbar>
+          }
+          filters={
+            <FrappeFilterBar className="items-end">
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search reps…"
+              />
+              <div className="grid gap-2">
+                <Label htmlFor="comm-from">From</Label>
+                <Input
+                  id="comm-from"
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="w-full sm:w-[160px]"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="comm-to">To</Label>
+                <Input
+                  id="comm-to"
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="w-full sm:w-[160px]"
+                />
+              </div>
+              {canFilterRep ? (
+                <div className="grid gap-2">
+                  <Label>Sales rep</Label>
+                  <Select
+                    value={soldByUserId || "__all__"}
+                    onValueChange={(v) =>
+                      setSoldByUserId(v === "__all__" ? "" : v)
+                    }
                   >
-                    View sales
-                  </Link>
-                ),
-              },
-            ]}
-          />
-        )}
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                      <SelectValue placeholder="All reps" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All reps</SelectItem>
+                      {activeUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+            </FrappeFilterBar>
+          }
+          emptyTitle="No commission data"
+          emptyDescription="No sales in this date range for the selected filters."
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "rep",
+              header: "Sales rep",
+              hideable: false,
+              mobilePriority: 1,
+              cell: (r) => commissionRowRepName(r),
+            },
+            {
+              key: "count",
+              header: "Sales",
+              className: "text-right tabular-nums",
+              mobilePriority: 3,
+              cell: (r) => r.saleCount,
+            },
+            {
+              key: "sales",
+              header: "Subtotal",
+              className: "text-right tabular-nums",
+              mobilePriority: 4,
+              cell: (r) => formatMoney(commissionRowSubtotal(r)),
+            },
+            {
+              key: "commission",
+              header: "Commission",
+              className: "text-right tabular-nums",
+              mobilePriority: 2,
+              cell: (r) => formatMoney(r.totalCommission),
+            },
+            {
+              key: "view",
+              header: "Actions",
+              cell: (r) => (
+                <Link
+                  href={`/sales?soldByUserId=${r.soldByUserId}&from=${from}&to=${to}`}
+                  className="text-sm text-[var(--frappe-primary)] hover:underline"
+                >
+                  View sales
+                </Link>
+              ),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

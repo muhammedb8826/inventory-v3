@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import { BankAccountFormFields } from "@/components/banks/bank-account-form-fields";
 import { FrappeFilterBar } from "@/components/frappe";
@@ -82,27 +81,29 @@ export default function BanksPage() {
   const [transactionType, setTransactionType] = useState<
     BankTransactionType | ""
   >("");
-  const [direction, setDirection] = useState<BankTransactionDirection | "">(
-    ""
-  );
+  const [direction, setDirection] = useState<BankTransactionDirection | "">("");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const { data: accounts, loading, reload } = useFetch(
+  const {
+    data: accounts,
+    loading,
+    reload,
+  } = useFetch(
     () =>
       apiList<BankAccount>(
         buildBanksAccountsListPath({
           type: accountTypeFilter || undefined,
           includeInactive: showInactive || undefined,
           search: debouncedAccountSearch || undefined,
-        })
+        }),
       ),
-    [accountTypeFilter, showInactive, debouncedAccountSearch]
+    [accountTypeFilter, showInactive, debouncedAccountSearch],
   );
   const { data: liquidity, reload: reloadLiquidity } = useFetch(
     () => api<BankLiquidity>("/banks/liquidity"),
-    []
+    [],
   );
 
   function refreshAll() {
@@ -131,10 +132,10 @@ export default function BanksPage() {
               search: debouncedSearch || undefined,
             },
             page,
-            limit
+            limit,
           )
         : null,
-    [effectiveId, from, to, transactionType, direction, debouncedSearch]
+    [effectiveId, from, to, transactionType, direction, debouncedSearch],
   );
 
   return (
@@ -153,282 +154,282 @@ export default function BanksPage() {
       }
     >
       <PermissionGate permission="bank.read" showDenied>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <Tabs defaultValue="accounts">
-            <TabsList>
-              <TabsTrigger value="accounts">Accounts</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            </TabsList>
-            <TabsContent value="accounts" className="mt-4 space-y-4">
-              <FrappeFilterBar>
-                <ListSearchField
-                  value={accountSearch}
-                  onChange={setAccountSearch}
-                  placeholder="Search accounts…"
-                />
-                <Select
-                  value={accountTypeFilter || "__all__"}
-                  onValueChange={(v) =>
-                    setAccountTypeFilter(
-                      v === "__all__" ? "" : (v as BankAccountType)
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-[170px]">
-                    <SelectValue placeholder="All types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All types</SelectItem>
-                    <SelectItem value="CASH">Cash</SelectItem>
-                    <SelectItem value="BANK">Bank</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2 self-end">
-                  <Switch
-                    id="banks-show-inactive"
-                    checked={showInactive}
-                    onCheckedChange={setShowInactive}
+        <Tabs defaultValue="accounts">
+          <TabsList>
+            <TabsTrigger value="accounts">Accounts</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          </TabsList>
+          <TabsContent value="accounts" className="mt-4 space-y-4">
+            {liquidity?.totals ? (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Cash on hand</CardDescription>
+                    <CardTitle className="text-xl tabular-nums">
+                      {formatMoney(liquidity.totals.cashTotal)}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Bank balances</CardDescription>
+                    <CardTitle className="text-xl tabular-nums">
+                      {formatMoney(liquidity.totals.bankTotal)}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Total liquidity</CardDescription>
+                    <CardTitle className="text-xl tabular-nums">
+                      {formatMoney(liquidity.totals.totalLiquidity)}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              </div>
+            ) : null}
+            <DataCardTable
+              storageKey="banks-accounts"
+              rows={accountRows}
+              loading={loading}
+              filters={
+                <FrappeFilterBar>
+                  <ListSearchField
+                    value={accountSearch}
+                    onChange={setAccountSearch}
+                    placeholder="Search accounts…"
                   />
-                  <Label
-                    htmlFor="banks-show-inactive"
-                    className="text-sm font-normal text-[var(--frappe-text)]"
-                  >
-                    Include inactive
-                  </Label>
-                </div>
-              </FrappeFilterBar>
-              {liquidity?.totals ? (
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Cash on hand</CardDescription>
-                      <CardTitle className="text-xl tabular-nums">
-                        {formatMoney(liquidity.totals.cashTotal)}
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Bank balances</CardDescription>
-                      <CardTitle className="text-xl tabular-nums">
-                        {formatMoney(liquidity.totals.bankTotal)}
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Total liquidity</CardDescription>
-                      <CardTitle className="text-xl tabular-nums">
-                        {formatMoney(liquidity.totals.totalLiquidity)}
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
-                </div>
-              ) : null}
-              <DataCardTable
-                rows={accountRows}
-                emptyTitle="No bank accounts"
-                pagination={{
-                  meta: accountMeta,
-                  onPageChange: setAccountPage,
-                  onLimitChange: setAccountLimit,
-                }}
-                columns={[
-                  { key: "name", header: "Display name", cell: (r) => r.name },
-                  {
-                    key: "type",
-                    header: "Type",
-                    cell: (r) => (
-                      <Badge variant="outline">
-                        {r.accountType ?? "BANK"}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    key: "bank",
-                    header: "Bank",
-                    cell: (r) => r.bankName ?? "—",
-                  },
-                  {
-                    key: "holder",
-                    header: "Account holder",
-                    cell: (r) => r.accountHolderName ?? "—",
-                  },
-                  {
-                    key: "number",
-                    header: "Account #",
-                    cell: (r) => r.accountNumber ?? "—",
-                  },
-                  {
-                    key: "balance",
-                    header: "Balance",
-                    className: "w-32 text-right tabular-nums",
-                    cell: (r) => formatMoney(r.balance),
-                  },
-                  {
-                    key: "status",
-                    header: "Status",
-                    cell: (r) => (
-                      <Badge
-                        variant={r.isActive === false ? "secondary" : "outline"}
-                      >
-                        {r.isActive === false ? "Inactive" : "Active"}
-                      </Badge>
-                    ),
-                  },
-                  {
-                    key: "actions",
-                    header: "",
-                    className: "w-16 text-right",
-                    cell: (r) => (
-                      <PermissionGate permission="bank.write">
-                        <EditAccountDialog account={r} onSuccess={refreshAll} />
-                      </PermissionGate>
-                    ),
-                  },
-                ]}
-              />
-            </TabsContent>
-            <TabsContent value="transactions" className="mt-4 space-y-4">
-              <FrappeFilterBar>
-                <ListSearchField
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search description…"
-                />
-                <div className="grid gap-2">
-                  <Label className="text-sm text-[var(--frappe-text-muted)]">
-                    Account
-                  </Label>
-                  <Select value={effectiveId} onValueChange={setAccountId}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="Account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(accounts ?? [])
-                        .filter((a) => a.isActive !== false)
-                        .map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {formatBankAccountLabel(a)}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DateRangeFilter
-                  from={from}
-                  to={to}
-                  onFromChange={setFrom}
-                  onToChange={setTo}
-                />
-                <div className="grid gap-2">
-                  <Label className="text-sm text-[var(--frappe-text-muted)]">
-                    Type
-                  </Label>
                   <Select
-                    value={transactionType || "__all__"}
+                    value={accountTypeFilter || "__all__"}
                     onValueChange={(v) =>
-                      setTransactionType(
-                        v === "__all__" ? "" : (v as BankTransactionType)
+                      setAccountTypeFilter(
+                        v === "__all__" ? "" : (v as BankAccountType),
                       )
                     }
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[170px]">
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__">All types</SelectItem>
-                      {BANK_TRANSACTION_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="BANK">Bank</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-sm text-[var(--frappe-text-muted)]">
-                    Direction
-                  </Label>
-                  <Select
-                    value={direction || "__all__"}
-                    onValueChange={(v) =>
-                      setDirection(
-                        v === "__all__" ? "" : (v as BankTransactionDirection)
-                      )
-                    }
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All</SelectItem>
-                      {BANK_TRANSACTION_DIRECTION_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </FrappeFilterBar>
-              {transactionList.loading ? (
-                <PageLoading />
-              ) : (
-                <DataCardTable
-                  rows={transactionList.rows}
-                  emptyTitle="No transactions"
-                  pagination={{
-                    meta: transactionList.meta,
-                    onPageChange: transactionList.setPage,
-                    onLimitChange: transactionList.setLimit,
-                    disabled: transactionList.loading,
-                  }}
-                  columns={[
-                    {
-                      key: "date",
-                      header: "Date",
-                      cell: (r) => formatDate(r.createdAt),
-                    },
-                    {
-                      key: "type",
-                      header: "Type",
-                      cell: (r) => (
-                        <Badge variant="outline">
-                          {bankTransactionTypeLabel(r.type)}
-                        </Badge>
-                      ),
-                    },
-                    {
-                      key: "dir",
-                      header: "Direction",
-                      cell: (r) => bankTransactionDirectionLabel(r.direction),
-                    },
-                    {
-                      key: "amount",
-                      header: "Amount",
-                      className: "text-right tabular-nums",
-                      cell: (r) => formatBankTransactionAmount(r),
-                    },
-                    {
-                      key: "balance",
-                      header: "Balance after",
-                      className: "text-right tabular-nums",
-                      cell: (r) => formatMoney(r.balanceAfter),
-                    },
-                    {
-                      key: "desc",
-                      header: "Description",
-                      cell: (r) => r.description ?? "—",
-                    },
-                  ]}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
-        )}
+                  <div className="flex items-center gap-2 self-end">
+                    <Switch
+                      id="banks-show-inactive"
+                      checked={showInactive}
+                      onCheckedChange={setShowInactive}
+                    />
+                    <Label
+                      htmlFor="banks-show-inactive"
+                      className="text-sm font-normal text-[var(--frappe-text)]"
+                    >
+                      Include inactive
+                    </Label>
+                  </div>
+                </FrappeFilterBar>
+              }
+              emptyTitle="No bank accounts"
+              pagination={{
+                meta: accountMeta,
+                onPageChange: setAccountPage,
+                onLimitChange: setAccountLimit,
+              }}
+              columns={[
+                { key: "name", header: "Display name", cell: (r) => r.name },
+                {
+                  key: "type",
+                  header: "Type",
+                  cell: (r) => (
+                    <Badge variant="outline">{r.accountType ?? "BANK"}</Badge>
+                  ),
+                },
+                {
+                  key: "bank",
+                  header: "Bank",
+                  cell: (r) => r.bankName ?? "—",
+                },
+                {
+                  key: "holder",
+                  header: "Account holder",
+                  cell: (r) => r.accountHolderName ?? "—",
+                },
+                {
+                  key: "number",
+                  header: "Account #",
+                  cell: (r) => r.accountNumber ?? "—",
+                },
+                {
+                  key: "balance",
+                  header: "Balance",
+                  className: "w-32 text-right tabular-nums",
+                  cell: (r) => formatMoney(r.balance),
+                },
+                {
+                  key: "status",
+                  header: "Status",
+                  cell: (r) => (
+                    <Badge
+                      variant={r.isActive === false ? "secondary" : "outline"}
+                    >
+                      {r.isActive === false ? "Inactive" : "Active"}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: "actions",
+                  header: "",
+                  className: "w-16 text-right",
+                  cell: (r) => (
+                    <PermissionGate permission="bank.write">
+                      <EditAccountDialog account={r} onSuccess={refreshAll} />
+                    </PermissionGate>
+                  ),
+                },
+              ]}
+            />
+          </TabsContent>
+          <TabsContent value="transactions" className="mt-4 space-y-4">
+            <DataCardTable
+              storageKey="banks-transactions"
+              rows={transactionList.rows}
+              loading={transactionList.loading}
+              filters={
+                <FrappeFilterBar>
+                  <ListSearchField
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search description…"
+                  />
+                  <div className="grid gap-2">
+                    <Label className="text-sm text-[var(--frappe-text-muted)]">
+                      Account
+                    </Label>
+                    <Select value={effectiveId} onValueChange={setAccountId}>
+                      <SelectTrigger className="w-[280px]">
+                        <SelectValue placeholder="Account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(accounts ?? [])
+                          .filter((a) => a.isActive !== false)
+                          .map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {formatBankAccountLabel(a)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DateRangeFilter
+                    from={from}
+                    to={to}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                  />
+                  <div className="grid gap-2">
+                    <Label className="text-sm text-[var(--frappe-text-muted)]">
+                      Type
+                    </Label>
+                    <Select
+                      value={transactionType || "__all__"}
+                      onValueChange={(v) =>
+                        setTransactionType(
+                          v === "__all__" ? "" : (v as BankTransactionType),
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">All types</SelectItem>
+                        {BANK_TRANSACTION_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-sm text-[var(--frappe-text-muted)]">
+                      Direction
+                    </Label>
+                    <Select
+                      value={direction || "__all__"}
+                      onValueChange={(v) =>
+                        setDirection(
+                          v === "__all__"
+                            ? ""
+                            : (v as BankTransactionDirection),
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">All</SelectItem>
+                        {BANK_TRANSACTION_DIRECTION_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </FrappeFilterBar>
+              }
+              emptyTitle="No transactions"
+              pagination={{
+                meta: transactionList.meta,
+                onPageChange: transactionList.setPage,
+                onLimitChange: transactionList.setLimit,
+                disabled: transactionList.loading,
+              }}
+              columns={[
+                {
+                  key: "date",
+                  header: "Date",
+                  cell: (r) => formatDate(r.createdAt),
+                },
+                {
+                  key: "type",
+                  header: "Type",
+                  cell: (r) => (
+                    <Badge variant="outline">
+                      {bankTransactionTypeLabel(r.type)}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: "dir",
+                  header: "Direction",
+                  cell: (r) => bankTransactionDirectionLabel(r.direction),
+                },
+                {
+                  key: "amount",
+                  header: "Amount",
+                  className: "text-right tabular-nums",
+                  cell: (r) => formatBankTransactionAmount(r),
+                },
+                {
+                  key: "balance",
+                  header: "Balance after",
+                  className: "text-right tabular-nums",
+                  cell: (r) => formatMoney(r.balanceAfter),
+                },
+                {
+                  key: "desc",
+                  header: "Description",
+                  cell: (r) => r.description ?? "—",
+                },
+              ]}
+            />
+          </TabsContent>
+        </Tabs>
       </PermissionGate>
     </AppShell>
   );
@@ -507,7 +508,9 @@ function EditAccountDialog({
   onSuccess: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState(() => bankAccountFormFromRecord(account));
+  const [values, setValues] = useState(() =>
+    bankAccountFormFromRecord(account),
+  );
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {

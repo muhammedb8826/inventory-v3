@@ -191,33 +191,33 @@ export function DashboardOverview() {
         <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-teal-400/10 blur-3xl dark:bg-teal-300/10" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 size-48 rounded-full bg-rose-400/10 blur-3xl" />
 
-        <div className="relative flex flex-col gap-6 p-5 lg:flex-row lg:items-end lg:justify-between lg:p-7">
+        <div className="relative flex flex-col gap-5 p-4 sm:gap-6 sm:p-5 lg:flex-row lg:items-end lg:justify-between lg:p-7">
           <div className="min-w-0 max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/50 px-3 py-1 text-xs font-medium text-[var(--frappe-text)] shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
               <SparklesIcon className="size-3.5 text-teal-600 dark:text-teal-300" />
               {dateLabel}
             </div>
-            <h2 className="font-heading text-2xl font-semibold tracking-tight text-[var(--frappe-text)] sm:text-3xl">
+            <h2 className="font-heading text-xl font-semibold tracking-tight text-[var(--frappe-text)] sm:text-2xl lg:text-3xl">
               {greeting}, {firstName}
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--frappe-text-muted)] sm:text-[15px]">
-              Here&apos;s your stock, sales, and cash position. Filter the
-              period below to refine P&amp;L and cash movement.
+              Stock, sales, and cash at a glance. Use the period filter to refine
+              P&amp;L and cash movement.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button asChild className="h-9 rounded-xl bg-teal-700 hover:bg-teal-600">
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
+              <Button asChild className="h-9 flex-1 rounded-xl bg-teal-700 hover:bg-teal-600 sm:flex-none">
                 <Link href="/sales/new">
                   <PlusIcon className="size-4" />
                   New sale
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-9 rounded-xl bg-white/60 backdrop-blur dark:bg-white/5">
+              <Button asChild variant="outline" className="h-9 flex-1 rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:flex-none">
                 <Link href="/purchases/new">
                   <ShoppingCartIcon className="size-4" />
-                  New purchase
+                  Purchase
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-9 rounded-xl bg-white/60 backdrop-blur dark:bg-white/5">
+              <Button asChild variant="outline" className="h-9 w-full rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:w-auto">
                 <Link href="/inventory">
                   <PackageIcon className="size-4" />
                   Inventory
@@ -226,7 +226,7 @@ export function DashboardOverview() {
             </div>
           </div>
 
-          <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:max-w-md lg:w-[22rem]">
+          <div className="grid w-full shrink-0 grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-md lg:w-[22rem]">
             <div className="rounded-2xl border border-white/50 bg-white/55 p-3.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-900/40">
               <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--frappe-text-muted)]">
                 Liquidity

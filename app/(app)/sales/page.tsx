@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
@@ -150,128 +149,127 @@ export default function SalesPage() {
       }
     >
       <PermissionGate permission="sales.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search sales..."
-            className="max-w-sm"
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          <div className="flex items-center gap-2">
-            <Switch
-              id="include-voided"
-              checked={includeVoided}
-              onCheckedChange={setIncludeVoided}
-            />
-            <Label
-              htmlFor="include-voided"
-              className="text-sm font-normal text-[var(--frappe-text)]"
-            >
-              Include voided
-            </Label>
-          </div>
-          <Select
-            value={customerId || "__all__"}
-            onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="All customers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All customers</SelectItem>
-              {(customers ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={locationId || "__all__"}
-            onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="All locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All locations</SelectItem>
-              {(locations ?? []).map((l) => (
-                <SelectItem key={l.id} value={l.id}>
-                  {l.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={paymentMethod || "__all__"}
-            onValueChange={(v) =>
-              setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
-            }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Payment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All payments</SelectItem>
-              <SelectItem value="CASH">Cash</SelectItem>
-              <SelectItem value="BANK">Bank</SelectItem>
-              <SelectItem value="CREDIT">Credit</SelectItem>
-            </SelectContent>
-          </Select>
-          {canOnBehalf ? (
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-[var(--frappe-text-muted)]">
-                Sales rep
-              </Label>
-              <Select
-                value={soldByUserId || "__all__"}
-                onValueChange={(v) =>
-                  setSoldByUserId(v === "__all__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-[200px] border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
-                  <SelectValue placeholder="All reps" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All reps</SelectItem>
-                  {activeUsers.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
-        </FrappeFilterBar>
-
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} record{meta.total === 1 ? "" : "s"}
-          </span>
-          {totals ? (
-            <ListPageTotals
-              items={[
-                { label: "Subtotal", value: formatMoney(totals.subtotal) },
-                { label: "Total", value: formatMoney(totals.total) },
-                { label: "Commission", value: formatMoney(totals.commission) },
-              ]}
-            />
-          ) : null}
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
           <DataCardTable
+            storageKey="sales-list"
             rows={rows}
+            loading={loading}
             emptyTitle="Nothing to show"
             emptyDescription="Create your first sale invoice."
+            leading={
+              <FrappeListToolbar>
+                <span>
+                  {meta.total} record{meta.total === 1 ? "" : "s"}
+                </span>
+                {totals ? (
+                  <ListPageTotals
+                    items={[
+                      { label: "Subtotal", value: formatMoney(totals.subtotal) },
+                      { label: "Total", value: formatMoney(totals.total) },
+                      {
+                        label: "Commission",
+                        value: formatMoney(totals.commission),
+                      },
+                    ]}
+                  />
+                ) : null}
+              </FrappeListToolbar>
+            }
+            filters={
+              <FrappeFilterBar>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search sales..."
+                />
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="include-voided"
+                    checked={includeVoided}
+                    onCheckedChange={setIncludeVoided}
+                  />
+                  <Label
+                    htmlFor="include-voided"
+                    className="text-sm font-normal"
+                  >
+                    Include voided
+                  </Label>
+                </div>
+                <Select
+                  value={customerId || "__all__"}
+                  onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-9 w-[190px]">
+                    <SelectValue placeholder="All customers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All customers</SelectItem>
+                    {(customers ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={locationId || "__all__"}
+                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-9 w-[170px]">
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All locations</SelectItem>
+                    {(locations ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={paymentMethod || "__all__"}
+                  onValueChange={(v) =>
+                    setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
+                  }
+                >
+                  <SelectTrigger className="h-9 w-[150px]">
+                    <SelectValue placeholder="Payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All payments</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="BANK">Bank</SelectItem>
+                    <SelectItem value="CREDIT">Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+                {canOnBehalf ? (
+                  <Select
+                    value={soldByUserId || "__all__"}
+                    onValueChange={(v) =>
+                      setSoldByUserId(v === "__all__" ? "" : v)
+                    }
+                  >
+                    <SelectTrigger className="h-9 w-[200px]">
+                      <SelectValue placeholder="All reps" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All reps</SelectItem>
+                      {activeUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </FrappeFilterBar>
+            }
             pagination={{
               meta,
               onPageChange: setPage,
@@ -282,6 +280,8 @@ export default function SalesPage() {
               {
                 key: "id",
                 header: "ID",
+                hideable: false,
+                mobilePriority: 4,
                 cell: (r) => (
                   <Link
                     href={`/sales/${r.id}`}
@@ -294,11 +294,14 @@ export default function SalesPage() {
               {
                 key: "date",
                 header: "Date",
+                mobilePriority: 3,
                 cell: (r) => formatDate(r.createdAt),
               },
               {
                 key: "customer",
                 header: "Customer",
+                hideable: false,
+                mobilePriority: 1,
                 cell: (r) =>
                   r.customer?.name ? (
                     <Link
@@ -314,6 +317,7 @@ export default function SalesPage() {
               {
                 key: "soldBy",
                 header: "Sales rep",
+                defaultVisible: false,
                 cell: (r) => saleRepName(r) ?? "—",
               },
               {
@@ -340,6 +344,7 @@ export default function SalesPage() {
                 key: "commission",
                 header: "Commission",
                 className: "text-right tabular-nums",
+                defaultVisible: false,
                 cell: (r) =>
                   r.commissionAmount
                     ? formatMoney(r.commissionAmount)
@@ -352,11 +357,11 @@ export default function SalesPage() {
                 key: "total",
                 header: "Amount",
                 className: "text-right",
+                mobilePriority: 2,
                 cell: (r) => formatMoney(documentTotal(r)),
               },
             ]}
           />
-        )}
       </PermissionGate>
     </AppShell>
   );

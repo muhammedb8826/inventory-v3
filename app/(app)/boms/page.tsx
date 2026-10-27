@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeButtonPrimary,
@@ -38,23 +37,19 @@ export default function BomsPage() {
       buildBomsListPath(
         {
           search: debouncedSearch || undefined,
-          isActive:
-            isActive === "all" ? undefined : isActive === "true",
+          isActive: isActive === "all" ? undefined : isActive === "true",
         },
         page,
-        limit
+        limit,
       ),
-    [debouncedSearch, isActive]
+    [debouncedSearch, isActive],
   );
 
   return (
     <AppShell
       title="Bills of Materials"
       subtitle="Recipes for finished goods"
-      breadcrumbs={[
-        { label: "Stock", href: "/dashboard" },
-        { label: "BOMs" },
-      ]}
+      breadcrumbs={[{ label: "Stock", href: "/dashboard" }, { label: "BOMs" }]}
       actions={
         <PermissionGate permission="bom.write">
           <FrappeButtonPrimary asChild>
@@ -67,93 +62,93 @@ export default function BomsPage() {
       }
     >
       <PermissionGate permission="bom.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search BOMs…"
-          />
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              Status
-            </Label>
-            <Select
-              value={isActive}
-              onValueChange={(v) =>
-                setIsActive(v as "all" | "true" | "false")
-              }
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-                <SelectItem value="all">All</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} BOM{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No BOMs"
-            emptyDescription="Create a bill of materials for a finished item."
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "name",
-                header: "Name",
-                cell: (r) => (
-                  <Link
-                    href={`/boms/${r.id}`}
-                    className="font-medium text-[var(--frappe-primary)] hover:underline"
-                  >
-                    {r.name}
-                  </Link>
-                ),
-              },
-              {
-                key: "finished",
-                header: "Finished item",
-                cell: (r) => r.finishedItem?.description ?? "—",
-              },
-              {
-                key: "version",
-                header: "Version",
-                cell: (r) => r.version ?? "—",
-              },
-              {
-                key: "status",
-                header: "Status",
-                cell: (r) => (
-                  <Badge
-                    variant={r.isActive === false ? "secondary" : "outline"}
-                  >
-                    {r.isActive === false ? "Inactive" : "Active"}
-                  </Badge>
-                ),
-              },
-              {
-                key: "date",
-                header: "Created",
-                cell: (r) => formatDate(r.createdAt),
-              },
-            ]}
-          />
-        )}
+        <DataCardTable
+          storageKey="boms-list"
+          rows={rows}
+          loading={loading}
+          leading={
+            <FrappeListToolbar>
+              <span className="text-[var(--frappe-text-muted)]">
+                {meta.total} BOM{meta.total === 1 ? "" : "s"}
+              </span>
+            </FrappeListToolbar>
+          }
+          filters={
+            <FrappeFilterBar>
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search BOMs…"
+              />
+              <div className="grid gap-2">
+                <Label className="text-sm text-[var(--frappe-text-muted)]">
+                  Status
+                </Label>
+                <Select
+                  value={isActive}
+                  onValueChange={(v) =>
+                    setIsActive(v as "all" | "true" | "false")
+                  }
+                >
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Active</SelectItem>
+                    <SelectItem value="false">Inactive</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </FrappeFilterBar>
+          }
+          emptyTitle="No BOMs"
+          emptyDescription="Create a bill of materials for a finished item."
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "name",
+              header: "Name",
+              cell: (r) => (
+                <Link
+                  href={`/boms/${r.id}`}
+                  className="font-medium text-[var(--frappe-primary)] hover:underline"
+                >
+                  {r.name}
+                </Link>
+              ),
+            },
+            {
+              key: "finished",
+              header: "Finished item",
+              cell: (r) => r.finishedItem?.description ?? "—",
+            },
+            {
+              key: "version",
+              header: "Version",
+              cell: (r) => r.version ?? "—",
+            },
+            {
+              key: "status",
+              header: "Status",
+              cell: (r) => (
+                <Badge variant={r.isActive === false ? "secondary" : "outline"}>
+                  {r.isActive === false ? "Inactive" : "Active"}
+                </Badge>
+              ),
+            },
+            {
+              key: "date",
+              header: "Created",
+              cell: (r) => formatDate(r.createdAt),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

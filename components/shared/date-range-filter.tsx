@@ -11,6 +11,7 @@ export function DateRangeFilter({
   onToChange,
   className,
   disabled,
+  compact = true,
 }: {
   from: string;
   to: string;
@@ -18,39 +19,43 @@ export function DateRangeFilter({
   onToChange: (value: string) => void;
   className?: string;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-end gap-2", className)}>
-      <div className="grid gap-2">
-        <Label
-          htmlFor="date-from"
-          className="text-sm text-[var(--frappe-text-muted)]"
-        >
-          From
-        </Label>
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      <div className={cn(!compact && "grid gap-1.5")}>
+        {!compact ? (
+          <Label
+            htmlFor="date-from"
+            className="text-sm text-muted-foreground"
+          >
+            From
+          </Label>
+        ) : null}
         <Input
           id="date-from"
           type="date"
           value={from}
           onChange={(e) => onFromChange(e.target.value)}
           disabled={disabled}
-          className="h-9 w-[150px] border-[var(--frappe-border)] bg-[var(--frappe-surface)]"
+          aria-label="From date"
+          className="h-9 w-[140px]"
         />
       </div>
-      <div className="grid gap-2">
-        <Label
-          htmlFor="date-to"
-          className="text-sm text-[var(--frappe-text-muted)]"
-        >
-          To
-        </Label>
+      <div className={cn(!compact && "grid gap-1.5")}>
+        {!compact ? (
+          <Label htmlFor="date-to" className="text-sm text-muted-foreground">
+            To
+          </Label>
+        ) : null}
         <Input
           id="date-to"
           type="date"
           value={to}
           onChange={(e) => onToChange(e.target.value)}
           disabled={disabled}
-          className="h-9 w-[150px] border-[var(--frappe-border)] bg-[var(--frappe-surface)]"
+          aria-label="To date"
+          className="h-9 w-[140px]"
         />
       </div>
     </div>

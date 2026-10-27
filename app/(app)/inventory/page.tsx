@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -19,7 +18,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -176,82 +174,10 @@ export default function InventoryPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="stock" className="mt-0 space-y-0">
-        <FrappeFilterBar>
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              Location
-            </Label>
-            <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger className="h-9 w-full min-w-[200px] border-[var(--frappe-border)] bg-[var(--frappe-surface)] sm:w-[240px]">
-                <SelectValue placeholder="All locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_LOCATIONS}>All locations</SelectItem>
-                {(locations ?? []).map((loc) => (
-                  <SelectItem key={loc.id} value={loc.id}>
-                    {loc.name} ({loc.type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              View
-            </Label>
-            <Select
-              value={viewMode}
-              onValueChange={(v) =>
-                setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
-              }
-            >
-              <SelectTrigger className="h-9 w-full min-w-[180px] border-[var(--frappe-border)] bg-[var(--frappe-surface)] sm:w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={VIEW_ALL}>All stock</SelectItem>
-                <SelectItem value={VIEW_LOW_STOCK}>Low stock only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search stock..."
-            disabled={isLowStockView}
-            className={isLowStockView ? "opacity-60" : undefined}
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-            disabled={isLowStockView}
-            className={isLowStockView ? "opacity-60" : undefined}
-          />
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} {isLowStockView ? "low-stock item" : "item"}
-            {meta.total === 1 ? "" : "s"}
-          </span>
-          {!isLowStockView && totals ? (
-            <ListPageTotals
-              items={[
-                { label: "Total qty", value: formatQty(totals.quantity) },
-                {
-                  label: "Stock value",
-                  value: formatMoney(totals.inventoryValue),
-                },
-              ]}
-            />
-          ) : null}
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
           <DataCardTable
+            storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
             rows={rows}
+            loading={loading}
             emptyTitle={
               isLowStockView
                 ? "No low-stock items"
@@ -263,6 +189,71 @@ export default function InventoryPage() {
               isLowStockView
                 ? "Items at or below their reorder point will appear here."
                 : undefined
+            }
+            leading={
+              <FrappeListToolbar>
+                <span>
+                  {meta.total} {isLowStockView ? "low-stock item" : "item"}
+                  {meta.total === 1 ? "" : "s"}
+                </span>
+                {!isLowStockView && totals ? (
+                  <ListPageTotals
+                    items={[
+                      { label: "Total qty", value: formatQty(totals.quantity) },
+                      {
+                        label: "Stock value",
+                        value: formatMoney(totals.inventoryValue),
+                      },
+                    ]}
+                  />
+                ) : null}
+              </FrappeListToolbar>
+            }
+            filters={
+              <FrappeFilterBar>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="h-9 w-[200px]">
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_LOCATIONS}>All locations</SelectItem>
+                    {(locations ?? []).map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name} ({loc.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={viewMode}
+                  onValueChange={(v) =>
+                    setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
+                  }
+                >
+                  <SelectTrigger className="h-9 w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={VIEW_ALL}>All stock</SelectItem>
+                    <SelectItem value={VIEW_LOW_STOCK}>Low stock only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search stock..."
+                  disabled={isLowStockView}
+                  className={isLowStockView ? "opacity-60" : undefined}
+                />
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  disabled={isLowStockView}
+                  className={isLowStockView ? "opacity-60" : undefined}
+                />
+              </FrappeFilterBar>
             }
             pagination={{
               meta,
@@ -276,6 +267,7 @@ export default function InventoryPage() {
                     {
                       key: "location",
                       header: "Location",
+                      mobilePriority: 2,
                       cell: (r: StockRecord) => r.location?.name ?? "—",
                     },
                   ]
@@ -283,6 +275,8 @@ export default function InventoryPage() {
               {
                 key: "item",
                 header: "Item",
+                hideable: false,
+                mobilePriority: 1,
                 cell: (r) => {
                   const imageSrc = resolveItemImageUrl(
                     r.item.imageUrl ?? r.item.imagePath
@@ -340,6 +334,8 @@ export default function InventoryPage() {
                 key: "qty",
                 header: "Current stock",
                 className: "min-w-[9rem]",
+                hideable: false,
+                mobilePriority: 2,
                 cell: (r) => (
                   <StockLevelBar
                     quantity={r.quantity}
@@ -349,9 +345,24 @@ export default function InventoryPage() {
                 ),
               },
               {
+                key: "unit",
+                header: "Unit",
+                className: "w-20",
+                defaultVisible: false,
+                cell: (r) => r.item.unit || "—",
+              },
+              {
+                key: "sku",
+                header: "SKU",
+                className: "w-28 font-mono text-xs",
+                defaultVisible: false,
+                cell: (r) => r.item.sku || "—",
+              },
+              {
                 key: "reorder",
                 header: "Reorder at",
                 className: "w-28 text-right tabular-nums",
+                mobilePriority: 4,
                 cell: (r) =>
                   r.reorderPoint != null && r.reorderPoint !== ""
                     ? formatQty(r.reorderPoint)
@@ -363,6 +374,7 @@ export default function InventoryPage() {
                       key: "shortage",
                       header: "Shortage",
                       className: "w-28 text-right tabular-nums",
+                      mobilePriority: 3,
                       cell: (r: StockRecord | LowStockRecord) =>
                         formatQty((r as LowStockRecord).shortage),
                     },
@@ -372,6 +384,7 @@ export default function InventoryPage() {
                 key: "price",
                 header: "Purchase price",
                 className: "w-36 text-right tabular-nums",
+                mobilePriority: 3,
                 cell: (r) => formatMoney(r.purchasePrice),
               },
               {
@@ -385,8 +398,10 @@ export default function InventoryPage() {
               },
               {
                 key: "actions",
-                header: "",
+                header: "Actions",
                 className: "w-40 text-right",
+                hideable: false,
+                mobilePriority: 5,
                 cell: (r) => (
                     <div className="flex justify-end gap-1">
                       <StockDetailDialog record={r} />
@@ -416,7 +431,6 @@ export default function InventoryPage() {
               },
             ]}
           />
-        )}
           </TabsContent>
           <TabsContent value="adjustments" className="mt-0">
             <InventoryAdjustmentsPanel />

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -40,7 +39,12 @@ import {
   formatBankAccountLabel,
 } from "@/lib/bank-accounts";
 import { formatMoney, formatDate, errorMessage } from "@/lib/format";
-import type { BankAccount, Expense, ExpenseCategory, ExpenseListTotals } from "@/lib/types";
+import type {
+  BankAccount,
+  Expense,
+  ExpenseCategory,
+  ExpenseListTotals,
+} from "@/lib/types";
 import { ListPageTotals } from "@/components/shared/list-page-totals";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
@@ -56,11 +60,11 @@ export default function ExpensesPage() {
   const debouncedSearch = useDebouncedValue(search);
   const { data: categories } = useFetch(
     () => api<ExpenseCategory[]>("/expenses/categories"),
-    []
+    [],
   );
   const { data: banks } = useFetch(
     () => apiList<BankAccount>("/banks/accounts"),
-    []
+    [],
   );
   const { rows, meta, totals, setPage, setLimit, loading, reload } =
     usePaginatedList<Expense, ExpenseListTotals>(
@@ -74,9 +78,9 @@ export default function ExpensesPage() {
             bankAccountId: bankAccountId || undefined,
           },
           page,
-          limit
+          limit,
         ),
-      [from, to, debouncedSearch, categoryId, bankAccountId]
+      [from, to, debouncedSearch, categoryId, bankAccountId],
     );
 
   return (
@@ -89,110 +93,117 @@ export default function ExpensesPage() {
       }
     >
       <PermissionGate permission="expense.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search expenses..."
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          <Select
-            value={categoryId || "__all__"}
-            onValueChange={(v) => setCategoryId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All categories</SelectItem>
-              {(categories ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={bankAccountId || "__all__"}
-            onValueChange={(v) => setBankAccountId(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="All accounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All accounts</SelectItem>
-              {bankAccountsForSelect(banks ?? []).map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {formatBankAccountLabel(b)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} expense{meta.total === 1 ? "" : "s"}
-          </span>
-          {totals ? (
-            <ListPageTotals
-              items={[
-                { label: "Total amount", value: formatMoney(totals.amount) },
-              ]}
-            />
-          ) : null}
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No expenses"
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "date",
-                header: "Date",
-                cell: (r) => formatDate(r.expenseDate),
-              },
-              {
-                key: "category",
-                header: "Category",
-                cell: (r) => r.category?.name ?? "—",
-              },
-              {
-                key: "desc",
-                header: "Description",
-                cell: (r) => r.description ?? "—",
-              },
-              {
-                key: "amount",
-                header: "Amount",
-                className: "text-right",
-                cell: (r) => formatMoney(r.amount),
-              },
-              {
-                key: "actions",
-                header: "",
-                className: "w-16 text-right",
-                cell: (r) => (
-                  <PermissionGate permission="expense.write">
-                    <DeleteExpenseButton id={r.id} onSuccess={reload} />
-                  </PermissionGate>
-                ),
-              },
-            ]}
-          />
-        )}
+        <DataCardTable
+          storageKey="expenses-list"
+          rows={rows}
+          loading={loading}
+          leading={
+            <FrappeListToolbar>
+              <span className="text-[var(--frappe-text-muted)]">
+                {meta.total} expense{meta.total === 1 ? "" : "s"}
+              </span>
+              {totals ? (
+                <ListPageTotals
+                  items={[
+                    {
+                      label: "Total amount",
+                      value: formatMoney(totals.amount),
+                    },
+                  ]}
+                />
+              ) : null}
+            </FrappeListToolbar>
+          }
+          filters={
+            <FrappeFilterBar>
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search expenses..."
+              />
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+              />
+              <Select
+                value={categoryId || "__all__"}
+                onValueChange={(v) => setCategoryId(v === "__all__" ? "" : v)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All categories</SelectItem>
+                  {(categories ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={bankAccountId || "__all__"}
+                onValueChange={(v) =>
+                  setBankAccountId(v === "__all__" ? "" : v)
+                }
+              >
+                <SelectTrigger className="w-[190px]">
+                  <SelectValue placeholder="All accounts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All accounts</SelectItem>
+                  {bankAccountsForSelect(banks ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {formatBankAccountLabel(b)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FrappeFilterBar>
+          }
+          emptyTitle="No expenses"
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "date",
+              header: "Date",
+              cell: (r) => formatDate(r.expenseDate),
+            },
+            {
+              key: "category",
+              header: "Category",
+              cell: (r) => r.category?.name ?? "—",
+            },
+            {
+              key: "desc",
+              header: "Description",
+              cell: (r) => r.description ?? "—",
+            },
+            {
+              key: "amount",
+              header: "Amount",
+              className: "text-right",
+              cell: (r) => formatMoney(r.amount),
+            },
+            {
+              key: "actions",
+              header: "",
+              className: "w-16 text-right",
+              cell: (r) => (
+                <PermissionGate permission="expense.write">
+                  <DeleteExpenseButton id={r.id} onSuccess={reload} />
+                </PermissionGate>
+              ),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );
@@ -243,7 +254,7 @@ function ExpenseDialog({ onSuccess }: { onSuccess: () => void }) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [expenseDate, setExpenseDate] = useState(
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10),
   );
   const [saving, setSaving] = useState(false);
 
@@ -333,9 +344,7 @@ function ExpenseDialog({ onSuccess }: { onSuccess: () => void }) {
               listHref="/banks"
               listLabel="All accounts"
               emptyMessage="Create a bank account to pay from."
-              quickCreate={
-                <QuickBankAccountDialog onCreated={onBankCreated} />
-              }
+              quickCreate={<QuickBankAccountDialog onCreated={onBankCreated} />}
             />
             <div className="grid gap-2">
               <Label>Amount</Label>

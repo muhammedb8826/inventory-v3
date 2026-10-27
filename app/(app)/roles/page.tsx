@@ -6,7 +6,11 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeButtonPrimary, FrappeField, FrappeFilterBar } from "@/components/frappe";
+import {
+  FrappeButtonPrimary,
+  FrappeField,
+  FrappeFilterBar,
+} from "@/components/frappe";
 import { Button } from "@/components/ui/button";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
@@ -89,98 +93,99 @@ function RolesPageContent() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const debouncedSearch = useDebouncedValue(search);
-  const { rows, meta, setPage, setLimit, loading, reload } = usePaginatedList<Role>(
-    (page, limit) =>
-      buildRolesListPath(
-        {
-          from: from || undefined,
-          to: to || undefined,
-          search: debouncedSearch || undefined,
-        },
-        page,
-        limit
-      ),
-    [from, to, debouncedSearch]
-  );
+  const { rows, meta, setPage, setLimit, loading, reload } =
+    usePaginatedList<Role>(
+      (page, limit) =>
+        buildRolesListPath(
+          {
+            from: from || undefined,
+            to: to || undefined,
+            search: debouncedSearch || undefined,
+          },
+          page,
+          limit,
+        ),
+      [from, to, debouncedSearch],
+    );
 
   return (
     <AppShell
       title="Roles"
-      actions={canWrite ? <RoleDialog mode="create" onSuccess={reload} /> : null}
+      actions={
+        canWrite ? <RoleDialog mode="create" onSuccess={reload} /> : null
+      }
     >
-      <>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search roles..."
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-        </FrappeFilterBar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="No roles"
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-            }}
-            columns={[
-              { key: "name", header: "Name", cell: (r) => r.name },
-              {
-                key: "desc",
-                header: "Description",
-                cell: (r) => r.description ?? "—",
-              },
-              {
-                key: "perms",
-                header: "Permissions",
-                cell: (r) => (
-                  <div className="flex max-w-xl flex-wrap gap-1">
-                    {normalizeRolePermissions(r.permissions)
-                      .slice(0, 6)
-                      .map((p) => (
-                        <Badge
-                          key={p.id ?? p.code}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {p.code}
-                        </Badge>
-                      ))}
-                    {(r.permissions?.length ?? 0) > 6 ? (
-                      <Badge variant="outline">
-                        +{(r.permissions?.length ?? 0) - 6} more
-                      </Badge>
-                    ) : null}
-                  </div>
-                ),
-              },
-              {
-                key: "actions",
-                header: "",
-                className: "w-24 text-right",
-                cell: (r) => (
-                  <PermissionGate permission="roles.write">
-                    <div className="flex justify-end gap-1">
-                      <RoleDialog mode="edit" role={r} onSuccess={reload} />
-                      <DeleteRoleButton role={r} onSuccess={reload} />
-                    </div>
-                  </PermissionGate>
-                ),
-              },
-            ]}
-          />
-        )}
-      </>
+      <DataCardTable
+        storageKey="roles-list"
+        rows={rows}
+        loading={loading}
+        emptyTitle="No roles"
+        filters={
+          <FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search roles..."
+            />
+            <DateRangeFilter
+              from={from}
+              to={to}
+              onFromChange={setFrom}
+              onToChange={setTo}
+            />
+          </FrappeFilterBar>
+        }
+        pagination={{
+          meta,
+          onPageChange: setPage,
+          onLimitChange: setLimit,
+        }}
+        columns={[
+          { key: "name", header: "Name", cell: (r) => r.name },
+          {
+            key: "desc",
+            header: "Description",
+            cell: (r) => r.description ?? "�",
+          },
+          {
+            key: "perms",
+            header: "Permissions",
+            cell: (r) => (
+              <div className="flex max-w-xl flex-wrap gap-1">
+                {normalizeRolePermissions(r.permissions)
+                  .slice(0, 6)
+                  .map((p) => (
+                    <Badge
+                      key={p.id ?? p.code}
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      {p.code}
+                    </Badge>
+                  ))}
+                {(r.permissions?.length ?? 0) > 6 ? (
+                  <Badge variant="outline">
+                    +{(r.permissions?.length ?? 0) - 6} more
+                  </Badge>
+                ) : null}
+              </div>
+            ),
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-24 text-right",
+            cell: (r) => (
+              <PermissionGate permission="roles.write">
+                <div className="flex justify-end gap-1">
+                  <RoleDialog mode="edit" role={r} onSuccess={reload} />
+                  <DeleteRoleButton role={r} onSuccess={reload} />
+                </div>
+              </PermissionGate>
+            ),
+          },
+        ]}
+      />
     </AppShell>
   );
 }
@@ -205,7 +210,7 @@ function RoleDialog({
   const { data: catalog } = useFetch(
     () => api<Permission[]>("/permissions"),
     [],
-    { enabled: open }
+    { enabled: open },
   );
 
   const filteredCatalog = useMemo(() => {
@@ -215,13 +220,13 @@ function RoleDialog({
     return list.filter(
       (p) =>
         p.code.toLowerCase().includes(term) ||
-        (p.description?.toLowerCase().includes(term) ?? false)
+        (p.description?.toLowerCase().includes(term) ?? false),
     );
   }, [catalog, permSearch]);
 
   const permissionGroups = useMemo(
     () => groupPermissions(filteredCatalog),
-    [filteredCatalog]
+    [filteredCatalog],
   );
 
   function handleOpenChange(nextOpen: boolean) {
@@ -231,7 +236,7 @@ function RoleDialog({
       setName(role?.name ?? "");
       setDescription(role?.description ?? "");
       setPermSearch("");
-      // Catalog may still be loading — permissions hydrate in the effect below.
+      // Catalog may still be loading � permissions hydrate in the effect below.
       setSelectedIds(new Set());
     }
   }
@@ -242,7 +247,7 @@ function RoleDialog({
     permissionsHydratedRef.current = true;
     if (mode === "edit" && role) {
       setSelectedIds(
-        new Set(rolePermissionIdsFromRole(role.permissions, catalog))
+        new Set(rolePermissionIdsFromRole(role.permissions, catalog)),
       );
     }
   }, [open, catalog, mode, role]);
@@ -358,7 +363,7 @@ function RoleDialog({
                     <Input
                       value={permSearch}
                       onChange={(e) => setPermSearch(e.target.value)}
-                      placeholder="Search permissions…"
+                      placeholder="Search permissions�"
                       className="h-8 pl-9"
                     />
                   </div>
@@ -370,13 +375,13 @@ function RoleDialog({
                   <p className="px-4 py-8 text-center text-sm text-[var(--frappe-text-muted)]">
                     {catalog?.length
                       ? "No permissions match your search."
-                      : "Loading permissions…"}
+                      : "Loading permissions�"}
                   </p>
                 ) : (
                   <div className="divide-y divide-[var(--frappe-border)]">
                     {permissionGroups.map(({ groupKey, items }) => {
                       const moduleSelected = items.filter((p) =>
-                        selectedIds.has(p.id)
+                        selectedIds.has(p.id),
                       ).length;
                       const moduleChecked =
                         moduleSelected === items.length && items.length > 0;
@@ -470,8 +475,8 @@ function RoleDialog({
             <FrappeButtonPrimary type="submit" disabled={saving}>
               {saving
                 ? mode === "create"
-                  ? "Creating…"
-                  : "Saving…"
+                  ? "Creating�"
+                  : "Saving�"
                 : mode === "create"
                   ? "Create role"
                   : "Save changes"}
@@ -495,7 +500,7 @@ function DeleteRoleButton({
   async function handleDelete() {
     if (
       !confirm(
-        `Delete role "${role.name}"? Users assigned to this role may lose access.`
+        `Delete role "${role.name}"? Users assigned to this role may lose access.`,
       )
     ) {
       return;

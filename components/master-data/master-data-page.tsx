@@ -156,37 +156,37 @@ export function MasterDataPage<
         </PermissionGate>
       }
     >
-      <>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder={`Search ${title.toLowerCase()}...`}
-          />
-          {filterExtras}
-        </FrappeFilterBar>
-        <FrappeListToolbar>
-          <span className="text-[var(--frappe-text-muted)]">
-            {meta.total} record{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-        {loading ? (
-          <PageLoading />
-        ) : (
-          <DataCardTable
-            rows={rows}
-            emptyTitle="Nothing to show"
-            emptyDescription={emptyDescription}
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={tableColumns}
-          />
-        )}
-      </>
+      <DataCardTable
+        storageKey={`master-${endpoint}`}
+        rows={rows}
+        loading={loading}
+        emptyTitle="Nothing to show"
+        emptyDescription={emptyDescription}
+        leading={
+          <FrappeListToolbar>
+            <span>
+              {meta.total} record{meta.total === 1 ? "" : "s"}
+            </span>
+          </FrappeListToolbar>
+        }
+        filters={
+          <FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder={`Search ${title.toLowerCase()}...`}
+            />
+            {filterExtras}
+          </FrappeFilterBar>
+        }
+        pagination={{
+          meta,
+          onPageChange: setPage,
+          onLimitChange: setLimit,
+          disabled: loading,
+        }}
+        columns={tableColumns}
+      />
     </AppShell>
   );
 }

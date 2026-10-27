@@ -4,10 +4,8 @@ import { useState } from "react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
-import { PageLoading } from "@/components/shared/page-loading";
 import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -55,14 +53,23 @@ export function InventoryMovementsPanel() {
     );
 
   return (
-    <div className="space-y-3">
-      <FrappeFilterBar>
-        <div className="grid gap-2">
-          <Label className="text-sm text-[var(--frappe-text-muted)]">
-            Location
-          </Label>
+    <DataCardTable
+      storageKey="inventory-movements"
+      rows={rows}
+      loading={loading}
+      emptyTitle="No stock movements"
+      emptyDescription="Sales, purchases, transfers, production, and adjustments appear here as an immutable ledger."
+      leading={
+        <FrappeListToolbar>
+          <span>
+            {meta.total} movement{meta.total === 1 ? "" : "s"}
+          </span>
+        </FrappeListToolbar>
+      }
+      filters={
+        <FrappeFilterBar>
           <Select value={locationId} onValueChange={setLocationId}>
-            <SelectTrigger className="h-9 w-full min-w-[200px] border-[var(--frappe-border)] bg-[var(--frappe-surface)] sm:w-[240px]">
+            <SelectTrigger className="h-9 w-[200px]">
               <SelectValue placeholder="All locations" />
             </SelectTrigger>
             <SelectContent>
@@ -74,18 +81,13 @@ export function InventoryMovementsPanel() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label className="text-sm text-[var(--frappe-text-muted)]">
-            Type
-          </Label>
           <Select
             value={type || ALL}
             onValueChange={(v) =>
               setType(v === ALL ? "" : (v as StockMovementType))
             }
           >
-            <SelectTrigger className="h-9 w-[200px] border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
+            <SelectTrigger className="h-9 w-[180px]">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -97,38 +99,26 @@ export function InventoryMovementsPanel() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <ListSearchField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search notes, SKU, item…"
-        />
-        <DateRangeFilter
-          from={from}
-          to={to}
-          onFromChange={setFrom}
-          onToChange={setTo}
-        />
-      </FrappeFilterBar>
-      <FrappeListToolbar>
-        <span className="text-[var(--frappe-text-muted)]">
-          {meta.total} movement{meta.total === 1 ? "" : "s"}
-        </span>
-      </FrappeListToolbar>
-      {loading ? (
-        <PageLoading />
-      ) : (
-        <DataCardTable
-          rows={rows}
-          emptyTitle="No stock movements"
-          emptyDescription="Sales, purchases, transfers, production, and adjustments appear here as an immutable ledger."
-          pagination={{
-            meta,
-            onPageChange: setPage,
-            onLimitChange: setLimit,
-            disabled: loading,
-          }}
-          columns={[
+          <ListSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search notes, SKU, item…"
+          />
+          <DateRangeFilter
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+          />
+        </FrappeFilterBar>
+      }
+      pagination={{
+        meta,
+        onPageChange: setPage,
+        onLimitChange: setLimit,
+        disabled: loading,
+      }}
+      columns={[
             {
               key: "date",
               header: "Date",
@@ -203,8 +193,6 @@ export function InventoryMovementsPanel() {
               cell: (r) => r.createdBy?.fullName ?? "—",
             },
           ]}
-        />
-      )}
-    </div>
+    />
   );
 }

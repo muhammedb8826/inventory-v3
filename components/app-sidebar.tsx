@@ -80,23 +80,23 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="border-b border-white/5 p-3">
+      <SidebarHeader className="border-b border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               size="lg"
-              className="h-12 rounded-xl px-2.5 hover:bg-white/5 data-[slot=sidebar-menu-button]:p-2!"
+              className="h-12 rounded-xl px-2.5 data-[slot=sidebar-menu-button]:p-2!"
             >
               <Link href="/dashboard">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-teal-500/20 text-teal-300 ring-1 ring-teal-400/30">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 text-teal-700 ring-1 ring-teal-600/25 dark:from-teal-500/25 dark:to-teal-700/20 dark:text-teal-300 dark:ring-teal-400/30">
                   <BoxesIcon className="size-5" />
                 </span>
                 <div className="grid min-w-0 flex-1 text-left leading-tight">
-                  <span className="truncate text-[15px] font-semibold tracking-tight text-slate-50">
+                  <span className="truncate text-[15px] font-semibold tracking-tight text-slate-800 dark:text-sidebar-foreground">
                     {appName}
                   </span>
-                  <span className="truncate text-[11px] text-slate-400">
+                  <span className="truncate text-[11px] text-slate-500 dark:text-muted-foreground">
                     Stock operations
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export function AppSidebar({
           </SidebarGroup>
         ) : null}
       </SidebarContent>
-      <SidebarFooter className="border-t border-white/5 p-2">
+      <SidebarFooter className="border-t border-sidebar-border p-2">
         {user ? (
           <NavUser
             user={{

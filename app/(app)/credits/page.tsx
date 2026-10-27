@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
-import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -87,7 +86,7 @@ function isCreditOverdue(record: CreditRecord): boolean {
 
 function creditColumns(
   partyKey: "customer" | "supplier",
-  onSuccess: () => void
+  onSuccess: () => void,
 ) {
   const sourceKey = partyKey === "customer" ? "sale" : "purchase";
   const sourceLabel = partyKey === "customer" ? "Sale" : "Purchase";
@@ -133,7 +132,9 @@ function creditColumns(
             href={href}
             className="font-medium text-[var(--frappe-primary)] hover:underline"
           >
-            {doc?.createdAt ? formatDate(doc.createdAt) : href.split("/").pop()?.slice(0, 8) + "…"}
+            {doc?.createdAt
+              ? formatDate(doc.createdAt)
+              : href.split("/").pop()?.slice(0, 8) + "…"}
           </Link>
         );
       },
@@ -165,7 +166,7 @@ function creditColumns(
       cell: (r: CreditRecord) => (
         <span
           className={cn(
-            isCreditOverdue(r) && "font-medium text-[var(--frappe-red)]"
+            isCreditOverdue(r) && "font-medium text-[var(--frappe-red)]",
           )}
         >
           {formatDate(r.dueDate)}
@@ -202,11 +203,7 @@ function creditColumns(
         <div className="flex items-center justify-end gap-1">
           {r.status === "PAID" ? null : (
             <PermissionGate permission="credit.write">
-              <PaymentButton
-                type={partyKey}
-                credit={r}
-                onSuccess={onSuccess}
-              />
+              <PaymentButton type={partyKey} credit={r} onSuccess={onSuccess} />
             </PermissionGate>
           )}
           {r.source === "OPENING" ? (
@@ -244,7 +241,6 @@ export default function CreditsPage() {
     }
   }
 
-
   const customerList = usePaginatedList<CreditRecord, CreditListTotals>(
     (page, limit) =>
       buildCreditsCustomersListPath(
@@ -256,9 +252,9 @@ export default function CreditsPage() {
           source: source || undefined,
         },
         page,
-        limit
+        limit,
       ),
-    [from, to, debouncedSearch, status, source]
+    [from, to, debouncedSearch, status, source],
   );
   const supplierList = usePaginatedList<CreditRecord, CreditListTotals>(
     (page, limit) =>
@@ -271,9 +267,9 @@ export default function CreditsPage() {
           source: source || undefined,
         },
         page,
-        limit
+        limit,
       ),
-    [from, to, debouncedSearch, status, source]
+    [from, to, debouncedSearch, status, source],
   );
 
   const reloadAll = () => {
@@ -284,52 +280,6 @@ export default function CreditsPage() {
   return (
     <AppShell title="Credits">
       <PermissionGate permission="credit.read" showDenied>
-        <FrappeFilterBar>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search credits..."
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          <Select
-            value={status || "__all__"}
-            onValueChange={(v) =>
-              setStatus(v === "__all__" ? "" : (v as CreditStatus))
-            }
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All statuses</SelectItem>
-              <SelectItem value="OPEN">Open</SelectItem>
-              <SelectItem value="PARTIAL">Partial</SelectItem>
-              <SelectItem value="PAID">Paid</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={source || "__all__"}
-            onValueChange={(v) =>
-              setSource(v === "__all__" ? "" : (v as CreditSource))
-            }
-          >
-            <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="Source" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All sources</SelectItem>
-              <SelectItem value={tab === "customers" ? "SALE" : "PURCHASE"}>
-                {tab === "customers" ? "From sale" : "From purchase"}
-              </SelectItem>
-              <SelectItem value="OPENING">Opening balance</SelectItem>
-            </SelectContent>
-          </Select>
-        </FrappeFilterBar>
         <Tabs
           value={tab}
           onValueChange={(v) => handleTabChange(v as "customers" | "suppliers")}
@@ -339,92 +289,198 @@ export default function CreditsPage() {
             <TabsTrigger value="suppliers">Supplier credit</TabsTrigger>
           </TabsList>
           <TabsContent value="customers" className="mt-4">
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {customerList.meta.total} record
-                {customerList.meta.total === 1 ? "" : "s"}
-              </span>
-              {customerList.totals ? (
-                <ListPageTotals
-                  items={[
-                    {
-                      label: "Amount",
-                      value: formatMoney(customerList.totals.amount),
-                    },
-                    {
-                      label: "Paid",
-                      value: formatMoney(customerList.totals.paidAmount),
-                    },
-                    {
-                      label: "Balance",
-                      value: formatMoney(customerList.totals.balance),
-                    },
-                  ]}
-                />
-              ) : null}
-              <PermissionGate permission="credit.write">
-                <OpeningCreditDialog type="customer" onSuccess={reloadAll} />
-              </PermissionGate>
-            </FrappeListToolbar>
-            {customerList.loading ? (
-              <PageLoading />
-            ) : (
-              <DataCardTable
-                rows={customerList.rows}
-                emptyTitle="No customer credits"
-                pagination={{
-                  meta: customerList.meta,
-                  onPageChange: customerList.setPage,
-                  onLimitChange: customerList.setLimit,
-                  disabled: customerList.loading,
-                }}
-                columns={creditColumns("customer", reloadAll)}
-              />
-            )}
+            <DataCardTable
+              storageKey="credits-list"
+              rows={customerList.rows}
+              loading={customerList.loading}
+              leading={
+                <FrappeListToolbar>
+                  <span className="text-[var(--frappe-text-muted)]">
+                    {customerList.meta.total} record
+                    {customerList.meta.total === 1 ? "" : "s"}
+                  </span>
+                  {customerList.totals ? (
+                    <ListPageTotals
+                      items={[
+                        {
+                          label: "Amount",
+                          value: formatMoney(customerList.totals.amount),
+                        },
+                        {
+                          label: "Paid",
+                          value: formatMoney(customerList.totals.paidAmount),
+                        },
+                        {
+                          label: "Balance",
+                          value: formatMoney(customerList.totals.balance),
+                        },
+                      ]}
+                    />
+                  ) : null}
+                  <PermissionGate permission="credit.write">
+                    <OpeningCreditDialog
+                      type="customer"
+                      onSuccess={reloadAll}
+                    />
+                  </PermissionGate>
+                </FrappeListToolbar>
+              }
+              filters={
+                <FrappeFilterBar>
+                  <ListSearchField
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search credits..."
+                  />
+                  <DateRangeFilter
+                    from={from}
+                    to={to}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                  />
+                  <Select
+                    value={status || "__all__"}
+                    onValueChange={(v) =>
+                      setStatus(v === "__all__" ? "" : (v as CreditStatus))
+                    }
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All statuses</SelectItem>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="PARTIAL">Partial</SelectItem>
+                      <SelectItem value="PAID">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={source || "__all__"}
+                    onValueChange={(v) =>
+                      setSource(v === "__all__" ? "" : (v as CreditSource))
+                    }
+                  >
+                    <SelectTrigger className="w-[170px]">
+                      <SelectValue placeholder="Source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All sources</SelectItem>
+                      <SelectItem
+                        value={tab === "customers" ? "SALE" : "PURCHASE"}
+                      >
+                        {tab === "customers" ? "From sale" : "From purchase"}
+                      </SelectItem>
+                      <SelectItem value="OPENING">Opening balance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FrappeFilterBar>
+              }
+              emptyTitle="No customer credits"
+              pagination={{
+                meta: customerList.meta,
+                onPageChange: customerList.setPage,
+                onLimitChange: customerList.setLimit,
+                disabled: customerList.loading,
+              }}
+              columns={creditColumns("customer", reloadAll)}
+            />
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {supplierList.meta.total} record
-                {supplierList.meta.total === 1 ? "" : "s"}
-              </span>
-              {supplierList.totals ? (
-                <ListPageTotals
-                  items={[
-                    {
-                      label: "Amount",
-                      value: formatMoney(supplierList.totals.amount),
-                    },
-                    {
-                      label: "Paid",
-                      value: formatMoney(supplierList.totals.paidAmount),
-                    },
-                    {
-                      label: "Balance",
-                      value: formatMoney(supplierList.totals.balance),
-                    },
-                  ]}
-                />
-              ) : null}
-              <PermissionGate permission="credit.write">
-                <OpeningCreditDialog type="supplier" onSuccess={reloadAll} />
-              </PermissionGate>
-            </FrappeListToolbar>
-            {supplierList.loading ? (
-              <PageLoading />
-            ) : (
-              <DataCardTable
-                rows={supplierList.rows}
-                emptyTitle="No supplier credits"
-                pagination={{
-                  meta: supplierList.meta,
-                  onPageChange: supplierList.setPage,
-                  onLimitChange: supplierList.setLimit,
-                  disabled: supplierList.loading,
-                }}
-                columns={creditColumns("supplier", reloadAll)}
-              />
-            )}
+            <DataCardTable
+              storageKey="credits-secondary"
+              rows={supplierList.rows}
+              loading={supplierList.loading}
+              leading={
+                <FrappeListToolbar>
+                  <span className="text-[var(--frappe-text-muted)]">
+                    {supplierList.meta.total} record
+                    {supplierList.meta.total === 1 ? "" : "s"}
+                  </span>
+                  {supplierList.totals ? (
+                    <ListPageTotals
+                      items={[
+                        {
+                          label: "Amount",
+                          value: formatMoney(supplierList.totals.amount),
+                        },
+                        {
+                          label: "Paid",
+                          value: formatMoney(supplierList.totals.paidAmount),
+                        },
+                        {
+                          label: "Balance",
+                          value: formatMoney(supplierList.totals.balance),
+                        },
+                      ]}
+                    />
+                  ) : null}
+                  <PermissionGate permission="credit.write">
+                    <OpeningCreditDialog
+                      type="supplier"
+                      onSuccess={reloadAll}
+                    />
+                  </PermissionGate>
+                </FrappeListToolbar>
+              }
+              filters={
+                <FrappeFilterBar>
+                  <ListSearchField
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search credits..."
+                  />
+                  <DateRangeFilter
+                    from={from}
+                    to={to}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                  />
+                  <Select
+                    value={status || "__all__"}
+                    onValueChange={(v) =>
+                      setStatus(v === "__all__" ? "" : (v as CreditStatus))
+                    }
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All statuses</SelectItem>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="PARTIAL">Partial</SelectItem>
+                      <SelectItem value="PAID">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={source || "__all__"}
+                    onValueChange={(v) =>
+                      setSource(v === "__all__" ? "" : (v as CreditSource))
+                    }
+                  >
+                    <SelectTrigger className="w-[170px]">
+                      <SelectValue placeholder="Source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All sources</SelectItem>
+                      <SelectItem
+                        value={tab === "customers" ? "SALE" : "PURCHASE"}
+                      >
+                        {tab === "customers" ? "From sale" : "From purchase"}
+                      </SelectItem>
+                      <SelectItem value="OPENING">Opening balance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FrappeFilterBar>
+              }
+              emptyTitle="No supplier credits"
+              pagination={{
+                meta: supplierList.meta,
+                onPageChange: supplierList.setPage,
+                onLimitChange: supplierList.setLimit,
+                disabled: supplierList.loading,
+              }}
+              columns={creditColumns("supplier", reloadAll)}
+            />
           </TabsContent>
         </Tabs>
       </PermissionGate>
@@ -450,7 +506,7 @@ function PaymentButton({
     type === "customer" ? credit.customer?.name : credit.supplier?.name;
   const { data: banks } = useFetch(
     () => apiList<BankAccount>("/banks/accounts"),
-    []
+    [],
   );
 
   function handleOpen() {
@@ -513,10 +569,7 @@ function PaymentButton({
                   {formatMoney(outstanding)}
                 </span>
                 {credit.dueDate ? (
-                  <>
-                    {" "}
-                    · Due {formatDate(credit.dueDate)}
-                  </>
+                  <> · Due {formatDate(credit.dueDate)}</>
                 ) : null}
               </p>
               <div className="grid gap-2">
@@ -543,7 +596,7 @@ function PaymentButton({
                         <SelectItem key={b.id} value={b.id}>
                           {formatBankAccountLabel(b)}
                         </SelectItem>
-                      )
+                      ),
                     )}
                   </SelectContent>
                 </Select>
@@ -578,7 +631,7 @@ function OpeningCreditDialog({
 
   const { data: parties, loading: partiesLoading } = useFetch(
     () => (type === "customer" ? fetchCustomers() : fetchSuppliers()),
-    [type]
+    [type],
   );
 
   const partyOptions = (parties ?? []).map((p) => ({
@@ -618,7 +671,7 @@ function OpeningCreditDialog({
       toast.success(
         type === "customer"
           ? "Opening receivable added"
-          : "Opening payable added"
+          : "Opening payable added",
       );
       setOpen(false);
       resetForm();
@@ -746,7 +799,7 @@ function DeleteOpeningCreditButton({
 
   async function handleDelete() {
     const ok = confirm(
-      "Delete this opening credit? Only unpaid opening balances can be removed."
+      "Delete this opening credit? Only unpaid opening balances can be removed.",
     );
     if (!ok) return;
     setDeleting(true);

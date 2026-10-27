@@ -1,6 +1,8 @@
 "use client";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { AppTopHeader } from "@/components/app-top-header";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { SiteHeader } from "@/components/site-header";
 import {
   FrappePageBody,
@@ -38,13 +40,14 @@ export function AppShell({
       style={
         {
           "--sidebar-width": "17rem",
-          "--header-height": "calc(var(--spacing) * 12)",
+          "--header-height": "3.5rem",
         } as React.CSSProperties
       }
     >
       <TooltipProvider>
         <AppSidebar variant="inset" />
         <SidebarInset className="flex flex-col overflow-hidden bg-[var(--frappe-desk)] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:border md:peer-data-[variant=inset]:border-[var(--frappe-border)] md:peer-data-[variant=inset]:shadow-[var(--frappe-shadow-lg)]">
+          <AppTopHeader />
           {isFrappe ? (
             <div className="frappe-page flex min-h-0 flex-1 flex-col">
               {variant !== "plain" ? (
@@ -68,7 +71,7 @@ export function AppShell({
               ) : null}
               <div
                 className={cn(
-                  "flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6",
+                  "frappe-page-body-pad flex flex-1 flex-col gap-4 overflow-auto p-3 sm:p-4 md:gap-6 md:p-6",
                   className
                 )}
               >
@@ -77,6 +80,7 @@ export function AppShell({
             </>
           )}
         </SidebarInset>
+        <MobileBottomNav />
       </TooltipProvider>
     </SidebarProvider>
   );
