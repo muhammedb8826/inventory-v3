@@ -21,14 +21,23 @@ export function DateRangeFilter({
   disabled?: boolean;
   compact?: boolean;
 }) {
+  const inputClass = cn(
+    "h-9 rounded-xl border-border/80 bg-background shadow-none",
+    compact ? "w-[138px]" : "w-full"
+  );
+
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div
+      className={cn(
+        compact
+          ? "flex flex-wrap items-center gap-2"
+          : "grid grid-cols-2 gap-3",
+        className
+      )}
+    >
       <div className={cn(!compact && "grid gap-1.5")}>
         {!compact ? (
-          <Label
-            htmlFor="date-from"
-            className="text-sm text-muted-foreground"
-          >
+          <Label htmlFor="date-from" className="text-sm text-muted-foreground">
             From
           </Label>
         ) : null}
@@ -39,7 +48,7 @@ export function DateRangeFilter({
           onChange={(e) => onFromChange(e.target.value)}
           disabled={disabled}
           aria-label="From date"
-          className="h-9 w-[138px] rounded-lg"
+          className={inputClass}
         />
       </div>
       <div className={cn(!compact && "grid gap-1.5")}>
@@ -55,7 +64,7 @@ export function DateRangeFilter({
           onChange={(e) => onToChange(e.target.value)}
           disabled={disabled}
           aria-label="To date"
-          className="h-9 w-[138px] rounded-lg"
+          className={inputClass}
         />
       </div>
     </div>

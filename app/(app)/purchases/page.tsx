@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeFilterBar,
-  FrappeButtonPrimary,
-} from "@/components/frappe";
+import { FrappeButtonPrimary } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatMoney, formatDate } from "@/lib/format";
 import { documentTotal } from "@/lib/document-utils";
@@ -29,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { PlusIcon, ShoppingCartIcon, WalletIcon } from "lucide-react";
 
 import type {
@@ -37,6 +39,7 @@ import type {
   Purchase,
   PurchaseListTotals,
 } from "@/lib/types";
+
 type PurchaseRow = Pick<
   Purchase,
   | "id"
@@ -90,11 +93,36 @@ export default function PurchasesPage() {
     ]
   );
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        from,
+        to,
+        includeVoided,
+        supplierId,
+        locationId,
+        paymentMethod,
+      ]),
+    [from, to, includeVoided, supplierId, locationId, paymentMethod]
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setIncludeVoided(false);
+    setSupplierId("");
+    setLocationId("");
+    setPaymentMethod("");
+  }
+
   return (
     <AppShell
       title="Purchase"
       subtitle="List of all purchase transactions"
-      breadcrumbs={[{ label: "Stock", href: "/dashboard" }, { label: "Purchase" }]}
+      breadcrumbs={[
+        { label: "Stock", href: "/dashboard" },
+        { label: "Purchase" },
+      ]}
       actions={
         <PermissionGate permission="purchase.write">
           <FrappeButtonPrimary asChild>
@@ -107,65 +135,66 @@ export default function PurchasesPage() {
       }
     >
       <PermissionGate permission="purchase.read" showDenied>
-          <ListSummaryCards
-            items={[
-              {
-                label: "Purchases",
-                value: meta.total.toLocaleString(),
-                icon: ShoppingCartIcon,
-                tone: "slate",
-              },
-              {
-                label: "Subtotal",
-                value: formatMoney(totals?.subtotal ?? 0),
-                icon: WalletIcon,
-                tone: "sky",
-              },
-              {
-                label: "Total",
-                value: formatMoney(totals?.total ?? 0),
-                icon: WalletIcon,
-                tone: "teal",
-              },
-            ]}
-          />
-          <DataCardTable
-            storageKey="purchases-list"
-            rows={rows}
-            loading={loading}
-            emptyTitle="Nothing to show"
-            emptyDescription="Create your first purchase to receive stock."
-            filters={
-              <FrappeFilterBar>
-                <ListSearchField
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search purchases..."
-                />
+        <ListSummaryCards
+          items={[
+            {
+              label: "Purchases",
+              value: meta.total.toLocaleString(),
+              icon: ShoppingCartIcon,
+              tone: "slate",
+              badge: { label: "Orders", tone: "muted" },
+            },
+            {
+              label: "Subtotal",
+              value: formatMoney(totals?.subtotal ?? 0),
+              icon: WalletIcon,
+              tone: "sky",
+              badge: { label: "Net", tone: "info" },
+            },
+            {
+              label: "Total",
+              value: formatMoney(totals?.total ?? 0),
+              icon: WalletIcon,
+              tone: "teal",
+              badge: { label: "Paid out", tone: "success" },
+            },
+          ]}
+        />
+        <DataCardTable
+          storageKey="purchases-list"
+          rows={rows}
+          loading={loading}
+          emptyTitle="Nothing to show"
+          emptyDescription="Create your first purchase to receive stock."
+          filters={
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search purchases..."
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
                 <DateRangeFilter
                   from={from}
                   to={to}
                   onFromChange={setFrom}
                   onToChange={setTo}
+                  compact={false}
                 />
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="purchase-include-voided"
-                    checked={includeVoided}
-                    onCheckedChange={setIncludeVoided}
-                  />
-                  <Label
-                    htmlFor="purchase-include-voided"
-                    className="text-sm font-normal"
-                  >
-                    Include voided
-                  </Label>
-                </div>
+              </FilterField>
+              <FilterField label="Supplier">
                 <Select
                   value={supplierId || "__all__"}
-                  onValueChange={(v) => setSupplierId(v === "__all__" ? "" : v)}
+                  onValueChange={(v) =>
+                    setSupplierId(v === "__all__" ? "" : v)
+                  }
                 >
-                  <SelectTrigger className="h-9 w-[200px]">
+                  <SelectTrigger className="h-10 w-full rounded-xl">
                     <SelectValue placeholder="All suppliers" />
                   </SelectTrigger>
                   <SelectContent>
@@ -177,11 +206,15 @@ export default function PurchasesPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </FilterField>
+              <FilterField label="Location">
                 <Select
                   value={locationId || "__all__"}
-                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
+                  onValueChange={(v) =>
+                    setLocationId(v === "__all__" ? "" : v)
+                  }
                 >
-                  <SelectTrigger className="h-9 w-[180px]">
+                  <SelectTrigger className="h-10 w-full rounded-xl">
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
                   <SelectContent>
@@ -193,14 +226,18 @@ export default function PurchasesPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </FilterField>
+              <FilterField label="Payment method">
                 <Select
                   value={paymentMethod || "__all__"}
                   onValueChange={(v) =>
-                    setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
+                    setPaymentMethod(
+                      v === "__all__" ? "" : (v as PaymentMethod)
+                    )
                   }
                 >
-                  <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Payment" />
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="All payments" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all__">All payments</SelectItem>
@@ -209,81 +246,95 @@ export default function PurchasesPage() {
                     <SelectItem value="CREDIT">Credit</SelectItem>
                   </SelectContent>
                 </Select>
-              </FrappeFilterBar>
-            }
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "id",
-                header: "ID",
-                hideable: false,
-                mobilePriority: 4,
-                cell: (r) => (
+              </FilterField>
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <Label
+                  htmlFor="purchase-include-voided"
+                  className="text-sm font-medium"
+                >
+                  Include voided
+                </Label>
+                <Switch
+                  id="purchase-include-voided"
+                  checked={includeVoided}
+                  onCheckedChange={setIncludeVoided}
+                />
+              </div>
+            </TableFiltersSheet>
+          }
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "id",
+              header: "ID",
+              hideable: false,
+              mobilePriority: 4,
+              cell: (r) => (
+                <Link
+                  href={`/purchases/${r.id}`}
+                  className="font-medium text-[var(--frappe-primary)] hover:underline"
+                >
+                  {r.id.slice(0, 8)}…
+                </Link>
+              ),
+            },
+            {
+              key: "date",
+              header: "Date",
+              mobilePriority: 3,
+              cell: (r) => formatDate(r.createdAt),
+            },
+            {
+              key: "supplier",
+              header: "Supplier",
+              hideable: false,
+              mobilePriority: 1,
+              cell: (r) =>
+                r.supplier?.name ? (
                   <Link
                     href={`/purchases/${r.id}`}
-                    className="font-medium text-[var(--frappe-primary)] hover:underline"
+                    className="hover:text-[var(--frappe-primary)] hover:underline"
                   >
-                    {r.id.slice(0, 8)}…
+                    {r.supplier.name}
                   </Link>
+                ) : (
+                  "—"
                 ),
-              },
-              {
-                key: "date",
-                header: "Date",
-                mobilePriority: 3,
-                cell: (r) => formatDate(r.createdAt),
-              },
-              {
-                key: "supplier",
-                header: "Supplier",
-                hideable: false,
-                mobilePriority: 1,
-                cell: (r) =>
-                  r.supplier?.name ? (
-                    <Link
-                      href={`/purchases/${r.id}`}
-                      className="hover:text-[var(--frappe-primary)] hover:underline"
-                    >
-                      {r.supplier.name}
-                    </Link>
-                  ) : (
-                    "—"
-                  ),
-              },
-              {
-                key: "location",
-                header: "Location",
-                cell: (r) => r.location?.name ?? "—",
-              },
-              {
-                key: "payment",
-                header: "Payment",
-                cell: (r) => r.paymentMethod,
-              },
-              {
-                key: "status",
-                header: "Status",
-                cell: (r) =>
-                  r.status === "VOIDED" ? (
-                    <Badge variant="secondary">Voided</Badge>
-                  ) : (
-                    "Posted"
-                  ),
-              },
-              {
-                key: "total",
-                header: "Amount",
-                className: "text-right",
-                mobilePriority: 2,
-                cell: (r) => formatMoney(documentTotal(r)),
-              },
-            ]}
-          />
+            },
+            {
+              key: "location",
+              header: "Location",
+              cell: (r) => r.location?.name ?? "—",
+            },
+            {
+              key: "payment",
+              header: "Payment",
+              cell: (r) => r.paymentMethod,
+            },
+            {
+              key: "status",
+              header: "Status",
+              cell: (r) =>
+                r.status === "VOIDED" ? (
+                  <Badge variant="secondary">Voided</Badge>
+                ) : (
+                  "Posted"
+                ),
+            },
+            {
+              key: "total",
+              header: "Amount",
+              className: "text-right",
+              mobilePriority: 2,
+              cell: (r) => formatMoney(documentTotal(r)),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

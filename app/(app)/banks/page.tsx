@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import { BankAccountFormFields } from "@/components/banks/bank-account-form-fields";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +142,41 @@ export default function BanksPage() {
     [effectiveId, from, to, transactionType, direction, debouncedSearch],
   );
 
+
+  const accountsActiveFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        accountTypeFilter,
+        showInactive,
+      ]),
+    [accountTypeFilter, showInactive],
+  );
+
+  function resetAccountFilters() {
+    setAccountTypeFilter("");
+    setShowInactive(false);
+  }
+
+  const transactionsActiveFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        accountId,
+        from,
+        to,
+        transactionType,
+        direction,
+      ]),
+    [accountId, from, to, transactionType, direction],
+  );
+
+  function resetTransactionFilters() {
+    setAccountId("");
+    setFrom("");
+    setTo("");
+    setTransactionType("");
+    setDirection("");
+  }
+
   return (
     <AppShell
       title="Bank"
@@ -193,43 +232,50 @@ export default function BanksPage() {
               rows={accountRows}
               loading={loading}
               filters={
-                <FrappeFilterBar>
-                  <ListSearchField
-                    value={accountSearch}
-                    onChange={setAccountSearch}
-                    placeholder="Search accounts…"
-                  />
-                  <Select
-                    value={accountTypeFilter || "__all__"}
-                    onValueChange={(v) =>
-                      setAccountTypeFilter(
-                        v === "__all__" ? "" : (v as BankAccountType),
-                      )
-                    }
-                  >
-                    <SelectTrigger className="w-[170px]">
-                      <SelectValue placeholder="All types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All types</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="BANK">Bank</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2 self-end">
+                <ListSearchField
+                  value={accountSearch}
+                  onChange={setAccountSearch}
+                  placeholder="Search accounts…"
+                />
+              }
+              toolbar={
+                <TableFiltersSheet
+                  activeCount={accountsActiveFilterCount}
+                  onReset={resetAccountFilters}
+                >
+                  <FilterField label="Type">
+                    <Select
+                      value={accountTypeFilter || "__all__"}
+                      onValueChange={(v) =>
+                        setAccountTypeFilter(
+                          v === "__all__" ? "" : (v as BankAccountType),
+                        )
+                      }
+                    >
+                      <SelectTrigger className="h-10 w-full rounded-xl">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">All types</SelectItem>
+                        <SelectItem value="CASH">Cash</SelectItem>
+                        <SelectItem value="BANK">Bank</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FilterField>
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                    <Label
+                      htmlFor="banks-show-inactive"
+                      className="text-sm font-medium"
+                    >
+                      Include inactive
+                    </Label>
                     <Switch
                       id="banks-show-inactive"
                       checked={showInactive}
                       onCheckedChange={setShowInactive}
                     />
-                    <Label
-                      htmlFor="banks-show-inactive"
-                      className="text-sm font-normal text-[var(--frappe-text)]"
-                    >
-                      Include inactive
-                    </Label>
                   </div>
-                </FrappeFilterBar>
+                </TableFiltersSheet>
               }
               emptyTitle="No bank accounts"
               pagination={{
@@ -297,18 +343,20 @@ export default function BanksPage() {
               rows={transactionList.rows}
               loading={transactionList.loading}
               filters={
-                <FrappeFilterBar>
-                  <ListSearchField
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Search description…"
-                  />
-                  <div className="grid gap-2">
-                    <Label className="text-sm text-[var(--frappe-text-muted)]">
-                      Account
-                    </Label>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search description…"
+                />
+              }
+              toolbar={
+                <TableFiltersSheet
+                  activeCount={transactionsActiveFilterCount}
+                  onReset={resetTransactionFilters}
+                >
+                  <FilterField label="Account">
                     <Select value={effectiveId} onValueChange={setAccountId}>
-                      <SelectTrigger className="w-[280px]">
+                      <SelectTrigger className="h-10 w-full rounded-xl">
                         <SelectValue placeholder="Account" />
                       </SelectTrigger>
                       <SelectContent>
@@ -321,17 +369,17 @@ export default function BanksPage() {
                           ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <DateRangeFilter
-                    from={from}
-                    to={to}
-                    onFromChange={setFrom}
-                    onToChange={setTo}
-                  />
-                  <div className="grid gap-2">
-                    <Label className="text-sm text-[var(--frappe-text-muted)]">
-                      Type
-                    </Label>
+                  </FilterField>
+                  <FilterField label="Date range">
+                    <DateRangeFilter
+                      from={from}
+                      to={to}
+                      onFromChange={setFrom}
+                      onToChange={setTo}
+                      compact={false}
+                    />
+                  </FilterField>
+                  <FilterField label="Type">
                     <Select
                       value={transactionType || "__all__"}
                       onValueChange={(v) =>
@@ -340,7 +388,7 @@ export default function BanksPage() {
                         )
                       }
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="h-10 w-full rounded-xl">
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
@@ -352,11 +400,8 @@ export default function BanksPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-sm text-[var(--frappe-text-muted)]">
-                      Direction
-                    </Label>
+                  </FilterField>
+                  <FilterField label="Direction">
                     <Select
                       value={direction || "__all__"}
                       onValueChange={(v) =>
@@ -367,7 +412,7 @@ export default function BanksPage() {
                         )
                       }
                     >
-                      <SelectTrigger className="w-[140px]">
+                      <SelectTrigger className="h-10 w-full rounded-xl">
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
@@ -379,8 +424,8 @@ export default function BanksPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                </FrappeFilterBar>
+                  </FilterField>
+                </TableFiltersSheet>
               }
               emptyTitle="No transactions"
               pagination={{

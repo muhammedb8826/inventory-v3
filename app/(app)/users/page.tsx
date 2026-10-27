@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -13,9 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -92,6 +96,18 @@ function UsersPageContent() {
       [from, to, debouncedSearch, roleId, activeFilter],
     );
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([from, to, roleId, activeFilter]),
+    [from, to, roleId, activeFilter],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setRoleId("");
+    setActiveFilter("");
+  }
+
   return (
     <AppShell
       title="Users"
@@ -105,50 +121,64 @@ function UsersPageContent() {
         loading={loading}
         emptyTitle="No users"
         filters={
-          <FrappeFilterBar>
-            <ListSearchField
-              value={search}
-              onChange={setSearch}
-              placeholder="Search users..."
-            />
-            <DateRangeFilter
-              from={from}
-              to={to}
-              onFromChange={setFrom}
-              onToChange={setTo}
-            />
-            <Select
-              value={roleId || "__all__"}
-              onValueChange={(v) => setRoleId(v === "__all__" ? "" : v)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All roles</SelectItem>
-                {(roles ?? []).map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={activeFilter || "__all__"}
-              onValueChange={(v) =>
-                setActiveFilter(v === "__all__" ? "" : (v as "true" | "false"))
-              }
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All users</SelectItem>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </FrappeFilterBar>
+          <ListSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search users..."
+          />
+        }
+        toolbar={
+          <TableFiltersSheet
+            activeCount={activeFilterCount}
+            onReset={resetFilters}
+          >
+            <FilterField label="Date range">
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+                compact={false}
+              />
+            </FilterField>
+            <FilterField label="Role">
+              <Select
+                value={roleId || "__all__"}
+                onValueChange={(v) => setRoleId(v === "__all__" ? "" : v)}
+              >
+                <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectValue placeholder="All roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All roles</SelectItem>
+                  {(roles ?? []).map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+            <FilterField label="Status">
+              <Select
+                value={activeFilter || "__all__"}
+                onValueChange={(v) =>
+                  setActiveFilter(
+                    v === "__all__" ? "" : (v as "true" | "false"),
+                  )
+                }
+              >
+                <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All users</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </FilterField>
+          </TableFiltersSheet>
         }
         pagination={{
           meta,

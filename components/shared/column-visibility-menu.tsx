@@ -36,15 +36,14 @@ export function ColumnVisibilityMenu({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 gap-2 rounded-lg border-border bg-background px-3 font-medium shadow-none"
+          className="h-9 gap-2 rounded-xl border-border/80 bg-background px-3 text-sm font-medium shadow-none hover:bg-muted/60"
         >
-          <Columns3Icon className="size-4 opacity-80" />
-          <span className="hidden sm:inline">Customize Columns</span>
-          <span className="sm:hidden">Columns</span>
+          <Columns3Icon className="size-4 opacity-70" />
+          <span className="hidden sm:inline">Columns</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-56 rounded-xl">
+        <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {tunable.map((col) => (
           <DropdownMenuCheckboxItem

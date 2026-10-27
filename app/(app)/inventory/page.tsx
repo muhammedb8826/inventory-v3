@@ -4,9 +4,13 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,14 +167,14 @@ export default function InventoryPage() {
     >
       <PermissionGate permission="inventory.read" showDenied>
         <Tabs defaultValue="stock" className="gap-4">
-          <TabsList className="h-11 rounded-xl bg-[var(--frappe-surface)] p-1 shadow-[var(--frappe-shadow)]">
-            <TabsTrigger value="stock" className="rounded-lg px-4">
+          <TabsList className="mb-1 h-11 rounded-full bg-muted/60 p-1 shadow-none">
+            <TabsTrigger value="stock" className="rounded-full px-4">
               All products
             </TabsTrigger>
-            <TabsTrigger value="adjustments" className="rounded-lg px-4">
+            <TabsTrigger value="adjustments" className="rounded-full px-4">
               Adjustments
             </TabsTrigger>
-            <TabsTrigger value="movements" className="rounded-lg px-4">
+            <TabsTrigger value="movements" className="rounded-full px-4">
               Movements
             </TabsTrigger>
           </TabsList>
@@ -183,18 +187,21 @@ export default function InventoryPage() {
                   value: meta.total.toLocaleString(),
                   icon: PackageIcon,
                   tone: "slate",
+                  badge: { label: "Catalog", tone: "muted" },
                 },
                 {
                   label: "Total qty",
                   value: formatQty(totals?.quantity ?? 0),
                   icon: BoxesIcon,
                   tone: "sky",
+                  badge: { label: "On hand", tone: "info" },
                 },
                 {
                   label: "Stock value",
                   value: formatMoney(totals?.inventoryValue ?? 0),
                   icon: WalletIcon,
                   tone: "teal",
+                  badge: { label: "Healthy", tone: "success" },
                 },
               ]}
             />
@@ -206,6 +213,7 @@ export default function InventoryPage() {
                   value: meta.total.toLocaleString(),
                   icon: PackageIcon,
                   tone: "amber",
+                  badge: { label: "Urgent", tone: "danger" },
                 },
               ]}
             />
@@ -227,50 +235,79 @@ export default function InventoryPage() {
                 : undefined
             }
             filters={
-              <FrappeFilterBar>
-                <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger className="h-9 w-[200px]">
-                    <SelectValue placeholder="All locations" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_LOCATIONS}>All locations</SelectItem>
-                    {(locations ?? []).map((loc) => (
-                      <SelectItem key={loc.id} value={loc.id}>
-                        {loc.name} ({loc.type})
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search stock..."
+                disabled={isLowStockView}
+                className={isLowStockView ? "opacity-60" : undefined}
+              />
+            }
+            toolbar={
+              <TableFiltersSheet
+                activeCount={countActiveFilters([
+                  locationFilter !== ALL_LOCATIONS ? locationFilter : "",
+                  viewMode !== VIEW_ALL ? viewMode : "",
+                  from,
+                  to,
+                ])}
+                onReset={() => {
+                  setLocationFilter(ALL_LOCATIONS);
+                  setViewMode(VIEW_ALL);
+                  setFrom("");
+                  setTo("");
+                }}
+              >
+                <FilterField label="Location">
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectValue placeholder="All locations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_LOCATIONS}>
+                        All locations
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={viewMode}
-                  onValueChange={(v) =>
-                    setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
-                  }
-                >
-                  <SelectTrigger className="h-9 w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={VIEW_ALL}>All stock</SelectItem>
-                    <SelectItem value={VIEW_LOW_STOCK}>Low stock only</SelectItem>
-                  </SelectContent>
-                </Select>
-                <ListSearchField
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search stock..."
-                  disabled={isLowStockView}
-                  className={isLowStockView ? "opacity-60" : undefined}
-                />
-                <DateRangeFilter
-                  from={from}
-                  to={to}
-                  onFromChange={setFrom}
-                  onToChange={setTo}
-                  disabled={isLowStockView}
-                  className={isLowStockView ? "opacity-60" : undefined}
-                />
-              </FrappeFilterBar>
+                      {(locations ?? []).map((loc) => (
+                        <SelectItem key={loc.id} value={loc.id}>
+                          {loc.name} ({loc.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                <FilterField label="Stock view">
+                  <Select
+                    value={viewMode}
+                    onValueChange={(v) =>
+                      setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={VIEW_ALL}>All stock</SelectItem>
+                      <SelectItem value={VIEW_LOW_STOCK}>
+                        Low stock only
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                <FilterField label="Date range">
+                  <DateRangeFilter
+                    from={from}
+                    to={to}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                    disabled={isLowStockView}
+                    compact={false}
+                    className={isLowStockView ? "opacity-60" : undefined}
+                  />
+                </FilterField>
+              </TableFiltersSheet>
             }
             pagination={{
               meta,

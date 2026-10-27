@@ -7,7 +7,6 @@ import { PageLoading } from "@/components/shared/page-loading";
 import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
 import {
-  FrappeFilterBar,
   FrappeButtonPrimary,
   FrappeField,
   FrappeFormGrid,
@@ -15,6 +14,7 @@ import {
   FrappeSection,
 } from "@/components/frappe";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import { TableFiltersSheet } from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Dialog,
@@ -66,6 +66,8 @@ export function MasterDataPage<
   supportsActive = false,
   listParams,
   filterExtras,
+  filterActiveCount = 0,
+  onResetFilters,
 }: {
   title: string;
   endpoint: string;
@@ -77,6 +79,8 @@ export function MasterDataPage<
   supportsActive?: boolean;
   listParams?: ListQueryParams;
   filterExtras?: React.ReactNode;
+  filterActiveCount?: number;
+  onResetFilters?: () => void;
 }) {
   const { user, loading: authLoading } = useAuth();
   const canRead = hasPermission(user, readPermission);
@@ -162,14 +166,21 @@ export function MasterDataPage<
         emptyTitle="Nothing to show"
         emptyDescription={emptyDescription}
         filters={
-          <FrappeFilterBar>
-            <ListSearchField
-              value={search}
-              onChange={setSearch}
-              placeholder={`Search ${title.toLowerCase()}...`}
-            />
-            {filterExtras}
-          </FrappeFilterBar>
+          <ListSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder={`Search ${title.toLowerCase()}...`}
+          />
+        }
+        toolbar={
+          filterExtras ? (
+            <TableFiltersSheet
+              activeCount={filterActiveCount}
+              onReset={onResetFilters ?? (() => undefined)}
+            >
+              {filterExtras}
+            </TableFiltersSheet>
+          ) : undefined
         }
         pagination={{
           meta,

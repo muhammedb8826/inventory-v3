@@ -6,14 +6,15 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeButtonPrimary,
-  FrappeField,
-  FrappeFilterBar,
-} from "@/components/frappe";
+import { FrappeButtonPrimary, FrappeField } from "@/components/frappe";
 import { Button } from "@/components/ui/button";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Dialog,
@@ -108,6 +109,16 @@ function RolesPageContent() {
       [from, to, debouncedSearch],
     );
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([from, to]),
+    [from, to],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+  }
+
   return (
     <AppShell
       title="Roles"
@@ -121,19 +132,27 @@ function RolesPageContent() {
         loading={loading}
         emptyTitle="No roles"
         filters={
-          <FrappeFilterBar>
-            <ListSearchField
-              value={search}
-              onChange={setSearch}
-              placeholder="Search roles..."
-            />
-            <DateRangeFilter
-              from={from}
-              to={to}
-              onFromChange={setFrom}
-              onToChange={setTo}
-            />
-          </FrappeFilterBar>
+          <ListSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search roles..."
+          />
+        }
+        toolbar={
+          <TableFiltersSheet
+            activeCount={activeFilterCount}
+            onReset={resetFilters}
+          >
+            <FilterField label="Date range">
+              <DateRangeFilter
+                from={from}
+                to={to}
+                onFromChange={setFrom}
+                onToChange={setTo}
+                compact={false}
+              />
+            </FilterField>
+          </TableFiltersSheet>
         }
         pagination={{
           meta,

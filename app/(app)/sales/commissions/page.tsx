@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
+import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
-import { PermissionGate } from "@/components/permission-gate";
 import {
-  FrappeFilterBar,
-  FrappeButtonLink,
-} from "@/components/frappe";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
+import { PermissionGate } from "@/components/permission-gate";
+import { FrappeButtonLink } from "@/components/frappe";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   Select,
@@ -92,6 +93,22 @@ export default function SalesCommissionsPage() {
     );
   }, [rows, debouncedSearch]);
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        from !== firstDayOfMonthIso() ? from : "",
+        to !== todayIso() ? to : "",
+        soldByUserId,
+      ]),
+    [from, to, soldByUserId],
+  );
+
+  function resetFilters() {
+    setFrom(firstDayOfMonthIso());
+    setTo(todayIso());
+    setSoldByUserId("");
+  }
+
   return (
     <AppShell
       title="Sales commissions"
@@ -136,42 +153,35 @@ export default function SalesCommissionsPage() {
           rows={displayRows}
           loading={loading}
           filters={
-            <FrappeFilterBar className="items-end">
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search reps…"
-              />
-              <div className="grid gap-2">
-                <Label htmlFor="comm-from">From</Label>
-                <Input
-                  id="comm-from"
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="w-full sm:w-[160px]"
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search reps…"
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="comm-to">To</Label>
-                <Input
-                  id="comm-to"
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="w-full sm:w-[160px]"
-                />
-              </div>
+              </FilterField>
               {canFilterRep ? (
-                <div className="grid gap-2">
-                  <Label>Sales rep</Label>
+                <FilterField label="Sales rep">
                   <Select
                     value={soldByUserId || "__all__"}
                     onValueChange={(v) =>
                       setSoldByUserId(v === "__all__" ? "" : v)
                     }
                   >
-                    <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectTrigger className="h-10 w-full rounded-xl">
                       <SelectValue placeholder="All reps" />
                     </SelectTrigger>
                     <SelectContent>
@@ -183,9 +193,9 @@ export default function SalesCommissionsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FilterField>
               ) : null}
-            </FrappeFilterBar>
+            </TableFiltersSheet>
           }
           emptyTitle="No commission data"
           emptyDescription="No sales in this date range for the selected filters."

@@ -29,18 +29,16 @@ export function FrappePageHead({
         className
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
         <div className="min-w-0">
           {breadcrumbs && breadcrumbs.length > 0 ? (
-            <FrappeBreadcrumbs items={breadcrumbs} className="mb-1" />
+            <FrappeBreadcrumbs items={breadcrumbs} className="mb-1.5" />
           ) : null}
-          <h1 className="font-heading truncate text-xl font-semibold tracking-tight text-[var(--frappe-text)] sm:text-2xl">
+          <h1 className="font-heading truncate text-2xl font-semibold tracking-tight text-foreground">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-0.5 text-sm text-[var(--frappe-text-muted)]">
-              {subtitle}
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
         {actions ? (
@@ -84,7 +82,7 @@ export function FrappeFilterBar({
   return (
     <div
       className={cn(
-        "frappe-filter-bar flex min-w-0 flex-wrap items-center gap-2 [&_[data-slot=select-trigger]]:h-9 [&_[data-slot=select-trigger]]:rounded-lg",
+        "frappe-filter-bar flex min-w-0 flex-wrap items-center gap-2 [&_[data-slot=select-trigger]]:h-9 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:border-border/80 [&_[data-slot=select-trigger]]:bg-background [&_[data-slot=select-trigger]]:shadow-none",
         className
       )}
     >

@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import {
@@ -283,6 +287,72 @@ export default function CreditsPage() {
     supplierList.reload();
   };
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([from, to, status, source]),
+    [from, to, status, source],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setStatus("");
+    setSource("");
+  }
+
+  const creditsFilterToolbar = (
+    <TableFiltersSheet
+      activeCount={activeFilterCount}
+      onReset={resetFilters}
+    >
+      <FilterField label="Date range">
+        <DateRangeFilter
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          compact={false}
+        />
+      </FilterField>
+      <FilterField label="Status">
+        <Select
+          value={status || "__all__"}
+          onValueChange={(v) =>
+            setStatus(v === "__all__" ? "" : (v as CreditStatus))
+          }
+        >
+          <SelectTrigger className="h-10 w-full rounded-xl">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All statuses</SelectItem>
+            <SelectItem value="OPEN">Open</SelectItem>
+            <SelectItem value="PARTIAL">Partial</SelectItem>
+            <SelectItem value="PAID">Paid</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterField>
+      <FilterField label="Source">
+        <Select
+          value={source || "__all__"}
+          onValueChange={(v) =>
+            setSource(v === "__all__" ? "" : (v as CreditSource))
+          }
+        >
+          <SelectTrigger className="h-10 w-full rounded-xl">
+            <SelectValue placeholder="Source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All sources</SelectItem>
+            <SelectItem value={tab === "customers" ? "SALE" : "PURCHASE"}>
+              {tab === "customers" ? "From sale" : "From purchase"}
+            </SelectItem>
+            <SelectItem value="OPENING">Opening balance</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterField>
+    </TableFiltersSheet>
+  );
+
   return (
     <AppShell
       title="Credits"
@@ -338,55 +408,13 @@ export default function CreditsPage() {
               rows={customerList.rows}
               loading={customerList.loading}
               filters={
-                <FrappeFilterBar>
-                  <ListSearchField
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Search credits..."
-                  />
-                  <DateRangeFilter
-                    from={from}
-                    to={to}
-                    onFromChange={setFrom}
-                    onToChange={setTo}
-                  />
-                  <Select
-                    value={status || "__all__"}
-                    onValueChange={(v) =>
-                      setStatus(v === "__all__" ? "" : (v as CreditStatus))
-                    }
-                  >
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All statuses</SelectItem>
-                      <SelectItem value="OPEN">Open</SelectItem>
-                      <SelectItem value="PARTIAL">Partial</SelectItem>
-                      <SelectItem value="PAID">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={source || "__all__"}
-                    onValueChange={(v) =>
-                      setSource(v === "__all__" ? "" : (v as CreditSource))
-                    }
-                  >
-                    <SelectTrigger className="w-[170px]">
-                      <SelectValue placeholder="Source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All sources</SelectItem>
-                      <SelectItem
-                        value={tab === "customers" ? "SALE" : "PURCHASE"}
-                      >
-                        {tab === "customers" ? "From sale" : "From purchase"}
-                      </SelectItem>
-                      <SelectItem value="OPENING">Opening balance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FrappeFilterBar>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search credits..."
+                />
               }
+              toolbar={creditsFilterToolbar}
               emptyTitle="No customer credits"
               pagination={{
                 meta: customerList.meta,
@@ -431,55 +459,13 @@ export default function CreditsPage() {
               rows={supplierList.rows}
               loading={supplierList.loading}
               filters={
-                <FrappeFilterBar>
-                  <ListSearchField
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Search credits..."
-                  />
-                  <DateRangeFilter
-                    from={from}
-                    to={to}
-                    onFromChange={setFrom}
-                    onToChange={setTo}
-                  />
-                  <Select
-                    value={status || "__all__"}
-                    onValueChange={(v) =>
-                      setStatus(v === "__all__" ? "" : (v as CreditStatus))
-                    }
-                  >
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All statuses</SelectItem>
-                      <SelectItem value="OPEN">Open</SelectItem>
-                      <SelectItem value="PARTIAL">Partial</SelectItem>
-                      <SelectItem value="PAID">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={source || "__all__"}
-                    onValueChange={(v) =>
-                      setSource(v === "__all__" ? "" : (v as CreditSource))
-                    }
-                  >
-                    <SelectTrigger className="w-[170px]">
-                      <SelectValue placeholder="Source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All sources</SelectItem>
-                      <SelectItem
-                        value={tab === "customers" ? "SALE" : "PURCHASE"}
-                      >
-                        {tab === "customers" ? "From sale" : "From purchase"}
-                      </SelectItem>
-                      <SelectItem value="OPENING">Opening balance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FrappeFilterBar>
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search credits..."
+                />
               }
+              toolbar={creditsFilterToolbar}
               emptyTitle="No supplier credits"
               pagination={{
                 meta: supplierList.meta,

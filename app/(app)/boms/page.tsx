@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeButtonPrimary,
-  FrappeFilterBar,
-} from "@/components/frappe";
+import { FrappeButtonPrimary } from "@/components/frappe";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,15 @@ export default function BomsPage() {
     [debouncedSearch, isActive],
   );
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([isActive !== "true" ? isActive : ""]),
+    [isActive],
+  );
+
+  function resetFilters() {
+    setIsActive("true");
+  }
+
   return (
     <AppShell
       title="Bills of Materials"
@@ -66,23 +76,25 @@ export default function BomsPage() {
           rows={rows}
           loading={loading}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search BOMs…"
-              />
-              <div className="grid gap-2">
-                <Label className="text-sm text-[var(--frappe-text-muted)]">
-                  Status
-                </Label>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search BOMs?"
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Status">
                 <Select
                   value={isActive}
                   onValueChange={(v) =>
                     setIsActive(v as "all" | "true" | "false")
                   }
                 >
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="h-10 w-full rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -91,8 +103,8 @@ export default function BomsPage() {
                     <SelectItem value="all">All</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </FrappeFilterBar>
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No BOMs"
           emptyDescription="Create a bill of materials for a finished item."
@@ -118,12 +130,12 @@ export default function BomsPage() {
             {
               key: "finished",
               header: "Finished item",
-              cell: (r) => r.finishedItem?.description ?? "—",
+              cell: (r) => r.finishedItem?.description ?? "?",
             },
             {
               key: "version",
               header: "Version",
-              cell: (r) => r.version ?? "—",
+              cell: (r) => r.version ?? "?",
             },
             {
               key: "status",

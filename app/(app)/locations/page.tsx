@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MasterDataPage } from "@/components/master-data/master-data-page";
+import {
+  FilterField,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +24,15 @@ export default function LocationsPage() {
   const [type, setType] = useState<string>(ALL_TYPES);
   const [includeInactive, setIncludeInactive] = useState(false);
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        type !== ALL_TYPES ? type : "",
+        includeInactive,
+      ]),
+    [type, includeInactive]
+  );
+
   return (
     <MasterDataPage<Location>
       title="Locations"
@@ -31,14 +44,16 @@ export default function LocationsPage() {
         type: type === ALL_TYPES ? undefined : (type as LocationType),
         includeInactive: includeInactive || undefined,
       }}
+      filterActiveCount={activeFilterCount}
+      onResetFilters={() => {
+        setType(ALL_TYPES);
+        setIncludeInactive(false);
+      }}
       filterExtras={
         <>
-          <div className="grid gap-2">
-            <Label className="text-sm text-[var(--frappe-text-muted)]">
-              Type
-            </Label>
+          <FilterField label="Type">
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-9 w-[160px] border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
+              <SelectTrigger className="h-10 w-full rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -47,19 +62,19 @@ export default function LocationsPage() {
                 <SelectItem value="SHOWROOM">Showroom</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex items-center gap-2 self-end">
+          </FilterField>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+            <Label
+              htmlFor="locations-include-inactive"
+              className="text-sm font-medium"
+            >
+              Include inactive
+            </Label>
             <Switch
               id="locations-include-inactive"
               checked={includeInactive}
               onCheckedChange={setIncludeInactive}
             />
-            <Label
-              htmlFor="locations-include-inactive"
-              className="text-sm font-normal text-[var(--frappe-text)]"
-            >
-              Include inactive
-            </Label>
           </div>
         </>
       }

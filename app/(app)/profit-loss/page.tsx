@@ -5,9 +5,13 @@ import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar } from "@/components/frappe";
 import {
   Card,
   CardDescription,
@@ -69,6 +73,16 @@ export default function ProfitLossPage() {
     byItemRows,
   ]);
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([from, to]),
+    [from, to],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+  }
+
   return (
     <AppShell title="Profit & Loss">
       <PermissionGate permission="profit_loss.read" showDenied>
@@ -100,19 +114,27 @@ export default function ProfitLossPage() {
           rows={rows}
           loading={il}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search items…"
-              />
-              <DateRangeFilter
-                from={from}
-                to={to}
-                onFromChange={setFrom}
-                onToChange={setTo}
-              />
-            </FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search items…"
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No sales data"
           pagination={{

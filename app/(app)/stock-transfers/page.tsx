@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
@@ -11,11 +11,15 @@ import { QuickStockItemDialog } from "@/components/inventory/quick-stock-item-di
 import {
   FrappeButtonPrimary,
   FrappeField,
-  FrappeFilterBar,
   FrappeFormGrid,
 } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -91,6 +95,20 @@ export default function StockTransfersPage() {
       [from, to, debouncedSearch, status, fromLocationId, toLocationId],
     );
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([from, to, status, fromLocationId, toLocationId]),
+    [from, to, status, fromLocationId, toLocationId],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setStatus("");
+    setFromLocationId("");
+    setToLocationId("");
+  }
+
   return (
     <AppShell
       title="Stock Transfers"
@@ -106,69 +124,85 @@ export default function StockTransfersPage() {
           rows={rows}
           loading={loading}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search transfers..."
-              />
-              <DateRangeFilter
-                from={from}
-                to={to}
-                onFromChange={setFrom}
-                onToChange={setTo}
-              />
-              <Select
-                value={status || "__all__"}
-                onValueChange={(v) =>
-                  setStatus(v === "__all__" ? "" : (v as TransferStatus))
-                }
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All statuses</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={fromLocationId || "__all__"}
-                onValueChange={(v) =>
-                  setFromLocationId(v === "__all__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue placeholder="From location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">From any location</SelectItem>
-                  {(locations ?? []).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={toLocationId || "__all__"}
-                onValueChange={(v) => setToLocationId(v === "__all__" ? "" : v)}
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue placeholder="To location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">To any location</SelectItem>
-                  {(locations ?? []).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search transfers..."
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+              <FilterField label="Status">
+                <Select
+                  value={status || "__all__"}
+                  onValueChange={(v) =>
+                    setStatus(v === "__all__" ? "" : (v as TransferStatus))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All statuses</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="From location">
+                <Select
+                  value={fromLocationId || "__all__"}
+                  onValueChange={(v) =>
+                    setFromLocationId(v === "__all__" ? "" : v)
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="From location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">From any location</SelectItem>
+                    {(locations ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="To location">
+                <Select
+                  value={toLocationId || "__all__"}
+                  onValueChange={(v) =>
+                    setToLocationId(v === "__all__" ? "" : v)
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="To location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">To any location</SelectItem>
+                    {(locations ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No transfers"
           pagination={{

@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { EntitySelectField } from "@/components/shared/entity-select-field";
 import { QuickExpenseCategoryDialog } from "@/components/expenses/quick-expense-category-dialog";
@@ -83,6 +87,18 @@ export default function ExpensesPage() {
       [from, to, debouncedSearch, categoryId, bankAccountId],
     );
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters([from, to, categoryId, bankAccountId]),
+    [from, to, categoryId, bankAccountId],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setCategoryId("");
+    setBankAccountId("");
+  }
+
   return (
     <AppShell
       title="Expenses"
@@ -114,53 +130,67 @@ export default function ExpensesPage() {
           rows={rows}
           loading={loading}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search expenses..."
-              />
-              <DateRangeFilter
-                from={from}
-                to={to}
-                onFromChange={setFrom}
-                onToChange={setTo}
-              />
-              <Select
-                value={categoryId || "__all__"}
-                onValueChange={(v) => setCategoryId(v === "__all__" ? "" : v)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All categories</SelectItem>
-                  {(categories ?? []).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={bankAccountId || "__all__"}
-                onValueChange={(v) =>
-                  setBankAccountId(v === "__all__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-[190px]">
-                  <SelectValue placeholder="All accounts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All accounts</SelectItem>
-                  {bankAccountsForSelect(banks ?? []).map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {formatBankAccountLabel(b)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search expenses..."
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+              <FilterField label="Category">
+                <Select
+                  value={categoryId || "__all__"}
+                  onValueChange={(v) =>
+                    setCategoryId(v === "__all__" ? "" : v)
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All categories</SelectItem>
+                    {(categories ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Bank account">
+                <Select
+                  value={bankAccountId || "__all__"}
+                  onValueChange={(v) =>
+                    setBankAccountId(v === "__all__" ? "" : v)
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="All accounts" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All accounts</SelectItem>
+                    {bankAccountsForSelect(banks ?? []).map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {formatBankAccountLabel(b)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No expenses"
           pagination={{

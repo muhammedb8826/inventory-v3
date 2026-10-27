@@ -55,11 +55,8 @@ export function DataCardTable<T extends { id: string }>({
   emptyTitle?: string;
   emptyDescription?: string;
   pagination?: Omit<TablePaginationProps, "disabled"> & { disabled?: boolean };
-  /** Persist column visibility under this key (localStorage). */
   storageKey?: string;
-  /** Search + filters — rendered on the same row as Customize Columns. */
   filters?: React.ReactNode;
-  /** Extra controls on the right (beside Customize Columns). */
   toolbar?: React.ReactNode;
   loading?: boolean;
   className?: string;
@@ -105,17 +102,17 @@ export function DataCardTable<T extends { id: string }>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-[var(--frappe-shadow)]",
+        "overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm",
         className
       )}
     >
       {hasToolbar ? (
-        <div className="flex flex-col gap-3 border-b border-[var(--frappe-border)] px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+        <div className="flex flex-col gap-3 border-b border-border/60 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             {filters}
           </div>
           {(toolbar || columnMenu) && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               {toolbar}
               {columnMenu}
             </div>
@@ -124,20 +121,20 @@ export function DataCardTable<T extends { id: string }>({
       ) : null}
 
       {loading ? (
-        <div className="p-8">
+        <div className="p-10">
           <PageLoading />
         </div>
       ) : list.length === 0 ? (
-        <div className="p-6 sm:p-8">
+        <div className="p-8 sm:p-10">
           <EmptyState title={emptyTitle} description={emptyDescription} />
         </div>
       ) : (
         <>
-          <div className="space-y-3 p-3 md:hidden">
+          <div className="space-y-2.5 p-3 md:hidden">
             {list.map((row) => (
               <article
                 key={row.id}
-                className="rounded-xl border border-[var(--frappe-border)] bg-muted/30 p-4"
+                className="rounded-xl border border-border/70 bg-muted/20 p-4"
               >
                 <dl className="space-y-2.5">
                   {mobileColumns.map((col) => (
@@ -145,7 +142,7 @@ export function DataCardTable<T extends { id: string }>({
                       key={col.key}
                       className="flex items-start justify-between gap-3"
                     >
-                      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      <dt className="shrink-0 text-xs font-medium text-muted-foreground">
                         {col.header || col.key}
                       </dt>
                       <dd className="min-w-0 text-right text-sm text-foreground">
@@ -161,12 +158,12 @@ export function DataCardTable<T extends { id: string }>({
           <div className="hidden md:block">
             <Table className="min-w-full">
               <TableHeader>
-                <TableRow className="border-b border-[var(--frappe-border)] hover:bg-transparent">
+                <TableRow className="border-0 hover:bg-transparent">
                   {visibleColumns.map((col, index) => (
                     <TableHead
                       key={col.key}
                       className={cn(
-                        "h-12 bg-muted/50 px-4 text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground",
+                        "h-11 border-b border-border/60 bg-muted/40 px-4 text-[13px] font-medium text-muted-foreground",
                         index === 0 && "pl-5",
                         index === visibleColumns.length - 1 && "pr-5",
                         isRightAligned(col.className) && "text-right",
@@ -182,13 +179,13 @@ export function DataCardTable<T extends { id: string }>({
                 {list.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="border-b border-[var(--frappe-border)]/70 transition-colors last:border-0 hover:bg-muted/35"
+                    className="border-b border-border/50 transition-colors last:border-b-0 hover:bg-muted/25"
                   >
                     {visibleColumns.map((col, index) => (
                       <TableCell
                         key={col.key}
                         className={cn(
-                          "px-4 py-3.5 text-sm text-foreground",
+                          "border-0 px-4 py-4 text-[13px] text-foreground",
                           index === 0 && "pl-5",
                           index === visibleColumns.length - 1 && "pr-5",
                           isRightAligned(col.className) && "text-right",

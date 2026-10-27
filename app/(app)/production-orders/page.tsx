@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeButtonPrimary,
-  FrappeFilterBar,
-} from "@/components/frappe";
+import { FrappeButtonPrimary } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -60,6 +61,24 @@ export default function ProductionOrdersPage() {
       [debouncedSearch, status, locationId, from, to],
     );
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        status,
+        locationId !== ALL ? locationId : "",
+        from,
+        to,
+      ]),
+    [status, locationId, from, to],
+  );
+
+  function resetFilters() {
+    setStatus("");
+    setLocationId(ALL);
+    setFrom("");
+    setTo("");
+  }
+
   return (
     <AppShell
       title="Production Orders"
@@ -85,18 +104,20 @@ export default function ProductionOrdersPage() {
           rows={rows}
           loading={loading}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search orders…"
-              />
-              <div className="grid gap-2">
-                <Label className="text-sm text-[var(--frappe-text-muted)]">
-                  Location
-                </Label>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search orders?"
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Location">
                 <Select value={locationId} onValueChange={setLocationId}>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger className="h-10 w-full rounded-xl">
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
                   <SelectContent>
@@ -108,18 +129,15 @@ export default function ProductionOrdersPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm text-[var(--frappe-text-muted)]">
-                  Status
-                </Label>
+              </FilterField>
+              <FilterField label="Status">
                 <Select
                   value={status || ALL}
                   onValueChange={(v) =>
                     setStatus(v === ALL ? "" : (v as ProductionOrderStatus))
                   }
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="h-10 w-full rounded-xl">
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
@@ -131,14 +149,17 @@ export default function ProductionOrdersPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <DateRangeFilter
-                from={from}
-                to={to}
-                onFromChange={setFrom}
-                onToChange={setTo}
-              />
-            </FrappeFilterBar>
+              </FilterField>
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No production orders"
           emptyDescription="Create an order from an active BOM."
@@ -157,14 +178,14 @@ export default function ProductionOrdersPage() {
                   href={`/production-orders/${r.id}`}
                   className="font-medium text-[var(--frappe-primary)] hover:underline"
                 >
-                  {r.id.slice(0, 8)}…
+                  {r.id.slice(0, 8)}?
                 </Link>
               ),
             },
             {
               key: "bom",
               header: "BOM",
-              cell: (r) => r.bom?.name ?? "—",
+              cell: (r) => r.bom?.name ?? "?",
             },
             {
               key: "finished",
@@ -172,12 +193,12 @@ export default function ProductionOrdersPage() {
               cell: (r) =>
                 r.finishedItem?.description ??
                 r.bom?.finishedItem?.description ??
-                "—",
+                "?",
             },
             {
               key: "location",
               header: "Location",
-              cell: (r) => r.location?.name ?? "—",
+              cell: (r) => r.location?.name ?? "?",
             },
             {
               key: "qty",

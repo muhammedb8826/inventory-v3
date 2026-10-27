@@ -6,11 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeFilterBar,
-  FrappeButtonPrimary,
-  FrappeButtonLink,
-} from "@/components/frappe";
+import { FrappeButtonPrimary, FrappeButtonLink } from "@/components/frappe";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +36,11 @@ import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { ListSummaryCards } from "@/components/shared/list-summary-cards";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import {
@@ -128,6 +129,38 @@ export default function SalesPage() {
     ]
   );
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        from,
+        to,
+        includeVoided,
+        customerId,
+        locationId,
+        paymentMethod,
+        soldByUserId,
+      ]),
+    [
+      from,
+      to,
+      includeVoided,
+      customerId,
+      locationId,
+      paymentMethod,
+      soldByUserId,
+    ]
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setIncludeVoided(false);
+    setCustomerId("");
+    setLocationId("");
+    setPaymentMethod("");
+    setSoldByUserId("");
+  }
+
   return (
     <AppShell
       title="Sales Invoice"
@@ -160,24 +193,28 @@ export default function SalesPage() {
                 value: meta.total.toLocaleString(),
                 icon: ReceiptIcon,
                 tone: "slate",
+                badge: { label: "Invoices", tone: "muted" },
               },
               {
                 label: "Subtotal",
                 value: formatMoney(totals?.subtotal ?? 0),
                 icon: WalletIcon,
                 tone: "sky",
+                badge: { label: "Before tax", tone: "info" },
               },
               {
                 label: "Total",
                 value: formatMoney(totals?.total ?? 0),
                 icon: WalletIcon,
                 tone: "teal",
+                badge: { label: "Collected", tone: "success" },
               },
               {
                 label: "Commission",
                 value: formatMoney(totals?.commission ?? 0),
                 icon: BadgePercentIcon,
                 tone: "violet",
+                badge: { label: "Reps", tone: "info" },
               },
             ]}
           />
@@ -188,100 +225,119 @@ export default function SalesPage() {
             emptyTitle="Nothing to show"
             emptyDescription="Create your first sale invoice."
             filters={
-              <FrappeFilterBar>
-                <ListSearchField
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search sales..."
-                />
-                <DateRangeFilter
-                  from={from}
-                  to={to}
-                  onFromChange={setFrom}
-                  onToChange={setTo}
-                />
-                <div className="flex items-center gap-2">
+              <ListSearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Search sales..."
+              />
+            }
+            toolbar={
+              <TableFiltersSheet
+                activeCount={activeFilterCount}
+                onReset={resetFilters}
+              >
+                <FilterField label="Date range">
+                  <DateRangeFilter
+                    from={from}
+                    to={to}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                    compact={false}
+                  />
+                </FilterField>
+                <FilterField label="Customer">
+                  <Select
+                    value={customerId || "__all__"}
+                    onValueChange={(v) =>
+                      setCustomerId(v === "__all__" ? "" : v)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectValue placeholder="All customers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All customers</SelectItem>
+                      {(customers ?? []).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                <FilterField label="Location">
+                  <Select
+                    value={locationId || "__all__"}
+                    onValueChange={(v) =>
+                      setLocationId(v === "__all__" ? "" : v)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectValue placeholder="All locations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All locations</SelectItem>
+                      {(locations ?? []).map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                <FilterField label="Payment method">
+                  <Select
+                    value={paymentMethod || "__all__"}
+                    onValueChange={(v) =>
+                      setPaymentMethod(
+                        v === "__all__" ? "" : (v as PaymentMethod)
+                      )
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectValue placeholder="All payments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">All payments</SelectItem>
+                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="BANK">Bank</SelectItem>
+                      <SelectItem value="CREDIT">Credit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                {canOnBehalf ? (
+                  <FilterField label="Sales rep">
+                    <Select
+                      value={soldByUserId || "__all__"}
+                      onValueChange={(v) =>
+                        setSoldByUserId(v === "__all__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="h-10 w-full rounded-xl">
+                        <SelectValue placeholder="All reps" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">All reps</SelectItem>
+                        {activeUsers.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.fullName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FilterField>
+                ) : null}
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                  <Label htmlFor="include-voided" className="text-sm font-medium">
+                    Include voided
+                  </Label>
                   <Switch
                     id="include-voided"
                     checked={includeVoided}
                     onCheckedChange={setIncludeVoided}
                   />
-                  <Label
-                    htmlFor="include-voided"
-                    className="text-sm font-normal"
-                  >
-                    Include voided
-                  </Label>
                 </div>
-                <Select
-                  value={customerId || "__all__"}
-                  onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
-                >
-                  <SelectTrigger className="h-9 w-[190px]">
-                    <SelectValue placeholder="All customers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All customers</SelectItem>
-                    {(customers ?? []).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={locationId || "__all__"}
-                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
-                >
-                  <SelectTrigger className="h-9 w-[170px]">
-                    <SelectValue placeholder="All locations" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All locations</SelectItem>
-                    {(locations ?? []).map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={paymentMethod || "__all__"}
-                  onValueChange={(v) =>
-                    setPaymentMethod(v === "__all__" ? "" : (v as PaymentMethod))
-                  }
-                >
-                  <SelectTrigger className="h-9 w-[150px]">
-                    <SelectValue placeholder="Payment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All payments</SelectItem>
-                    <SelectItem value="CASH">Cash</SelectItem>
-                    <SelectItem value="BANK">Bank</SelectItem>
-                    <SelectItem value="CREDIT">Credit</SelectItem>
-                  </SelectContent>
-                </Select>
-                {canOnBehalf ? (
-                  <Select
-                    value={soldByUserId || "__all__"}
-                    onValueChange={(v) =>
-                      setSoldByUserId(v === "__all__" ? "" : v)
-                    }
-                  >
-                    <SelectTrigger className="h-9 w-[200px]">
-                      <SelectValue placeholder="All reps" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All reps</SelectItem>
-                      {activeUsers.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-              </FrappeFilterBar>
+              </TableFiltersSheet>
             }
             pagination={{
               meta,

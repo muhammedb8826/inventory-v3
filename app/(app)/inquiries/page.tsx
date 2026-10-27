@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,6 +135,41 @@ export default function InquiriesPage() {
     }
   }
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        from,
+        to,
+        status,
+        source,
+        priority,
+        assignmentStatus,
+        customerId,
+        assignedToUserId,
+      ]),
+    [
+      from,
+      to,
+      status,
+      source,
+      priority,
+      assignmentStatus,
+      customerId,
+      assignedToUserId,
+    ],
+  );
+
+  function resetFilters() {
+    setFrom("");
+    setTo("");
+    setStatus("");
+    setSource("");
+    setPriority("");
+    setAssignmentStatus("");
+    setCustomerId("");
+    setAssignedToUserId("");
+  }
+
   if (authLoading) {
     return (
       <AppShell title="Inquiries">
@@ -172,124 +211,144 @@ export default function InquiriesPage() {
           rows={rows}
           loading={loading}
           filters={
-            <FrappeFilterBar>
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search name, phone, email, subject…"
-              />
-              <DateRangeFilter
-                from={from}
-                to={to}
-                onFromChange={setFrom}
-                onToChange={setTo}
-              />
-              <Select
-                value={status || "__all__"}
-                onValueChange={(v) =>
-                  setStatus(v === "__all__" ? "" : (v as InquiryStatus))
-                }
-              >
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All statuses</SelectItem>
-                  {INQUIRY_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s.replaceAll("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={source || "__all__"}
-                onValueChange={(v) =>
-                  setSource(v === "__all__" ? "" : (v as InquirySource))
-                }
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All sources</SelectItem>
-                  <SelectItem value="PUBLIC">Public</SelectItem>
-                  <SelectItem value="INTERNAL">Internal</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={priority || "__all__"}
-                onValueChange={(v) =>
-                  setPriority(v === "__all__" ? "" : (v as InquiryPriority))
-                }
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All priorities</SelectItem>
-                  {INQUIRY_PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={assignmentStatus || "__all__"}
-                onValueChange={(v) =>
-                  setAssignmentStatus(
-                    v === "__all__" ? "" : (v as InquiryAssignmentStatus),
-                  )
-                }
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue placeholder="Assignment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All assignments</SelectItem>
-                  {INQUIRY_ASSIGNMENT_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s.replaceAll("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={customerId || "__all__"}
-                onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All customers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All customers</SelectItem>
-                  {(customers ?? []).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={assignedToUserId || "__all__"}
-                onValueChange={(v) =>
-                  setAssignedToUserId(v === "__all__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Anyone assigned" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Anyone assigned</SelectItem>
-                  {(users ?? []).map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.fullName || u.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FrappeFilterBar>
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search name, phone, email, subject…"
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+              <FilterField label="Status">
+                <Select
+                  value={status || "__all__"}
+                  onValueChange={(v) =>
+                    setStatus(v === "__all__" ? "" : (v as InquiryStatus))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All statuses</SelectItem>
+                    {INQUIRY_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Source">
+                <Select
+                  value={source || "__all__"}
+                  onValueChange={(v) =>
+                    setSource(v === "__all__" ? "" : (v as InquirySource))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All sources</SelectItem>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="INTERNAL">Internal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Priority">
+                <Select
+                  value={priority || "__all__"}
+                  onValueChange={(v) =>
+                    setPriority(v === "__all__" ? "" : (v as InquiryPriority))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All priorities</SelectItem>
+                    {INQUIRY_PRIORITIES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Assignment">
+                <Select
+                  value={assignmentStatus || "__all__"}
+                  onValueChange={(v) =>
+                    setAssignmentStatus(
+                      v === "__all__" ? "" : (v as InquiryAssignmentStatus),
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Assignment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All assignments</SelectItem>
+                    {INQUIRY_ASSIGNMENT_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Customer">
+                <Select
+                  value={customerId || "__all__"}
+                  onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="All customers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All customers</SelectItem>
+                    {(customers ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Assigned to">
+                <Select
+                  value={assignedToUserId || "__all__"}
+                  onValueChange={(v) =>
+                    setAssignedToUserId(v === "__all__" ? "" : v)
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectValue placeholder="Anyone assigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Anyone assigned</SelectItem>
+                    {(users ?? []).map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.fullName || u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+            </TableFiltersSheet>
           }
           emptyTitle="No inquiries"
           emptyDescription="Public website forms and walk-in leads will show up here."

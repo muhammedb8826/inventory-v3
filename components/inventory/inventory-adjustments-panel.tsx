@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
-import { FrappeFilterBar } from "@/components/frappe";
+import {
+  FilterField,
+  TableFiltersSheet,
+  countActiveFilters,
+} from "@/components/shared/table-filters-sheet";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -60,6 +64,26 @@ export function InventoryAdjustmentsPanel() {
       [locationId, direction, reason, debouncedSearch, from, to]
     );
 
+  const activeFilterCount = useMemo(
+    () =>
+      countActiveFilters([
+        locationId !== ALL ? locationId : "",
+        direction,
+        reason,
+        from,
+        to,
+      ]),
+    [locationId, direction, reason, from, to]
+  );
+
+  function resetFilters() {
+    setLocationId(ALL);
+    setDirection("");
+    setReason("");
+    setFrom("");
+    setTo("");
+  }
+
   return (
     <DataCardTable
       storageKey="inventory-adjustments"
@@ -68,65 +92,79 @@ export function InventoryAdjustmentsPanel() {
       emptyTitle="No adjustments"
       emptyDescription="Post an adjustment from a stock row to change quantity with an audit trail."
       filters={
-        <FrappeFilterBar>
-          <Select value={locationId} onValueChange={setLocationId}>
-            <SelectTrigger className="h-9 w-[200px]">
-              <SelectValue placeholder="All locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All locations</SelectItem>
-              {(locations ?? []).map((loc) => (
-                <SelectItem key={loc.id} value={loc.id}>
-                  {loc.name} ({loc.type})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={direction || ALL}
-            onValueChange={(v) =>
-              setDirection(v === ALL ? "" : (v as StockAdjustmentDirection))
-            }
-          >
-            <SelectTrigger className="h-9 w-[120px]">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All</SelectItem>
-              <SelectItem value="in">In</SelectItem>
-              <SelectItem value="out">Out</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={reason || ALL}
-            onValueChange={(v) =>
-              setReason(v === ALL ? "" : (v as StockAdjustmentReason))
-            }
-          >
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue placeholder="All reasons" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All reasons</SelectItem>
-              {STOCK_ADJUSTMENT_REASON_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <ListSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search notes or reference…"
-          />
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-        </FrappeFilterBar>
+        <ListSearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Search notes or reference…"
+        />
+      }
+      toolbar={
+        <TableFiltersSheet
+          activeCount={activeFilterCount}
+          onReset={resetFilters}
+        >
+          <FilterField label="Location">
+            <Select value={locationId} onValueChange={setLocationId}>
+              <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All locations</SelectItem>
+                {(locations ?? []).map((loc) => (
+                  <SelectItem key={loc.id} value={loc.id}>
+                    {loc.name} ({loc.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+          <FilterField label="Direction">
+            <Select
+              value={direction || ALL}
+              onValueChange={(v) =>
+                setDirection(v === ALL ? "" : (v as StockAdjustmentDirection))
+              }
+            >
+              <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All</SelectItem>
+                <SelectItem value="in">In</SelectItem>
+                <SelectItem value="out">Out</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterField>
+          <FilterField label="Reason">
+            <Select
+              value={reason || ALL}
+              onValueChange={(v) =>
+                setReason(v === ALL ? "" : (v as StockAdjustmentReason))
+              }
+            >
+              <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectValue placeholder="All reasons" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All reasons</SelectItem>
+                {STOCK_ADJUSTMENT_REASON_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+          <FilterField label="Date range">
+            <DateRangeFilter
+              from={from}
+              to={to}
+              onFromChange={setFrom}
+              onToChange={setTo}
+              compact={false}
+            />
+          </FilterField>
+        </TableFiltersSheet>
       }
       pagination={{
         meta,
