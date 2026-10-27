@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  FrappeDocument,
-  FrappeFormGrid,
-  FrappeSection,
-  FrappeButtonLink,
-} from "@/components/frappe";
+  FormGrid,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { SaleDocumentActions } from "@/components/transactions/document-actions";
 import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { documentTotal } from "@/lib/document-utils";
@@ -30,18 +30,16 @@ function DetailField({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="text-xs font-medium text-[var(--frappe-text-muted)]">
-        {label}
-      </p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       {href ? (
         <Link
           href={href}
-          className="text-sm font-medium text-[var(--frappe-primary)] hover:underline"
+          className="text-sm font-medium text-primary hover:underline"
         >
           {value}
         </Link>
       ) : (
-        <p className="text-sm text-[var(--frappe-text)]">{value}</p>
+        <p className="text-sm text-foreground">{value}</p>
       )}
     </div>
   );
@@ -67,15 +65,19 @@ export function SaleDetail({ sale }: { sale: Sale }) {
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FrappeButtonLink href="/sales">← Back to list</FrappeButtonLink>
-        <FrappeButtonLink
-          href={inventoryMovementsHref({
-            refType: "sale",
-            refId: sale.id,
-          })}
-        >
-          Stock movements
-        </FrappeButtonLink>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link href="/sales">← Back to list</Link>
+        </Button>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link
+            href={inventoryMovementsHref({
+              refType: "sale",
+              refId: sale.id,
+            })}
+          >
+            Stock movements
+          </Link>
+        </Button>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {isVoided ? (
             <Badge variant="secondary">Voided</Badge>
@@ -86,8 +88,8 @@ export function SaleDetail({ sale }: { sale: Sale }) {
         </div>
       </div>
 
-      <FrappeDocument>
-        <FrappeSection
+      <PageFormCard>
+        <PageFormSection
           title="Sales invoice"
           description={
             sale.createdAt
@@ -95,7 +97,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
               : undefined
           }
         >
-          <FrappeFormGrid columns={2}>
+          <FormGrid>
             <DetailField
               label="Customer"
               value={sale.customer?.name ?? "—"}
@@ -171,58 +173,62 @@ export function SaleDetail({ sale }: { sale: Sale }) {
                 <DetailField label="Notes" value={sale.notes} />
               </div>
             ) : null}
-          </FrappeFormGrid>
-        </FrappeSection>
+          </FormGrid>
+        </PageFormSection>
 
-        <FrappeSection
+        <PageFormSection
           title="Items"
           description={`${lines.length} line${lines.length === 1 ? "" : "s"}`}
         >
           {lines.length === 0 ? (
-            <p className="text-sm text-[var(--frappe-text-muted)]">
+            <p className="text-sm text-muted-foreground">
               No line items on this sale.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="frappe-list-table">
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>SKU</th>
-                    <th className="text-right tabular-nums">Qty</th>
-                    <th className="text-right tabular-nums">Rate</th>
-                    <th className="text-right tabular-nums">Amount</th>
+                  <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+                    <th className="px-4 py-2.5">Item</th>
+                    <th className="px-4 py-2.5">SKU</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">Qty</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">Rate</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Amount
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y">
                   {lines.map((line, i) => (
                     <tr key={line.id ?? `${line.itemId}-${i}`}>
-                      <td>{line.item?.description ?? line.itemId}</td>
-                      <td className="text-[var(--frappe-text-muted)]">
+                      <td className="px-4 py-2.5">
+                        {line.item?.description ?? line.itemId}
+                      </td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
                         {line.item?.sku ?? "—"}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatQty(line.quantity)}
                         {line.item?.unit ? ` ${line.item.unit}` : ""}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatMoney(line.unitPrice)}
                       </td>
-                      <td className="text-right tabular-nums font-medium">
+                      <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                         {formatMoney(lineAmount(line))}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[var(--frappe-section-head)]">
+                  <tr className="border-t bg-muted/20">
                     <td
                       colSpan={4}
-                      className="px-3 py-2 text-right text-xs font-semibold uppercase text-[var(--frappe-text-muted)]"
+                      className="px-4 py-2.5 text-right text-xs font-semibold uppercase text-muted-foreground"
                     >
                       Total
                     </td>
-                    <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums">
+                    <td className="px-4 py-2.5 text-right text-sm font-semibold tabular-nums">
                       {formatMoney(documentTotal(sale))}
                     </td>
                   </tr>
@@ -230,8 +236,8 @@ export function SaleDetail({ sale }: { sale: Sale }) {
               </table>
             </div>
           )}
-        </FrappeSection>
-      </FrappeDocument>
+        </PageFormSection>
+      </PageFormCard>
     </div>
   );
 }

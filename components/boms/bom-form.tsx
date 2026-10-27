@@ -4,20 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ItemSearchSelect } from "@/components/shared/item-search-select";
 import {
-  FrappeButtonLink,
-  FrappeButtonPrimary,
-  FrappeDocument,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeFormToolbar,
-  FrappeGridCell,
-  FrappeGridRow,
-  FrappeGridTable,
-  FrappeSection,
-} from "@/components/frappe";
+  FormField,
+  FormGrid,
+  PageForm,
+  PageFormActions,
+  PageFormCancel,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
 import {
   fetchAllInventory,
@@ -27,7 +26,7 @@ import { errorMessage } from "@/lib/format";
 import type { Bom } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 
 interface BomLineRow {
   componentItemId: string;
@@ -53,14 +52,16 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const router = useRouter();
   const isEdit = !!bom?.id;
   const [finishedItemId, setFinishedItemId] = useState(
-    bom?.finishedItemId ?? ""
+    bom?.finishedItemId ?? "",
   );
   const [name, setName] = useState(bom?.name ?? "");
   const [version, setVersion] = useState(bom?.version ?? "1.0");
   const [notes, setNotes] = useState(bom?.notes ?? "");
   const [isActive, setIsActive] = useState(bom?.isActive !== false);
   const [lines, setLines] = useState<BomLineRow[]>(() =>
-    bom ? linesFromBom(bom) : [{ componentItemId: "", quantity: "1", scrapPercent: "" }]
+    bom
+      ? linesFromBom(bom)
+      : [{ componentItemId: "", quantity: "1", scrapPercent: "" }],
   );
   const [saving, setSaving] = useState(false);
 
@@ -82,7 +83,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
         bom.finishedItemId,
         bom.finishedItem.sku
           ? `${bom.finishedItem.description} (${bom.finishedItem.sku})`
-          : bom.finishedItem.description
+          : bom.finishedItem.description,
       );
     }
     for (const line of bom?.lines ?? []) {
@@ -91,7 +92,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
         line.componentItemId,
         line.componentItem.sku
           ? `${line.componentItem.description} (${line.componentItem.sku})`
-          : line.componentItem.description
+          : line.componentItem.description,
       );
     }
     return options;
@@ -99,7 +100,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
 
   function updateLine(index: number, patch: Partial<BomLineRow>) {
     setLines((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, ...patch } : row))
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
     );
   }
 
@@ -190,29 +191,23 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const cancelHref = isEdit && bom ? `/boms/${bom.id}` : "/boms";
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-5xl">
-      <FrappeFormToolbar>
-        <FrappeButtonPrimary type="submit" disabled={saving}>
-          {saving ? <Spinner className="size-4" /> : "Save"}
-        </FrappeButtonPrimary>
-        <FrappeButtonLink href={cancelHref}>Cancel</FrappeButtonLink>
-      </FrappeFormToolbar>
-
-      <FrappeDocument>
-        <FrappeSection
-          title="BOM header"
-          description="Finished good and version identity"
+    <PageForm onSubmit={handleSubmit} maxWidth="max-w-4xl">
+      <PageFormCard>
+        <PageFormSection
+          title="BOM"
+          description="Finished good identity and version."
         >
-          <FrappeFormGrid columns={2}>
-            <FrappeField label="Name" required fullWidth>
+          <FormGrid>
+            <FormField label="Name" required className="sm:col-span-2">
               <Input
+                className="h-10"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Standard chair"
                 required
               />
-            </FrappeField>
-            <FrappeField label="Finished item" required>
+            </FormField>
+            <FormField label="Finished item" required className="sm:col-span-2">
               <ItemSearchSelect
                 value={finishedItemId}
                 onValueChange={setFinishedItemId}
@@ -221,67 +216,55 @@ export function BomForm({ bom }: { bom?: Bom }) {
                 searchPlaceholder="Search item…"
                 disabled={isEdit}
               />
-            </FrappeField>
-            <FrappeField label="Version">
+            </FormField>
+            <FormField label="Version">
               <Input
+                className="h-10"
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="1.0"
               />
-            </FrappeField>
+            </FormField>
             {isEdit ? (
-              <FrappeField label="Active">
-                <div className="flex h-8 items-center gap-2">
+              <FormField label="Status">
+                <div className="flex h-10 items-center gap-2">
                   <Switch checked={isActive} onCheckedChange={setIsActive} />
                   <Label className="text-sm font-normal">
                     {isActive ? "Active" : "Inactive"}
                   </Label>
                 </div>
-              </FrappeField>
+              </FormField>
             ) : (
-              <div className="hidden md:block" />
+              <div className="hidden sm:block" />
             )}
-            <FrappeField label="Notes" fullWidth>
+            <FormField label="Notes" className="sm:col-span-2">
               <Input
+                className="h-10"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional"
               />
-            </FrappeField>
-          </FrappeFormGrid>
-        </FrappeSection>
+            </FormField>
+          </FormGrid>
+        </PageFormSection>
 
-        <FrappeSection
+        <PageFormSection
           title="Components"
           description="Quantities are per 1 finished unit. Scrap % increases required material."
         >
-          <FrappeGridTable
-            columns={[
-              { key: "component", label: "Component" },
-              { key: "qty", label: "Qty / FG", className: "w-28" },
-              { key: "scrap", label: "Scrap %", className: "w-28" },
-            ]}
-            onAddRow={() =>
-              setLines((prev) => [
-                ...prev,
-                { componentItemId: "", quantity: "1", scrapPercent: "" },
-              ])
-            }
-            addLabel="Add component"
-          >
-            {lines.map((line, index) => (
-              <FrappeGridRow
-                key={index}
-                canRemove={lines.length > 1}
-                onRemove={() =>
-                  setLines((prev) =>
-                    prev.length <= 1
-                      ? prev
-                      : prev.filter((_, i) => i !== index)
-                  )
-                }
-              >
-                <FrappeGridCell>
+          <div className="overflow-hidden rounded-xl border">
+            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+              <span>Component</span>
+              <span>Qty / FG</span>
+              <span>Scrap %</span>
+              <span className="sr-only">Remove</span>
+            </div>
+            <div className="divide-y">
+              {lines.map((line, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_2.5rem] sm:items-center"
+                >
                   <ItemSearchSelect
                     value={line.componentItemId}
                     onValueChange={(componentItemId) =>
@@ -291,37 +274,74 @@ export function BomForm({ bom }: { bom?: Bom }) {
                     placeholder="Select component…"
                     searchPlaceholder="Search component…"
                   />
-                </FrappeGridCell>
-                <FrappeGridCell>
                   <Input
                     type="number"
                     step="any"
                     min="0"
+                    className="h-10"
                     value={line.quantity}
                     onChange={(e) =>
                       updateLine(index, { quantity: e.target.value })
                     }
-                    className="h-8"
                   />
-                </FrappeGridCell>
-                <FrappeGridCell>
                   <Input
                     type="number"
                     step="any"
                     min="0"
+                    className="h-10"
                     value={line.scrapPercent}
                     onChange={(e) =>
                       updateLine(index, { scrapPercent: e.target.value })
                     }
                     placeholder="0"
-                    className="h-8"
                   />
-                </FrappeGridCell>
-              </FrappeGridRow>
-            ))}
-          </FrappeGridTable>
-        </FrappeSection>
-      </FrappeDocument>
-    </form>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-9 text-muted-foreground hover:text-destructive"
+                    disabled={lines.length === 1}
+                    onClick={() =>
+                      setLines((prev) =>
+                        prev.length <= 1
+                          ? prev
+                          : prev.filter((_, i) => i !== index),
+                      )
+                    }
+                    aria-label="Remove line"
+                  >
+                    <Trash2Icon className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t bg-muted/20 px-3 py-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-primary"
+                onClick={() =>
+                  setLines((prev) => [
+                    ...prev,
+                    { componentItemId: "", quantity: "1", scrapPercent: "" },
+                  ])
+                }
+              >
+                <PlusIcon className="size-4" />
+                Add component
+              </Button>
+            </div>
+          </div>
+        </PageFormSection>
+      </PageFormCard>
+
+      <PageFormActions>
+        <PageFormCancel href={cancelHref} />
+        <Button type="submit" disabled={saving} className="min-w-28">
+          {saving ? <Spinner className="size-4" /> : "Save"}
+        </Button>
+      </PageFormActions>
+    </PageForm>
   );
 }

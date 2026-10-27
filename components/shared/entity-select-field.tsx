@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FrappeField } from "@/components/frappe";
+import { FormField } from "@/components/shared/page-form";
 import { SearchSelect } from "@/components/shared/search-select";
 import { cn } from "@/lib/utils";
 
@@ -53,19 +53,21 @@ export function EntitySelectField({
   const hasOptions = options.length > 0;
   const emptyHint =
     hint ??
-    (hasOptions ? undefined : `No ${label.toLowerCase()} yet — create one or open the list.`);
+    (hasOptions
+      ? undefined
+      : `No ${label.toLowerCase()} yet — create one or open the list.`);
 
   return (
-    <FrappeField
+    <FormField
       label={label}
       required={required}
-      fullWidth={fullWidth}
       hint={emptyHint}
+      className={fullWidth ? "sm:col-span-2" : undefined}
     >
       <div
         className={cn(
           "flex flex-col gap-2",
-          !stackedActions && "sm:flex-row sm:items-center"
+          !stackedActions && "sm:flex-row sm:items-center",
         )}
       >
         <SearchSelect
@@ -94,17 +96,17 @@ export function EntitySelectField({
           {quickCreate}
           <Link
             href={listHref}
-            className="text-xs text-[var(--frappe-text-muted)] hover:text-[var(--frappe-primary)] hover:underline"
+            className="text-xs text-muted-foreground hover:text-primary hover:underline"
           >
             {listLabel}
           </Link>
         </div>
       </div>
       {!hasOptions && !loading ? (
-        <div className="mt-2 rounded border border-dashed border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-3 py-2 text-xs text-[var(--frappe-text-muted)]">
+        <div className="mt-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
           {emptyMessage}
         </div>
       ) : null}
-    </FrappeField>
+    </FormField>
   );
 }

@@ -2,17 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EntitySelectField } from "@/components/shared/entity-select-field";
 import {
-  FrappeButtonLink,
-  FrappeButtonPrimary,
-  FrappeDocument,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeFormToolbar,
-  FrappeSection,
-} from "@/components/frappe";
+  FormField,
+  FormGrid,
+  PageForm,
+  PageFormActions,
+  PageFormCancel,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
 import { fetchAllBoms } from "@/lib/bom-fetch";
 import { errorMessage } from "@/lib/format";
@@ -20,7 +28,6 @@ import type { ProductionOrder } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import { useLocations } from "@/hooks/use-locations";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 
 export function ProductionOrderForm() {
   const router = useRouter();
@@ -32,7 +39,7 @@ export function ProductionOrderForm() {
 
   const { data: boms, loading: bomsLoading } = useFetch(
     () => fetchAllBoms({ isActive: true }),
-    []
+    [],
   );
   const { data: locations, loading: locationsLoading } = useLocations();
 
@@ -80,51 +87,56 @@ export function ProductionOrderForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
-      <FrappeFormToolbar>
-        <FrappeButtonPrimary type="submit" disabled={saving}>
-          {saving ? <Spinner className="size-4" /> : "Create"}
-        </FrappeButtonPrimary>
-        <FrappeButtonLink href="/production-orders">Cancel</FrappeButtonLink>
-      </FrappeFormToolbar>
-
-      <FrappeDocument>
-        <FrappeSection
+    <PageForm onSubmit={handleSubmit}>
+      <PageFormCard>
+        <PageFormSection
           title="Production order"
-          description="BOM lines are snapshotted when the order is created"
+          description="BOM lines are snapshotted when the order is created."
         >
-          <FrappeFormGrid columns={2}>
-            <EntitySelectField
-              label="BOM"
-              required
-              fullWidth
-              value={bomId}
-              onValueChange={setBomId}
-              options={(boms ?? []).map((bom) => ({
-                id: bom.id,
-                label: bom.finishedItem?.description
-                  ? `${bom.name} — ${bom.finishedItem.description}`
-                  : bom.name,
-              }))}
-              listHref="/boms"
-              listLabel="All BOMs"
-              emptyMessage="Create an active BOM first."
-            />
-            <EntitySelectField
-              label="Location"
-              required
-              value={locationId}
-              onValueChange={setLocationId}
-              options={(locations ?? []).map((loc) => ({
-                id: loc.id,
-                label: `${loc.name} (${loc.type})`,
-              }))}
-              listHref="/locations"
-              listLabel="All locations"
-              emptyMessage="Add a warehouse or showroom first."
-            />
-            <FrappeField label="Quantity planned" required>
+          <FormGrid>
+            <FormField label="BOM" required className="sm:col-span-2">
+              <Select value={bomId || undefined} onValueChange={setBomId}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select BOM" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(boms ?? []).length === 0 ? (
+                    <SelectItem value="__none__" disabled>
+                      No active BOMs — create one first
+                    </SelectItem>
+                  ) : (
+                    (boms ?? []).map((bom) => (
+                      <SelectItem key={bom.id} value={bom.id}>
+                        {bom.finishedItem?.description
+                          ? `${bom.name} — ${bom.finishedItem.description}`
+                          : bom.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label="Location" required>
+              <Select
+                value={locationId || undefined}
+                onValueChange={setLocationId}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(locations ?? []).map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}
+                      {loc.type ? ` · ${loc.type}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label="Quantity planned" required>
               <Input
+                className="h-10"
                 type="number"
                 step="any"
                 min="0"
@@ -132,17 +144,25 @@ export function ProductionOrderForm() {
                 onChange={(e) => setQuantityPlanned(e.target.value)}
                 required
               />
-            </FrappeField>
-            <FrappeField label="Notes" fullWidth>
+            </FormField>
+            <FormField label="Notes" className="sm:col-span-2">
               <Input
+                className="h-10"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional"
               />
-            </FrappeField>
-          </FrappeFormGrid>
-        </FrappeSection>
-      </FrappeDocument>
-    </form>
+            </FormField>
+          </FormGrid>
+        </PageFormSection>
+      </PageFormCard>
+
+      <PageFormActions>
+        <PageFormCancel href="/production-orders" />
+        <Button type="submit" disabled={saving} className="min-w-28">
+          {saving ? <Spinner className="size-4" /> : "Create"}
+        </Button>
+      </PageFormActions>
+    </PageForm>
   );
 }

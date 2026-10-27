@@ -534,7 +534,7 @@ Interested catalog products are stored as **`lines`** (zero or many). Legacy sin
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/public/inquiries` | Submit from website / landing page (`/` or `/contact`) |
+| POST | `/public/inquiries` | Optional public API (no FE site in this app; staff use `/inquiries`) |
 
 **Body:** `contactName`, `subject`, `message` (required); at least one of `phone` / `email`; optional `lines` (`{ itemId, quantity?, notes? }[]`) or legacy `itemId`.
 
@@ -1215,7 +1215,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | UI route | Primary API |
 |----------|-------------|
 | `/login` | `POST /auth/login` |
-| `/`, `/contact` | Public customer site → `POST /public/inquiries` |
+| `/` | Redirects to `/login` |
 | `/account` | `PATCH /auth/me`, `PATCH /auth/me/password` |
 | `/dashboard` | `GET /dashboard` |
 | `/inventory` | `/inventory`, `/inventory/low-stock`, `/inventory/adjustments`, import |
@@ -1230,7 +1230,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `/profit-loss` | `/profit-loss/*` |
 | `/reports` | `/reports/*` |
 | `/locations`, `/suppliers`, `/customers` | master data + PATCH |
-| `/inquiries` | `/inquiries` (staff CRM); public form at `/` and `/contact` → `POST /public/inquiries` |
+| `/inquiries` | Staff CRM; create at `/inquiries/new` |
 | `/settings/branding` | `GET/PATCH /settings/branding`, `POST/DELETE /settings/branding/hero-image`; public `GET /public/branding` |
 | `/users`, `/roles` | admin CRUD |
 | `/notifications`, `/notifications/[id]` | in-app notification bell, list, and detail |

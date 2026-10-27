@@ -62,12 +62,19 @@ import { InventoryAdjustmentsPanel } from "@/components/inventory/inventory-adju
 import { InventoryMovementsPanel } from "@/components/inventory/inventory-movements-panel";
 import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { StockDetailDialog } from "@/components/inventory/stock-detail-dialog";
-import { StockFormDialog } from "@/components/inventory/stock-form-dialog";
+import Link from "next/link";
+import { FrappeButtonPrimary } from "@/components/frappe";
 import { StockLevelBar } from "@/components/inventory/stock-level-bar";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
-import { ImageIcon, UploadIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  ImageIcon,
+  UploadIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 const ALL_LOCATIONS = "__all__";
 const VIEW_ALL = "all";
@@ -197,11 +204,18 @@ export default function InventoryPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <PermissionGate permission="inventory.write">
-            <StockFormDialog
-              locationId={listLocationId ?? ""}
-              disabled={isAllLocations}
-              onSuccess={reload}
-            />
+            <FrappeButtonPrimary asChild>
+              <Link
+                href={
+                  listLocationId
+                    ? `/inventory/new?locationId=${listLocationId}`
+                    : "/inventory/new"
+                }
+              >
+                <PlusIcon className="size-3.5" />
+                Add item
+              </Link>
+            </FrappeButtonPrimary>
           </PermissionGate>
           <PermissionGate permission="inventory.read">
             <ExportInventoryButton
@@ -525,16 +539,14 @@ export default function InventoryPage() {
                         />
                       ) : null}
                       {hasPermission(user, "inventory.write") ? (
-                        <StockFormDialog
-                          locationId={r.locationId ?? listLocationId ?? ""}
-                          record={r}
-                          onSuccess={reload}
-                          trigger={
-                            <Button size="icon" variant="ghost">
-                              <PencilIcon className="size-4" />
-                            </Button>
-                          }
-                        />
+                        <Button size="icon" variant="ghost" asChild>
+                          <Link
+                            href={`/inventory/${r.id}/edit`}
+                            aria-label="Edit stock"
+                          >
+                            <PencilIcon className="size-4" />
+                          </Link>
+                        </Button>
                       ) : null}
                       {hasPermission(user, "inventory.delete") ? (
                         <DeleteStockButton id={r.id} onSuccess={reload} />

@@ -6,7 +6,7 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeButtonPrimary, FrappeField } from "@/components/frappe";
+import { FormField } from "@/components/shared/page-form";
 import { Button } from "@/components/ui/button";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
@@ -323,10 +323,10 @@ function RoleDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {mode === "create" ? (
-          <FrappeButtonPrimary type="button">
+          <Button type="button">
             <PlusIcon className="size-3.5" />
             Add role
-          </FrappeButtonPrimary>
+          </Button>
         ) : (
           <Button type="button" variant="ghost" size="icon" className="size-8">
             <PencilIcon className="size-4" />
@@ -336,11 +336,11 @@ function RoleDialog({
       </DialogTrigger>
       <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="shrink-0 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-5 py-4">
+          <DialogHeader className="shrink-0 border-b border-border bg-muted/40 px-5 py-4">
             <DialogTitle className="text-base font-semibold">
               {mode === "create" ? "New role" : `Edit ${role?.name}`}
             </DialogTitle>
-            <DialogDescription className="text-xs text-[var(--frappe-text-muted)]">
+            <DialogDescription className="text-xs text-muted-foreground">
               {mode === "create"
                 ? "Create a role and choose which permissions users with this role receive."
                 : "Update the role name, description, or permission set. Saving replaces all assigned permissions."}
@@ -349,40 +349,40 @@ function RoleDialog({
 
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden p-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <FrappeField label="Name" required>
+              <FormField label="Name" required>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Warehouse Manager"
                   required
                 />
-              </FrappeField>
-              <FrappeField label="Description">
+              </FormField>
+              <FormField label="Description">
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional summary"
                 />
-              </FrappeField>
+              </FormField>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-[var(--frappe-border)]">
-              <div className="border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="border-b border-border bg-muted/40 px-4 py-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--frappe-text)]">
+                    <p className="text-sm font-semibold text-foreground">
                       Permissions
                     </p>
-                    <p className="mt-0.5 text-xs text-[var(--frappe-text-muted)]">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {selectedCount} of {totalCount} selected
                     </p>
                   </div>
                   <div className="relative min-w-[180px] flex-1 sm:max-w-[240px]">
-                    <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-[var(--frappe-text-muted)]" />
+                    <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={permSearch}
                       onChange={(e) => setPermSearch(e.target.value)}
-                      placeholder="Search permissions�"
+                      placeholder="Search permissions…"
                       className="h-8 pl-9"
                     />
                   </div>
@@ -391,13 +391,13 @@ function RoleDialog({
 
               <div className="max-h-[min(40vh,320px)] overflow-y-auto overscroll-contain">
                 {permissionGroups.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-[var(--frappe-text-muted)]">
+                  <p className="px-4 py-8 text-center text-sm text-muted-foreground">
                     {catalog?.length
                       ? "No permissions match your search."
-                      : "Loading permissions�"}
+                      : "Loading permissions…"}
                   </p>
                 ) : (
-                  <div className="divide-y divide-[var(--frappe-border)]">
+                  <div className="divide-y divide-border">
                     {permissionGroups.map(({ groupKey, items }) => {
                       const moduleSelected = items.filter((p) =>
                         selectedIds.has(p.id),
@@ -426,10 +426,10 @@ function RoleDialog({
                               htmlFor={moduleCheckboxId}
                               className="flex cursor-pointer items-center gap-2"
                             >
-                              <span className="text-xs font-semibold tracking-wide text-[var(--frappe-text-muted)] uppercase">
+                              <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 {groupKey}
                               </span>
-                              <span className="text-xs text-[var(--frappe-text-muted)]">
+                              <span className="text-xs text-muted-foreground">
                                 ({moduleSelected}/{items.length})
                               </span>
                             </label>
@@ -440,7 +440,7 @@ function RoleDialog({
                               return (
                                 <div
                                   key={p.id}
-                                  className="flex items-start gap-2 rounded-sm py-0.5 text-sm hover:bg-[var(--frappe-section-head)]/60"
+                                  className="flex items-start gap-2 rounded-sm py-0.5 text-sm hover:bg-muted/60"
                                 >
                                   <Checkbox
                                     id={checkboxId}
@@ -453,11 +453,11 @@ function RoleDialog({
                                     htmlFor={checkboxId}
                                     className="min-w-0 cursor-pointer"
                                   >
-                                    <span className="font-mono text-xs text-[var(--frappe-text)]">
+                                    <span className="font-mono text-xs text-foreground">
                                       {p.code}
                                     </span>
                                     {p.description ? (
-                                      <span className="mt-0.5 block text-xs text-[var(--frappe-text-muted)]">
+                                      <span className="mt-0.5 block text-xs text-muted-foreground">
                                         {p.description}
                                       </span>
                                     ) : null}
@@ -475,14 +475,14 @@ function RoleDialog({
             </div>
 
             {mode === "edit" && role?.permissions?.length ? (
-              <p className="text-xs text-[var(--frappe-text-muted)]">
+              <p className="text-xs text-muted-foreground">
                 Previously assigned:{" "}
                 {rolePermissionCodes(role.permissions).join(", ")}
               </p>
             ) : null}
           </div>
 
-          <DialogFooter className="mt-0 shrink-0 gap-2 border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-5 py-4 sm:justify-end">
+          <DialogFooter className="mt-0 shrink-0 gap-2 border-t border-border bg-muted/40 px-5 py-4 sm:justify-end">
             <Button
               type="button"
               variant="outline"
@@ -491,15 +491,15 @@ function RoleDialog({
             >
               Cancel
             </Button>
-            <FrappeButtonPrimary type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               {saving
                 ? mode === "create"
-                  ? "Creating�"
-                  : "Saving�"
+                  ? "Creating…"
+                  : "Saving…"
                 : mode === "create"
                   ? "Create role"
                   : "Save changes"}
-            </FrappeButtonPrimary>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

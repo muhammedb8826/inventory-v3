@@ -6,13 +6,7 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  FrappeButtonPrimary,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeDocument,
-  FrappeSection,
-} from "@/components/frappe";
+import { FormField, FormGrid } from "@/components/shared/page-form";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { TableFiltersSheet } from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -210,9 +204,14 @@ function MasterFieldsForm({
   isEdit?: boolean;
 }) {
   return (
-    <FrappeFormGrid columns={1}>
+    <FormGrid cols={1}>
       {fields.map((f) => (
-        <FrappeField key={f.name} label={f.label} required={f.required}>
+        <FormField
+          key={f.name}
+          label={f.label}
+          required={f.required}
+          htmlFor={f.name}
+        >
           {f.type === "textarea" ? (
             <Textarea
               id={f.name}
@@ -224,7 +223,9 @@ function MasterFieldsForm({
           ) : f.type === "select" && f.options ? (
             <Select
               value={(values[f.name] as string) ?? ""}
-              onValueChange={(v) => setValues((prev) => ({ ...prev, [f.name]: v }))}
+              onValueChange={(v) =>
+                setValues((prev) => ({ ...prev, [f.name]: v }))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder={`Select ${f.label}`} />
@@ -248,7 +249,7 @@ function MasterFieldsForm({
               }
             />
           )}
-        </FrappeField>
+        </FormField>
       ))}
       {supportsActive && isEdit ? (
         <div className="flex items-center gap-2">
@@ -262,7 +263,7 @@ function MasterFieldsForm({
           <Label htmlFor="isActive">Active</Label>
         </div>
       ) : null}
-    </FrappeFormGrid>
+    </FormGrid>
   );
 }
 
@@ -333,39 +334,43 @@ function CreateDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <FrappeButtonPrimary type="button">
+        <Button type="button">
           <PlusIcon className="size-3.5" />
           New
-        </FrappeButtonPrimary>
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+        <DialogHeader className="border-b border-border bg-muted/40 px-4 py-3">
           <DialogTitle className="text-base">New {title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="p-4">
-            <FrappeDocument>
-              <FrappeSection title="Details">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+              <div className="space-y-1 border-b border-border/70 px-4 pt-4">
+                <h2 className="text-base font-semibold tracking-tight">
+                  Details
+                </h2>
+              </div>
+              <div className="p-4">
                 <MasterFieldsForm
                   fields={fields}
                   values={values}
                   setValues={setValues}
                 />
-              </FrappeSection>
-            </FrappeDocument>
+              </div>
+            </div>
           </div>
-          <DialogFooter className="border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+          <DialogFooter className="border-t border-border bg-muted/40 px-4 py-3">
             <Button
               type="button"
               variant="outline"
-              className="h-8 text-xs"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
-            <FrappeButtonPrimary type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               Save
-            </FrappeButtonPrimary>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -427,13 +432,18 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+        <DialogHeader className="border-b border-border bg-muted/40 px-4 py-3">
           <DialogTitle className="text-base">Edit {row.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="p-4">
-            <FrappeDocument>
-              <FrappeSection title="Details">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+              <div className="space-y-1 border-b border-border/70 px-4 pt-4">
+                <h2 className="text-base font-semibold tracking-tight">
+                  Details
+                </h2>
+              </div>
+              <div className="p-4">
                 <MasterFieldsForm
                   fields={fields}
                   values={values}
@@ -441,21 +451,20 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
                   supportsActive={supportsActive}
                   isEdit
                 />
-              </FrappeSection>
-            </FrappeDocument>
+              </div>
+            </div>
           </div>
-          <DialogFooter className="border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+          <DialogFooter className="border-t border-border bg-muted/40 px-4 py-3">
             <Button
               type="button"
               variant="outline"
-              className="h-8 text-xs"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
-            <FrappeButtonPrimary type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving}>
               Save
-            </FrappeButtonPrimary>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

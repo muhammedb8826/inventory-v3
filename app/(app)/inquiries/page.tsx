@@ -22,8 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InquiryCreateDialog } from "@/components/inquiries/inquiry-create-dialog";
+import Link from "next/link";
+import { FrappeButtonPrimary } from "@/components/frappe";
 import { InquiryDetailDialog } from "@/components/inquiries/inquiry-detail-dialog";
+import { PlusIcon } from "lucide-react";
 import {
   InquiryAssignmentBadge,
   InquiryPriorityBadge,
@@ -189,19 +191,19 @@ export default function InquiriesPage() {
   return (
     <AppShell
       title="Inquiries"
-      subtitle="Leads and product questions from the website and walk-ins"
+      subtitle="Staff CRM for leads, walk-ins, and assigned follow-ups"
       breadcrumbs={[
         { label: "Home", href: "/dashboard" },
         { label: "Inquiries" },
       ]}
       actions={
         <PermissionGate permission="inquiries.write">
-          <InquiryCreateDialog
-            onSuccess={(inquiry) => {
-              reload();
-              if (inquiry?.id) openInquiry(inquiry.id);
-            }}
-          />
+          <FrappeButtonPrimary asChild>
+            <Link href="/inquiries/new">
+              <PlusIcon className="size-3.5" />
+              New inquiry
+            </Link>
+          </FrappeButtonPrimary>
         </PermissionGate>
       }
     >

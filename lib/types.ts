@@ -873,20 +873,7 @@ export interface Inquiry {
   updatedAt: string;
 }
 
-export interface PublicCatalogItem {
-  id: string;
-  sku?: string | null;
-  description: string;
-  imageUrl?: string | null;
-}
-
-export interface PublicInquiryResponse {
-  id: string;
-  status: InquiryStatus;
-  message: string;
-}
-
-export interface CreatePublicInquiryBody {
+export interface CreateInquiryBody {
   contactName: string;
   subject: string;
   message: string;
@@ -895,9 +882,6 @@ export interface CreatePublicInquiryBody {
   lines?: InquiryLineInput[];
   /** @deprecated Prefer `lines` */
   itemId?: string;
-}
-
-export interface CreateInquiryBody extends CreatePublicInquiryBody {
   priority?: InquiryPriority;
   customerId?: string;
   assignedToUserId?: string;

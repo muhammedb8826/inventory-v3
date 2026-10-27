@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/components/permission-gate";
 import {
-  FrappeDocument,
-  FrappeFormGrid,
-  FrappeSection,
-  FrappeButtonLink,
-} from "@/components/frappe";
+  FormGrid,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { formatDate, formatQty, errorMessage } from "@/lib/format";
 import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import { api } from "@/lib/api";
@@ -25,10 +25,8 @@ function DetailField({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="text-xs font-medium text-[var(--frappe-text-muted)]">
-        {label}
-      </p>
-      <p className="text-sm text-[var(--frappe-text)]">{value}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
     </div>
   );
 }
@@ -76,15 +74,19 @@ export function TransferDetail({
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FrappeButtonLink href="/stock-transfers">← Back to list</FrappeButtonLink>
-        <FrappeButtonLink
-          href={inventoryMovementsHref({
-            refType: "stock_transfer",
-            refId: transfer.id,
-          })}
-        >
-          Stock movements
-        </FrappeButtonLink>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link href="/stock-transfers">← Back to list</Link>
+        </Button>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link
+            href={inventoryMovementsHref({
+              refType: "stock_transfer",
+              refId: transfer.id,
+            })}
+          >
+            Stock movements
+          </Link>
+        </Button>
         <PermissionGate permission="stock_transfer.write">
           {transfer.status === "PENDING" ? (
             <>
@@ -148,8 +150,8 @@ export function TransferDetail({
         </Badge>
       </div>
 
-      <FrappeDocument>
-        <FrappeSection
+      <PageFormCard>
+        <PageFormSection
           title="Transfer"
           description={
             transfer.createdAt
@@ -157,7 +159,7 @@ export function TransferDetail({
               : undefined
           }
         >
-          <FrappeFormGrid columns={2}>
+          <FormGrid>
             <DetailField
               label="From"
               value={transfer.fromLocation?.name ?? "—"}
@@ -177,35 +179,37 @@ export function TransferDetail({
                 <DetailField label="Notes" value={transfer.notes} />
               </div>
             ) : null}
-          </FrappeFormGrid>
-        </FrappeSection>
+          </FormGrid>
+        </PageFormSection>
 
-        <FrappeSection
+        <PageFormSection
           title="Items"
           description={`${lines.length} line${lines.length === 1 ? "" : "s"}`}
         >
           {lines.length === 0 ? (
-            <p className="text-sm text-[var(--frappe-text-muted)]">
+            <p className="text-sm text-muted-foreground">
               No line items on this transfer.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="frappe-list-table">
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>SKU</th>
-                    <th className="text-right tabular-nums">Qty</th>
+                  <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+                    <th className="px-4 py-2.5">Item</th>
+                    <th className="px-4 py-2.5">SKU</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">Qty</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y">
                   {lines.map((line, i) => (
                     <tr key={line.id ?? `${line.itemId}-${i}`}>
-                      <td>{line.item?.description ?? line.itemId}</td>
-                      <td className="text-[var(--frappe-text-muted)]">
+                      <td className="px-4 py-2.5">
+                        {line.item?.description ?? line.itemId}
+                      </td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
                         {line.item?.sku ?? "—"}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatQty(line.quantity)}
                         {line.item?.unit ? ` ${line.item.unit}` : ""}
                       </td>
@@ -215,8 +219,8 @@ export function TransferDetail({
               </table>
             </div>
           )}
-        </FrappeSection>
-      </FrappeDocument>
+        </PageFormSection>
+      </PageFormCard>
     </div>
   );
 }

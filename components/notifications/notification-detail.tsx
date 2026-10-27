@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  FrappeButtonLink,
-  FrappeDocument,
-  FrappeFormGrid,
-  FrappeSection,
-} from "@/components/frappe";
+  FormGrid,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import { dismissNotification, markNotificationRead } from "@/lib/notifications";
 import { notificationHref } from "@/lib/notification-routes";
@@ -27,10 +26,8 @@ function DetailField({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="text-xs font-medium text-[var(--frappe-text-muted)]">
-        {label}
-      </p>
-      <div className="text-sm text-[var(--frappe-text)]">{value}</div>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <div className="text-sm text-foreground">{value}</div>
     </div>
   );
 }
@@ -90,12 +87,12 @@ export function NotificationDetail({
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FrappeButtonLink href="/notifications">← Back to list</FrappeButtonLink>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link href="/notifications">← Back to list</Link>
+        </Button>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {!notification.isRead ? (
-            <Badge className="bg-[var(--frappe-primary)]/10 text-[var(--frappe-primary)]">
-              Unread
-            </Badge>
+            <Badge className="bg-primary/10 text-primary">Unread</Badge>
           ) : (
             <Badge variant="secondary">Read</Badge>
           )}
@@ -108,15 +105,15 @@ export function NotificationDetail({
         </div>
       </div>
 
-      <FrappeDocument>
-        <FrappeSection title={notification.title}>
-          <p className="text-sm leading-relaxed text-[var(--frappe-text)]">
+      <PageFormCard>
+        <PageFormSection title={notification.title}>
+          <p className="text-sm leading-relaxed text-foreground">
             {notification.message}
           </p>
-        </FrappeSection>
+        </PageFormSection>
 
-        <FrappeSection title="Details">
-          <FrappeFormGrid columns={2}>
+        <PageFormSection title="Details">
+          <FormGrid>
             <DetailField
               label="Created"
               value={formatDate(notification.createdAt)}
@@ -139,18 +136,20 @@ export function NotificationDetail({
               <DetailField
                 label="Related ID"
                 value={
-                  <span className="font-mono text-xs">{notification.entityId}</span>
+                  <span className="font-mono text-xs">
+                    {notification.entityId}
+                  </span>
                 }
               />
             ) : null}
-          </FrappeFormGrid>
+          </FormGrid>
 
           {metadataEntries.length > 0 ? (
-            <div className="mt-4 border-t border-[var(--frappe-border)] pt-4">
-              <p className="mb-3 text-xs font-medium text-[var(--frappe-text-muted)]">
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-3 text-xs font-medium text-muted-foreground">
                 Additional info
               </p>
-              <FrappeFormGrid columns={2}>
+              <FormGrid>
                 {metadataEntries.map(([key, value]) => (
                   <DetailField
                     key={key}
@@ -158,15 +157,19 @@ export function NotificationDetail({
                     value={formatMetadataValue(value)}
                   />
                 ))}
-              </FrappeFormGrid>
+              </FormGrid>
             </div>
           ) : null}
-        </FrappeSection>
+        </PageFormSection>
 
-        <FrappeSection title="Actions">
+        <PageFormSection title="Actions">
           <div className="flex flex-wrap gap-2">
             {!notification.isRead ? (
-              <Button type="button" size="sm" onClick={() => void handleMarkRead()}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void handleMarkRead()}
+              >
                 Mark as read
               </Button>
             ) : null}
@@ -189,8 +192,8 @@ export function NotificationDetail({
               Dismiss
             </Button>
           </div>
-        </FrappeSection>
-      </FrappeDocument>
+        </PageFormSection>
+      </PageFormCard>
     </div>
   );
 }

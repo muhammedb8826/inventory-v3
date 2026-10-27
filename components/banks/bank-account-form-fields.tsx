@@ -1,5 +1,6 @@
 "use client";
 
+import { FormField } from "@/components/shared/page-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -23,10 +24,12 @@ export function BankAccountFormFields({
 }) {
   return (
     <div className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="bank-display-name">
-          Display name <span className="text-[var(--frappe-red)]">*</span>
-        </Label>
+      <FormField
+        label="Display name"
+        required
+        htmlFor="bank-display-name"
+        hint='Short label shown in dropdowns across purchases, sales, and expenses.'
+      >
         <Input
           id="bank-display-name"
           value={values.name}
@@ -35,15 +38,9 @@ export function BankAccountFormFields({
           required
           autoFocus
         />
-        <p className="text-xs text-[var(--frappe-text-muted)]">
-          Short label shown in dropdowns across purchases, sales, and expenses.
-        </p>
-      </div>
+      </FormField>
       {mode === "create" ? (
-        <div className="grid gap-2">
-          <Label htmlFor="bank-account-type">
-            Account type <span className="text-[var(--frappe-red)]">*</span>
-          </Label>
+        <FormField label="Account type" required htmlFor="bank-account-type">
           <Select
             value={values.accountType}
             onValueChange={(v) =>
@@ -58,42 +55,38 @@ export function BankAccountFormFields({
               <SelectItem value="BANK">Bank account</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </FormField>
       ) : null}
       {values.accountType === "BANK" || mode === "edit" ? (
         <>
-          <div className="grid gap-2">
-            <Label htmlFor="bank-institution">Bank / provider</Label>
+          <FormField label="Bank / provider" htmlFor="bank-institution">
             <Input
               id="bank-institution"
               value={values.bankName}
               onChange={(e) => onChange({ bankName: e.target.value })}
               placeholder="Commercial Bank of Ethiopia"
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="bank-holder">Account holder name</Label>
+          </FormField>
+          <FormField label="Account holder name" htmlFor="bank-holder">
             <Input
               id="bank-holder"
               value={values.accountHolderName}
               onChange={(e) => onChange({ accountHolderName: e.target.value })}
               placeholder="Noble Store PLC"
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="bank-number">Account number</Label>
+          </FormField>
+          <FormField label="Account number" htmlFor="bank-number">
             <Input
               id="bank-number"
               value={values.accountNumber}
               onChange={(e) => onChange({ accountNumber: e.target.value })}
               placeholder="1000123456789"
             />
-          </div>
+          </FormField>
         </>
       ) : null}
       {mode === "create" ? (
-        <div className="grid gap-2">
-          <Label htmlFor="bank-opening-balance">Opening balance</Label>
+        <FormField label="Opening balance" htmlFor="bank-opening-balance">
           <Input
             id="bank-opening-balance"
             type="number"
@@ -103,25 +96,24 @@ export function BankAccountFormFields({
             onChange={(e) => onChange({ balance: e.target.value })}
             placeholder="0"
           />
-        </div>
+        </FormField>
       ) : (
         <>
-          <div className="grid gap-2">
-            <Label>Account type</Label>
-            <p className="text-sm text-[var(--frappe-text-muted)]">
+          <FormField label="Account type">
+            <p className="text-sm text-muted-foreground">
               {values.accountType === "CASH"
                 ? "Cash till / petty cash"
                 : "Bank account"}
             </p>
-          </div>
+          </FormField>
           <div className="flex items-center gap-2">
-          <Switch
-            id="bank-active"
-            checked={values.isActive}
-            onCheckedChange={(checked) => onChange({ isActive: checked })}
-          />
-          <Label htmlFor="bank-active">Active</Label>
-        </div>
+            <Switch
+              id="bank-active"
+              checked={values.isActive}
+              onCheckedChange={(checked) => onChange({ isActive: checked })}
+            />
+            <Label htmlFor="bank-active">Active</Label>
+          </div>
         </>
       )}
     </div>

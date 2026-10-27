@@ -13,11 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
-  FrappeDocument,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeSection,
-} from "@/components/frappe";
+  FormField,
+  FormGrid,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { PageLoading } from "@/components/shared/page-loading";
 import { api } from "@/lib/api";
 import { resolveItemImageUrl } from "@/lib/inventory-media";
@@ -41,9 +40,7 @@ import { toast } from "sonner";
 import { EyeIcon, ImageIcon } from "lucide-react";
 
 function DetailValue({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="min-h-8 text-sm text-[var(--frappe-text)]">{children}</p>
-  );
+  return <p className="min-h-8 text-sm text-foreground">{children}</p>;
 }
 
 export function StockDetailDialog({
@@ -118,16 +115,18 @@ export function StockDetailDialog({
         )}
       </DialogTrigger>
       <DialogContent className="flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="shrink-0 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+        <DialogHeader className="shrink-0 border-b border-border bg-muted/40 px-4 py-3">
           <DialogTitle className="text-base">Stock details</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {loading && !detail ? (
-            <PageLoading />
+            <div className="p-4">
+              <PageLoading />
+            </div>
           ) : (
-            <FrappeDocument>
-              <FrappeSection title="Item">
-                <div className="mb-4 overflow-hidden rounded-lg border border-[var(--frappe-border)] bg-[var(--frappe-section-head)]">
+            <div className="overflow-hidden">
+              <PageFormSection title="Item">
+                <div className="mb-4 overflow-hidden rounded-lg border border-border bg-muted/40">
                   {imageSrc ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -136,28 +135,28 @@ export function StockDetailDialog({
                       className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
                     />
                   ) : (
-                    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-[var(--frappe-text-muted)] sm:aspect-[21/9]">
+                    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-muted-foreground sm:aspect-[21/9]">
                       <ImageIcon className="size-10" />
                       <p className="text-xs">No image</p>
                     </div>
                   )}
                 </div>
-                <FrappeFormGrid columns={2}>
-                  <FrappeField label="Description" fullWidth>
+                <FormGrid>
+                  <FormField label="Description" className="sm:col-span-2">
                     <DetailValue>{shown.item.description}</DetailValue>
-                  </FrappeField>
-                  <FrappeField label="SKU">
+                  </FormField>
+                  <FormField label="SKU">
                     <DetailValue>{shown.item.sku || "—"}</DetailValue>
-                  </FrappeField>
-                  <FrappeField label="Unit">
+                  </FormField>
+                  <FormField label="Unit">
                     <DetailValue>{shown.item.unit || "—"}</DetailValue>
-                  </FrappeField>
-                  <FrappeField label="Item type">
+                  </FormField>
+                  <FormField label="Item type">
                     <DetailValue>
                       {itemTypeLabel(shown.item.itemType)}
                     </DetailValue>
-                  </FrappeField>
-                  <FrappeField label="Location">
+                  </FormField>
+                  <FormField label="Location">
                     <DetailValue>
                       {shown.location?.name
                         ? `${shown.location.name}${
@@ -167,14 +166,14 @@ export function StockDetailDialog({
                           }`
                         : "—"}
                     </DetailValue>
-                  </FrappeField>
-                </FrappeFormGrid>
-              </FrappeSection>
-              <FrappeSection title="Stock">
-                <FrappeFormGrid columns={2}>
-                  <FrappeField label="On hand">
+                  </FormField>
+                </FormGrid>
+              </PageFormSection>
+              <PageFormSection title="Stock">
+                <FormGrid>
+                  <FormField label="On hand">
                     <div className="flex min-h-8 flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium tabular-nums text-[var(--frappe-text)]">
+                      <span className="text-sm font-medium tabular-nums text-foreground">
                         {formatQty(shown.quantity)}
                       </span>
                       {outOfStock ? (
@@ -187,49 +186,47 @@ export function StockDetailDialog({
                         </Badge>
                       ) : null}
                     </div>
-                  </FrappeField>
-                  <FrappeField label="Reorder point">
+                  </FormField>
+                  <FormField label="Reorder point">
                     <DetailValue>
                       {shown.reorderPoint != null && shown.reorderPoint !== ""
                         ? formatQty(shown.reorderPoint)
                         : "—"}
                     </DetailValue>
-                  </FrappeField>
-                  <FrappeField label="Purchase price">
+                  </FormField>
+                  <FormField label="Purchase price">
                     <DetailValue>
                       {formatMoney(shown.purchasePrice)}
                     </DetailValue>
-                  </FrappeField>
-                  <FrappeField label="Stock value">
+                  </FormField>
+                  <FormField label="Stock value">
                     <DetailValue>{formatMoney(stockValue)}</DetailValue>
-                  </FrappeField>
-                </FrappeFormGrid>
-              </FrappeSection>
-              <FrappeSection
+                  </FormField>
+                </FormGrid>
+              </PageFormSection>
+              <PageFormSection
                 title="Recent movements"
                 description="Ledger for this item at this location"
               >
                 {loading && movements.length === 0 ? (
-                  <p className="text-sm text-[var(--frappe-text-muted)]">
-                    Loading…
-                  </p>
+                  <p className="text-sm text-muted-foreground">Loading…</p>
                 ) : movements.length === 0 ? (
-                  <p className="text-sm text-[var(--frappe-text-muted)]">
+                  <p className="text-sm text-muted-foreground">
                     No movements recorded yet.
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="frappe-list-table">
+                  <div className="overflow-x-auto rounded-xl border">
+                    <table className="w-full text-sm">
                       <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Type</th>
-                          <th className="text-right">Delta</th>
-                          <th className="text-right">After</th>
-                          <th>Reference</th>
+                        <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+                          <th className="px-3 py-2">Date</th>
+                          <th className="px-3 py-2">Type</th>
+                          <th className="px-3 py-2 text-right">Delta</th>
+                          <th className="px-3 py-2 text-right">After</th>
+                          <th className="px-3 py-2">Reference</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y">
                         {movements.map((m) => {
                           const delta = Number(m.quantityDelta);
                           const sign = delta > 0 ? "+" : "";
@@ -243,10 +240,10 @@ export function StockDetailDialog({
                           );
                           return (
                             <tr key={m.id}>
-                              <td className="whitespace-nowrap">
+                              <td className="whitespace-nowrap px-3 py-2">
                                 {formatDate(m.createdAt)}
                               </td>
-                              <td>
+                              <td className="px-3 py-2">
                                 <Badge
                                   variant="outline"
                                   className="text-[10px] font-normal"
@@ -254,18 +251,18 @@ export function StockDetailDialog({
                                   {stockMovementTypeLabel(m.type)}
                                 </Badge>
                               </td>
-                              <td className="text-right tabular-nums">
+                              <td className="px-3 py-2 text-right tabular-nums">
                                 {sign}
                                 {formatQty(m.quantityDelta)}
                               </td>
-                              <td className="text-right tabular-nums">
+                              <td className="px-3 py-2 text-right tabular-nums">
                                 {formatQty(m.quantityAfter)}
                               </td>
-                              <td>
+                              <td className="px-3 py-2">
                                 {refHref ? (
                                   <Link
                                     href={refHref}
-                                    className="text-[var(--frappe-primary)] hover:underline"
+                                    className="text-primary hover:underline"
                                   >
                                     {refLabel}
                                   </Link>
@@ -283,16 +280,16 @@ export function StockDetailDialog({
                 <div className="mt-3">
                   <Link
                     href={allMovementsHref}
-                    className="text-sm font-medium text-[var(--frappe-primary)] hover:underline"
+                    className="text-sm font-medium text-primary hover:underline"
                   >
                     View full movement history →
                   </Link>
                 </div>
-              </FrappeSection>
-            </FrappeDocument>
+              </PageFormSection>
+            </div>
           )}
         </div>
-        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none border-t border-border bg-muted/40 px-4 py-3">
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Close
           </Button>

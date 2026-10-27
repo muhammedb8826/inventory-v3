@@ -6,13 +6,11 @@ import { AppShell } from "@/components/app-shell";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
 import {
-  FrappeButtonPrimary,
-  FrappeButtonSecondary,
-  FrappeDocument,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeSection,
-} from "@/components/frappe";
+  FormField,
+  FormGrid,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -182,13 +180,13 @@ export default function BrandingSettingsPage() {
           <PageLoading />
         ) : (
           <form onSubmit={handleSave} className="mx-auto max-w-3xl space-y-4">
-            <FrappeDocument>
-              <FrappeSection
+            <PageFormCard>
+              <PageFormSection
                 title="App name"
                 description="Shown on the public site, login screen, and sidebar."
               >
-                <FrappeFormGrid columns={1}>
-                  <FrappeField label="App name" required>
+                <FormGrid cols={1}>
+                  <FormField label="App name" required>
                     <Input
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
@@ -197,8 +195,8 @@ export default function BrandingSettingsPage() {
                       placeholder="Stock"
                       disabled={!canWrite}
                     />
-                  </FrappeField>
-                  <FrappeField label="Headline">
+                  </FormField>
+                  <FormField label="Headline">
                     <Input
                       value={headline}
                       onChange={(e) => setHeadline(e.target.value)}
@@ -206,8 +204,8 @@ export default function BrandingSettingsPage() {
                       placeholder="Tell us what you need…"
                       disabled={!canWrite}
                     />
-                  </FrappeField>
-                  <FrappeField label="Supporting text">
+                  </FormField>
+                  <FormField label="Supporting text">
                     <Textarea
                       value={supportingText}
                       onChange={(e) => setSupportingText(e.target.value)}
@@ -215,16 +213,16 @@ export default function BrandingSettingsPage() {
                       maxLength={400}
                       disabled={!canWrite}
                     />
-                  </FrappeField>
-                </FrappeFormGrid>
-              </FrappeSection>
+                  </FormField>
+                </FormGrid>
+              </PageFormSection>
 
-              <FrappeSection
+              <PageFormSection
                 title="Hero image"
                 description="Full-bleed background on the customer landing page. JPEG, PNG, WebP, or GIF up to 5 MB."
               >
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-lg border border-[var(--frappe-border)] bg-[var(--frappe-section-head)]">
+                  <div className="overflow-hidden rounded-lg border border-border bg-muted/40">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={previewSrc}
@@ -244,19 +242,19 @@ export default function BrandingSettingsPage() {
                           if (file) void handleUpload(file);
                         }}
                       />
-                      <FrappeButtonPrimary
+                      <Button
                         type="button"
                         disabled={uploading}
                         onClick={() => fileRef.current?.click()}
                       >
                         <UploadIcon className="size-3.5" />
                         {uploading ? "Uploading…" : "Upload image"}
-                      </FrappeButtonPrimary>
+                      </Button>
                       {heroImageUrl ? (
                         <Button
                           type="button"
                           variant="outline"
-                          className="h-8 text-xs text-destructive"
+                          className="text-destructive"
                           disabled={clearing}
                           onClick={() => void handleClearImage()}
                         >
@@ -264,7 +262,7 @@ export default function BrandingSettingsPage() {
                           {clearing ? "Clearing…" : "Use default"}
                         </Button>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--frappe-text-muted)]">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                           <ImageIcon className="size-3.5" />
                           Using built-in default image
                         </span>
@@ -272,19 +270,19 @@ export default function BrandingSettingsPage() {
                     </div>
                   ) : null}
                 </div>
-              </FrappeSection>
-            </FrappeDocument>
+              </PageFormSection>
+            </PageFormCard>
 
             <div className="flex justify-end gap-2">
-              <FrappeButtonSecondary type="button" asChild>
+              <Button type="button" variant="outline" asChild>
                 <Link href="/" target="_blank" rel="noreferrer">
                   Preview site
                 </Link>
-              </FrappeButtonSecondary>
+              </Button>
               {canWrite ? (
-                <FrappeButtonPrimary type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving}>
                   {saving ? "Saving…" : "Save branding"}
-                </FrappeButtonPrimary>
+                </Button>
               ) : null}
             </div>
           </form>

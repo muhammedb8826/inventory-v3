@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
@@ -12,21 +13,8 @@ import {
   countActiveFilters,
 } from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { EntitySelectField } from "@/components/shared/entity-select-field";
-import { QuickExpenseCategoryDialog } from "@/components/expenses/quick-expense-category-dialog";
-import { QuickBankAccountDialog } from "@/components/banks/quick-bank-account-dialog";
 import { FrappeButtonPrimary } from "@/components/frappe";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,7 +26,6 @@ import { api } from "@/lib/api";
 import { apiList } from "@/lib/list-response";
 import { buildExpensesListPath } from "@/lib/list-query";
 import {
-  bankAccountSelectOptions,
   bankAccountsForSelect,
   formatBankAccountLabel,
 } from "@/lib/bank-accounts";
@@ -104,7 +91,12 @@ export default function ExpensesPage() {
       title="Expenses"
       actions={
         <PermissionGate permission="expense.write">
-          <ExpenseDialog onSuccess={reload} />
+          <FrappeButtonPrimary asChild>
+            <Link href="/expenses/new">
+              <PlusIcon className="size-3.5" />
+              Add expense
+            </Link>
+          </FrappeButtonPrimary>
         </PermissionGate>
       }
     >
@@ -273,142 +265,5 @@ function DeleteExpenseButton({
       <Trash2Icon className="size-4" />
       <span className="sr-only">Delete</span>
     </Button>
-  );
-}
-
-function ExpenseDialog({ onSuccess }: { onSuccess: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [categoryId, setCategoryId] = useState("");
-  const [bankAccountId, setBankAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [expenseDate, setExpenseDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
-  const [saving, setSaving] = useState(false);
-
-  const {
-    data: categories,
-    reload: reloadCategories,
-    setData: setCategories,
-  } = useFetch(() => api<ExpenseCategory[]>("/expenses/categories"), []);
-  const {
-    data: banks,
-    reload: reloadBanks,
-    setData: setBanks,
-  } = useFetch(() => apiList<BankAccount>("/banks/accounts"), []);
-
-  function onCategoryCreated(category: ExpenseCategory) {
-    setCategories((prev) => [...(prev ?? []), category]);
-    setCategoryId(category.id);
-    reloadCategories();
-  }
-
-  function onBankCreated(account: BankAccount) {
-    setBanks((prev) => [...(prev ?? []), account]);
-    setBankAccountId(account.id);
-    reloadBanks();
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await api("/expenses", {
-        method: "POST",
-        body: {
-          categoryId,
-          bankAccountId,
-          amount: parseFloat(amount),
-          description,
-          expenseDate,
-        },
-      });
-      toast.success("Expense recorded");
-      setOpen(false);
-      onSuccess();
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <PlusIcon />
-          Add expense
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader className="border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
-            <DialogTitle className="text-base">Record expense</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 p-4">
-            <EntitySelectField
-              label="Category"
-              required
-              value={categoryId}
-              onValueChange={setCategoryId}
-              options={(categories ?? []).map((c) => ({
-                id: c.id,
-                label: c.name,
-              }))}
-              listHref="/expenses"
-              listLabel="Manage categories"
-              emptyMessage="Create an expense category first."
-              quickCreate={
-                <QuickExpenseCategoryDialog onCreated={onCategoryCreated} />
-              }
-            />
-            <EntitySelectField
-              label="Bank account"
-              required
-              value={bankAccountId}
-              onValueChange={setBankAccountId}
-              options={bankAccountSelectOptions(banks ?? [], bankAccountId)}
-              listHref="/banks"
-              listLabel="All accounts"
-              emptyMessage="Create a bank account to pay from."
-              quickCreate={<QuickBankAccountDialog onCreated={onBankCreated} />}
-            />
-            <div className="grid gap-2">
-              <Label>Amount</Label>
-              <Input
-                type="number"
-                step="any"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Date</Label>
-              <Input
-                type="date"
-                value={expenseDate}
-                onChange={(e) => setExpenseDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Description</Label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter className="border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
-            <FrappeButtonPrimary type="submit" disabled={saving}>
-              Save
-            </FrappeButtonPrimary>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

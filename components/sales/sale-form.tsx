@@ -11,21 +11,20 @@ import { EntitySelectField } from "@/components/shared/entity-select-field";
 import { ItemSearchSelect } from "@/components/shared/item-search-select";
 import { SearchSelect } from "@/components/shared/search-select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  FrappeDocument,
-  FrappeField,
-  FrappeFormGrid,
-  FrappeFormToolbar,
-  FrappeGridCell,
-  FrappeGridRow,
-  FrappeGridTable,
-  FrappeSection,
-  FrappeButtonPrimary,
-  FrappeButtonLink,
-} from "@/components/frappe";
+  FormField,
+  FormGrid,
+  PageForm,
+  PageFormActions,
+  PageFormCancel,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { api } from "@/lib/api";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { apiList } from "@/lib/list-response";
 import { creditHasPayments, needsBankAccount } from "@/lib/document-utils";
 import {
@@ -395,26 +394,19 @@ export function SaleForm({ sale }: { sale?: Sale }) {
   const cancelHref = isEdit && sale ? `/sales/${sale.id}` : "/sales";
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-5xl">
-      <FrappeFormToolbar>
-        <FrappeButtonPrimary type="submit" disabled={saving}>
-          {saving ? <Spinner className="size-4" /> : "Save"}
-        </FrappeButtonPrimary>
-        <FrappeButtonLink href={cancelHref}>Cancel</FrappeButtonLink>
-      </FrappeFormToolbar>
-
+    <PageForm onSubmit={handleSubmit} maxWidth="max-w-4xl">
       {notesOnly ? (
-        <div className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Customer credit has payments — only notes can be changed.
         </div>
       ) : null}
 
-      <FrappeDocument>
-        <FrappeSection
+      <PageFormCard>
+        <PageFormSection
           title="Customer & payment"
           description="Selling location and how this sale is paid"
         >
-          <FrappeFormGrid columns={2}>
+          <FormGrid>
             <EntitySelectField
               label="Customer"
               required={paymentMethod === "CREDIT" && !notesOnly}
@@ -452,21 +444,21 @@ export function SaleForm({ sale }: { sale?: Sale }) {
               }
               disabled={notesOnly}
             />
-            <FrappeField label="Payment method" required={!notesOnly}>
+            <FormField label="Payment method" required={!notesOnly}>
               <SearchSelect
                 value={paymentMethod}
                 onValueChange={(v) =>
                   onPaymentMethodChange(
                     v as PaymentMethod,
                     setPaymentMethod,
-                    setBankAccountId
+                    setBankAccountId,
                   )
                 }
                 options={PAYMENT_METHOD_OPTIONS}
                 searchPlaceholder="Search payment method…"
                 disabled={notesOnly}
               />
-            </FrappeField>
+            </FormField>
             {showsPaymentAccountPicker(paymentMethod, banks) ? (
               <EntitySelectField
                 label={paymentAccountFieldLabel(paymentMethod)}
@@ -494,19 +486,20 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                 disabled={notesOnly}
               />
             ) : paymentMethod === "CREDIT" ? (
-              <FrappeField label="Credit due date">
+              <FormField label="Credit due date">
                 <Input
+                  className="h-10"
                   type="date"
                   value={creditDueDate}
                   onChange={(e) => setCreditDueDate(e.target.value)}
                   disabled={notesOnly}
                 />
-              </FrappeField>
+              </FormField>
             ) : (
-              <div className="hidden md:block" />
+              <div className="hidden sm:block" />
             )}
             {canOnBehalf && !notesOnly ? (
-              <FrappeField label="Sales rep" required>
+              <FormField label="Sales rep" required>
                 <SearchSelect
                   value={effectiveSoldByUserId}
                   onValueChange={setSoldByUserId}
@@ -515,11 +508,11 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                   searchPlaceholder="Search by name…"
                   emptyMessage="No active users found."
                 />
-              </FrappeField>
+              </FormField>
             ) : null}
             {!notesOnly ? (
               <>
-                <FrappeField label="Commission basis">
+                <FormField label="Commission basis">
                   <SearchSelect
                     value={commissionBasis}
                     onValueChange={(v) =>
@@ -528,9 +521,17 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                     options={COMMISSION_BASIS_OPTIONS}
                     searchPlaceholder="Search commission basis…"
                   />
-                </FrappeField>
-                <FrappeField label="Commission %">
+                </FormField>
+                <FormField
+                  label="Commission %"
+                  hint={`Rate (0–100) on ${
+                    commissionBasis === "SALES"
+                      ? "sale subtotal"
+                      : "gross profit"
+                  }. Default 10%. Clear for none.`}
+                >
                   <Input
+                    className="h-10"
                     type="number"
                     min="0"
                     max="100"
@@ -539,14 +540,7 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                     onChange={(e) => setCommissionPercent(e.target.value)}
                     placeholder="10"
                   />
-                  <p className="mt-1 text-xs text-[var(--frappe-text-muted)]">
-                    Rate (0–100) applied to{" "}
-                    {commissionBasis === "SALES"
-                      ? "sale subtotal"
-                      : "gross profit"}
-                    . Default 10%. Clear for no commission.
-                  </p>
-                </FrappeField>
+                </FormField>
               </>
             ) : null}
             {canNegativeStock && !notesOnly ? (
@@ -559,18 +553,19 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                 <Label htmlFor="allow-negative">Allow negative stock</Label>
               </div>
             ) : null}
-            <FrappeField label="Notes" fullWidth>
+            <FormField label="Notes" className="sm:col-span-2">
               <Input
+                className="h-10"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional reference"
               />
-            </FrappeField>
-          </FrappeFormGrid>
-        </FrappeSection>
+            </FormField>
+          </FormGrid>
+        </PageFormSection>
 
         {!notesOnly ? (
-          <FrappeSection
+          <PageFormSection
             title="Items"
             description={
               locationId
@@ -580,7 +575,7 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                 : "Select a location first"
             }
           >
-            <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
               <QuickStockItemDialog
                 locationId={locationId}
                 onCreated={onStockCreated}
@@ -591,34 +586,24 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                 onClick={(e) => {
                   if (!locationId) e.preventDefault();
                 }}
-                className="text-xs text-[var(--frappe-text-muted)] hover:text-[var(--frappe-primary)] hover:underline"
+                className="text-xs text-muted-foreground hover:text-primary hover:underline"
               >
                 Stock ledger
               </Link>
             </div>
-            <FrappeGridTable
-              columns={[
-                { key: "item", label: "Item" },
-                { key: "qty", label: "Qty", className: "w-28" },
-                { key: "rate", label: "Rate", className: "w-32" },
-              ]}
-              onAddRow={() =>
-                setLines((prev) => [
-                  ...prev,
-                  { itemId: "", quantity: "1", unitPrice: "" },
-                ])
-              }
-              addLabel="Add Row"
-            >
-              {lines.map((line, i) => (
-                <FrappeGridRow
-                  key={i}
-                  canRemove={lines.length > 1}
-                  onRemove={() =>
-                    setLines((prev) => prev.filter((_, idx) => idx !== i))
-                  }
-                >
-                  <FrappeGridCell>
+            <div className="overflow-hidden rounded-xl border">
+              <div className="hidden grid-cols-[minmax(0,1fr)_7rem_8rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+                <span>Item</span>
+                <span>Qty</span>
+                <span>Rate</span>
+                <span className="sr-only">Remove</span>
+              </div>
+              <div className="divide-y">
+                {lines.map((line, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_2.5rem] sm:items-center"
+                  >
                     <ItemSearchSelect
                       value={line.itemId}
                       onValueChange={(v) => {
@@ -632,39 +617,72 @@ export function SaleForm({ sale }: { sale?: Sale }) {
                       onQueryChange={setItemQuery}
                       placeholder="Item"
                     />
-                  </FrappeGridCell>
-                  <FrappeGridCell>
                     <Input
                       type="number"
                       min="0"
                       step="any"
-                      className="h-8"
+                      className="h-10"
                       value={line.quantity}
                       onChange={(e) =>
                         updateLine(i, { quantity: e.target.value })
                       }
                       required
                     />
-                  </FrappeGridCell>
-                  <FrappeGridCell>
                     <Input
                       type="number"
                       min="0"
                       step="any"
-                      className="h-8"
+                      className="h-10"
                       value={line.unitPrice}
                       onChange={(e) =>
                         updateLine(i, { unitPrice: e.target.value })
                       }
                       required
                     />
-                  </FrappeGridCell>
-                </FrappeGridRow>
-              ))}
-            </FrappeGridTable>
-          </FrappeSection>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="size-9 text-muted-foreground hover:text-destructive"
+                      disabled={lines.length === 1}
+                      onClick={() =>
+                        setLines((prev) => prev.filter((_, idx) => idx !== i))
+                      }
+                      aria-label="Remove line"
+                    >
+                      <Trash2Icon className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t bg-muted/20 px-3 py-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary"
+                  onClick={() =>
+                    setLines((prev) => [
+                      ...prev,
+                      { itemId: "", quantity: "1", unitPrice: "" },
+                    ])
+                  }
+                >
+                  <PlusIcon className="size-4" />
+                  Add row
+                </Button>
+              </div>
+            </div>
+          </PageFormSection>
         ) : null}
-      </FrappeDocument>
-    </form>
+      </PageFormCard>
+
+      <PageFormActions>
+        <PageFormCancel href={cancelHref} />
+        <Button type="submit" disabled={saving} className="min-w-28">
+          {saving ? <Spinner className="size-4" /> : "Save"}
+        </Button>
+      </PageFormActions>
+    </PageForm>
   );
 }

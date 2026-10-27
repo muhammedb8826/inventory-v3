@@ -15,11 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  FrappeButtonLink,
-  FrappeDocument,
-  FrappeFormGrid,
-  FrappeSection,
-} from "@/components/frappe";
+  FormGrid,
+  PageFormCard,
+  PageFormSection,
+} from "@/components/shared/page-form";
 import { PermissionGate } from "@/components/permission-gate";
 import { api } from "@/lib/api";
 import { errorMessage, formatDate, formatQty } from "@/lib/format";
@@ -38,10 +37,8 @@ function DetailField({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="text-xs font-medium text-[var(--frappe-text-muted)]">
-        {label}
-      </p>
-      <p className="text-sm text-[var(--frappe-text)]">{value}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
     </div>
   );
 }
@@ -111,17 +108,19 @@ export function ProductionOrderDetail({
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FrappeButtonLink href="/production-orders">
-          ← Back to list
-        </FrappeButtonLink>
-        <FrappeButtonLink
-          href={inventoryMovementsHref({
-            refType: "production_order",
-            refId: order.id,
-          })}
-        >
-          Stock movements
-        </FrappeButtonLink>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link href="/production-orders">← Back to list</Link>
+        </Button>
+        <Button type="button" variant="outline" size="sm" asChild>
+          <Link
+            href={inventoryMovementsHref({
+              refType: "production_order",
+              refId: order.id,
+            })}
+          >
+            Stock movements
+          </Link>
+        </Button>
         <Badge variant="outline" className="ml-auto">
           {productionStatusLabel(status)}
         </Badge>
@@ -188,8 +187,8 @@ export function ProductionOrderDetail({
         </PermissionGate>
       </div>
 
-      <FrappeDocument>
-        <FrappeSection
+      <PageFormCard>
+        <PageFormSection
           title="Order"
           description={
             order.createdAt
@@ -197,14 +196,14 @@ export function ProductionOrderDetail({
               : undefined
           }
         >
-          <FrappeFormGrid columns={2}>
+          <FormGrid>
             <DetailField
               label="BOM"
               value={
                 order.bom ? (
                   <Link
                     href={`/boms/${order.bomId}`}
-                    className="text-[var(--frappe-primary)] hover:underline"
+                    className="text-primary hover:underline"
                   >
                     {order.bom.name}
                   </Link>
@@ -244,46 +243,52 @@ export function ProductionOrderDetail({
                 <DetailField label="Notes" value={order.notes} />
               </div>
             ) : null}
-          </FrappeFormGrid>
-        </FrappeSection>
+          </FormGrid>
+        </PageFormSection>
 
-        <FrappeSection
+        <PageFormSection
           title="Materials"
           description={`${lines.length} component line${lines.length === 1 ? "" : "s"}`}
         >
           {lines.length === 0 ? (
-            <p className="text-sm text-[var(--frappe-text-muted)]">
+            <p className="text-sm text-muted-foreground">
               No material lines on this order.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="frappe-list-table">
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr>
-                    <th>Component</th>
-                    <th>SKU</th>
-                    <th className="text-right tabular-nums">Required</th>
-                    <th className="text-right tabular-nums">Issued</th>
-                    <th className="text-right tabular-nums">Scrap %</th>
+                  <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+                    <th className="px-4 py-2.5">Component</th>
+                    <th className="px-4 py-2.5">SKU</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Required
+                    </th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Issued
+                    </th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Scrap %
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y">
                   {lines.map((line, i) => (
                     <tr key={line.id ?? `${line.componentItemId}-${i}`}>
-                      <td>
+                      <td className="px-4 py-2.5">
                         {line.componentItem?.description ??
                           line.componentItemId}
                       </td>
-                      <td className="text-[var(--frappe-text-muted)]">
+                      <td className="px-4 py-2.5 text-muted-foreground">
                         {line.componentItem?.sku ?? "—"}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatQty(line.quantityRequired ?? "0")}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatQty(line.quantityIssued ?? "0")}
                       </td>
-                      <td className="text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums">
                         {line.scrapPercent != null && line.scrapPercent !== ""
                           ? `${line.scrapPercent}%`
                           : "—"}
@@ -294,8 +299,8 @@ export function ProductionOrderDetail({
               </table>
             </div>
           )}
-        </FrappeSection>
-      </FrappeDocument>
+        </PageFormSection>
+      </PageFormCard>
 
       <Dialog open={completeOpen} onOpenChange={setCompleteOpen}>
         <DialogContent>
