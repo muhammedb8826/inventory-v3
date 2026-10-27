@@ -17,7 +17,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -223,10 +222,7 @@ export default function MessagesPage() {
                                 {formatRelativeDate(msg.createdAt)}
                               </span>
                             </div>
-                            <span className="truncate text-sm text-[var(--frappe-text)]">
-                              {msg.subject}
-                            </span>
-                            <span className="line-clamp-1 text-xs text-[var(--frappe-text-muted)]">
+                            <span className="line-clamp-2 text-sm text-[var(--frappe-text-muted)]">
                               {msg.body}
                             </span>
                             {folder === "inbox" && !msg.isRead ? (
@@ -276,14 +272,10 @@ export default function MessagesPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h2 className="font-heading text-lg font-semibold text-[var(--frappe-text)]">
-                        {selected.subject}
+                        {selected.sender?.fullName ?? "Message"}
                       </h2>
                       <p className="mt-1 text-sm text-[var(--frappe-text-muted)]">
-                        From{" "}
-                        <span className="font-medium text-[var(--frappe-text)]">
-                          {selected.sender?.fullName}
-                        </span>{" "}
-                        →{" "}
+                        To{" "}
                         <span className="font-medium text-[var(--frappe-text)]">
                           {selected.recipient?.fullName}
                         </span>
@@ -357,9 +349,6 @@ function ComposeMessageDialog({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [recipientId, setRecipientId] = useState(replyTo?.senderId ?? "");
-  const [subject, setSubject] = useState(
-    replyTo ? `Re: ${replyTo.subject}` : ""
-  );
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -377,7 +366,6 @@ function ComposeMessageDialog({
   useEffect(() => {
     if (open && replyTo) {
       setRecipientId(replyTo.senderId);
-      setSubject(`Re: ${replyTo.subject}`);
     }
   }, [open, replyTo]);
 
@@ -391,14 +379,12 @@ function ComposeMessageDialog({
     try {
       await sendMessage({
         recipientId,
-        subject: subject.trim(),
         body: body.trim(),
       });
       toast.success("Message sent");
       setOpen(false);
       setBody("");
       if (!replyTo) {
-        setSubject("");
         setRecipientId("");
       }
       onSent();
@@ -438,16 +424,6 @@ function ComposeMessageDialog({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="msg-subject">Subject</Label>
-            <Input
-              id="msg-subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-              className="h-10 rounded-xl"
-            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="msg-body">Message</Label>

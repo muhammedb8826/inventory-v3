@@ -173,10 +173,7 @@ export function MessagesBell() {
                     {formatRelativeDate(msg.createdAt)}
                   </span>
                 </div>
-                <p className="truncate text-sm text-foreground/90">
-                  {msg.subject}
-                </p>
-                <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                   {msg.body}
                 </p>
               </Link>
