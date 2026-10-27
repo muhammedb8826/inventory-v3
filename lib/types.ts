@@ -24,6 +24,7 @@ export type StockMovementType =
   | "SALE"
   | "SALE_VOID"
   | "SALE_REVERSAL"
+  | "SALE_RETURN"
   | "PURCHASE"
   | "PURCHASE_VOID"
   | "PURCHASE_REVERSAL"
@@ -42,7 +43,11 @@ export type ProductionOrderStatus =
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED";
-export type TransferStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+export type TransferStatus =
+  | "PENDING"
+  | "IN_TRANSIT"
+  | "COMPLETED"
+  | "CANCELLED";
 export type CreditStatus = "OPEN" | "PARTIAL" | "PAID";
 /** How a credit balance was created. OPENING is cutover AR/AP with no sale/purchase. */
 export type CreditSource = "SALE" | "PURCHASE" | "OPENING";
@@ -133,6 +138,7 @@ export interface Location {
 export interface Item {
   id: string;
   sku?: string | null;
+  barcode?: string | null;
   description: string;
   unit?: string | null;
   itemType?: ItemType | null;
@@ -147,6 +153,9 @@ export interface StockRecord {
   locationId: string;
   itemId: string;
   quantity: string;
+  /** Committed qty still on-hand; available ≈ quantity − reserved. */
+  reserved?: string;
+  available?: string;
   purchasePrice: string;
   reorderPoint?: string | null;
   item: Item;

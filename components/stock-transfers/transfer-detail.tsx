@@ -41,26 +41,36 @@ export function TransferDetail({
   onChanged?: (transfer: StockTransfer) => void;
 }) {
   const lines = transfer.lines ?? [];
-  const [voiding, setVoiding] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  async function handleVoid() {
-    const ok = confirm(
-      "Void this completed transfer? Stock will move back to the source location."
-    );
-    if (!ok) return;
-    setVoiding(true);
+  async function runAction(
+    path: string,
+    method: "POST" | "DELETE",
+    success: string
+  ) {
+    setBusy(true);
     try {
-      const updated = await api<StockTransfer>(
-        `/stock-transfers/${transfer.id}`,
-        { method: "DELETE" }
-      );
-      toast.success("Transfer voided");
+      const updated = await api<StockTransfer>(path, { method });
+      toast.success(success);
       onChanged?.(updated);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
-      setVoiding(false);
+      setBusy(false);
     }
+  }
+
+  function handleVoid() {
+    const label =
+      transfer.status === "PENDING"
+        ? "Cancel this pending transfer? Reserved stock will be released."
+        : "Void this completed transfer? Stock will move back to the source location.";
+    if (!confirm(label)) return;
+    void runAction(
+      `/stock-transfers/${transfer.id}`,
+      "DELETE",
+      transfer.status === "PENDING" ? "Transfer cancelled" : "Transfer voided"
+    );
   }
 
   return (
@@ -75,20 +85,64 @@ export function TransferDetail({
         >
           Stock movements
         </FrappeButtonLink>
-        {transfer.status === "COMPLETED" ? (
-          <PermissionGate permission="stock_transfer.write">
+        <PermissionGate permission="stock_transfer.write">
+          {transfer.status === "PENDING" ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  void runAction(
+                    `/stock-transfers/${transfer.id}/ship`,
+                    "POST",
+                    "Shipped — in transit"
+                  )
+                }
+              >
+                {busy ? "Working…" : "Ship"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="text-destructive"
+                disabled={busy}
+                onClick={handleVoid}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : null}
+          {transfer.status === "IN_TRANSIT" ? (
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void runAction(
+                  `/stock-transfers/${transfer.id}/receive`,
+                  "POST",
+                  "Received at destination"
+                )
+              }
+            >
+              {busy ? "Working…" : "Receive"}
+            </Button>
+          ) : null}
+          {transfer.status === "COMPLETED" ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
               className="text-destructive"
-              disabled={voiding}
+              disabled={busy}
               onClick={handleVoid}
             >
-              {voiding ? "Voiding…" : "Void transfer"}
+              Void transfer
             </Button>
-          </PermissionGate>
-        ) : null}
+          ) : null}
+        </PermissionGate>
         <Badge variant="outline" className="ml-auto">
           {transfer.status}
         </Badge>

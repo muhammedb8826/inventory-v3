@@ -58,6 +58,7 @@ export function StockFormDialog({
     record?.item.description ?? ""
   );
   const [sku, setSku] = useState(record?.item.sku ?? "");
+  const [barcode, setBarcode] = useState(record?.item.barcode ?? "");
   const [unit, setUnit] = useState(record?.item.unit ?? "pcs");
   const [itemType, setItemType] = useState<ItemType | "">(
     record?.item.itemType ?? ""
@@ -96,6 +97,7 @@ export function StockFormDialog({
     if (nextOpen) {
       setDescription(record?.item.description ?? "");
       setSku(record?.item.sku ?? "");
+      setBarcode(record?.item.barcode ?? "");
       setUnit(record?.item.unit ?? "pcs");
       setItemType(record?.item.itemType ?? "");
       setQuantity(record?.quantity ?? "");
@@ -151,6 +153,7 @@ export function StockFormDialog({
           body: {
             description: description.trim(),
             sku: optionalStringBodyValue(sku),
+            barcode: optionalStringBodyValue(barcode),
             unit: optionalStringBodyValue(unit),
             itemType: itemType || null,
             purchasePrice: parseFloat(purchasePrice),
@@ -170,6 +173,7 @@ export function StockFormDialog({
           quantity: parseFloat(quantity),
           purchasePrice: parseFloat(purchasePrice),
           sku: optionalStringBodyValue(sku) ?? undefined,
+          barcode: optionalStringBodyValue(barcode) ?? undefined,
           unit: optionalStringBodyValue(unit) ?? undefined,
         };
         if (itemType) body.itemType = itemType;
@@ -313,6 +317,14 @@ export function StockFormDialog({
                     Unique when set — leave blank if unused.
                   </p>
                 )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="stock-barcode">Barcode (optional)</Label>
+                <Input
+                  id="stock-barcode"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label>Unit</Label>

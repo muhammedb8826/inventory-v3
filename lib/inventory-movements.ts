@@ -8,6 +8,7 @@ export const STOCK_MOVEMENT_TYPE_OPTIONS: {
   { value: "SALE", label: "Sale" },
   { value: "SALE_VOID", label: "Sale void" },
   { value: "SALE_REVERSAL", label: "Sale reversal" },
+  { value: "SALE_RETURN", label: "Sale return" },
   { value: "PURCHASE", label: "Purchase" },
   { value: "PURCHASE_VOID", label: "Purchase void" },
   { value: "PURCHASE_REVERSAL", label: "Purchase reversal" },
