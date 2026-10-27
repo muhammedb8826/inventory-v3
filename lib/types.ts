@@ -1,0 +1,872 @@
+import type { Currency } from "@/lib/currency";
+
+export type LocationType = "WAREHOUSE" | "SHOWROOM";
+export type PaymentMethod = "CASH" | "BANK" | "CREDIT";
+export type BankAccountType = "CASH" | "BANK";
+export type BankTransactionType =
+  | "SALE"
+  | "PURCHASE"
+  | "ADJUSTMENT"
+  | "CREDIT_PAYMENT"
+  | "EXPENSE";
+export type BankTransactionDirection = "in" | "out";
+export type StockAdjustmentDirection = "in" | "out";
+export type StockAdjustmentReason =
+  | "DAMAGE"
+  | "LOSS"
+  | "FOUND"
+  | "COUNT"
+  | "OPENING"
+  | "RETURN"
+  | "OTHER";
+export type ItemType = "RAW" | "SEMI" | "FINISHED" | "OTHER";
+export type ProductionOrderStatus =
+  | "DRAFT"
+  | "RELEASED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
+export type TransferStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+export type CreditStatus = "OPEN" | "PARTIAL" | "PAID";
+/** How a credit balance was created. OPENING is cutover AR/AP with no sale/purchase. */
+export type CreditSource = "SALE" | "PURCHASE" | "OPENING";
+export type DocumentStatus = "POSTED" | "VOIDED";
+export type CommissionBasis = "PROFIT" | "SALES";
+
+export type { Currency };
+
+export interface HealthResponse {
+  status: string;
+  service: string;
+  currency?: Currency;
+}
+
+export interface PaginatedMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T, Totals = undefined> {
+  data: T[];
+  meta: PaginatedMeta;
+  totals?: Totals;
+}
+
+export interface InventoryListTotals {
+  quantity: string;
+  inventoryValue: string;
+}
+
+export interface PurchaseListTotals {
+  subtotal: string;
+  total: string;
+}
+
+export interface SaleListTotals {
+  subtotal: string;
+  total: string;
+  commission: string;
+}
+
+export interface ExpenseListTotals {
+  amount: string;
+}
+
+export interface CreditListTotals {
+  amount: string;
+  paidAmount: string;
+  balance: string;
+}
+
+export interface LinkedCredit {
+  paidAmount?: string;
+  status?: CreditStatus;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  /** Auth/login: codes only. `GET /roles` may return full `Permission` objects. */
+  permissions?: string[] | Permission[];
+  description?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: Role;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  type: LocationType;
+  address?: string;
+  isActive?: boolean;
+}
+
+export interface Item {
+  id: string;
+  sku?: string | null;
+  description: string;
+  unit?: string | null;
+  itemType?: ItemType | null;
+  /** Relative path from API, e.g. `/uploads/items/...` */
+  imagePath?: string | null;
+  /** Absolute or relative image URL for display */
+  imageUrl?: string | null;
+}
+
+export interface StockRecord {
+  id: string;
+  locationId: string;
+  itemId: string;
+  quantity: string;
+  purchasePrice: string;
+  reorderPoint?: string | null;
+  item: Item;
+  location: Location;
+}
+
+export type LowStockStatus = "LOW_STOCK" | "OUT_OF_STOCK";
+
+export interface LowStockRecord extends StockRecord {
+  status: LowStockStatus;
+  shortage: string;
+}
+
+export interface StockAdjustment {
+  id: string;
+  locationId: string;
+  itemId: string;
+  direction: StockAdjustmentDirection;
+  quantity: string;
+  quantityBefore: string;
+  quantityAfter: string;
+  reason: StockAdjustmentReason | string;
+  notes?: string | null;
+  reference?: string | null;
+  purchasePrice?: string | null;
+  createdById?: string;
+  createdBy?: { id: string; fullName?: string; email?: string };
+  item?: Item;
+  location?: Location;
+  createdAt?: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  isActive?: boolean;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  isActive?: boolean;
+}
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  balance: string;
+  accountType?: BankAccountType;
+  bankName?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  isActive?: boolean;
+}
+
+export interface BankLiquidity {
+  accounts: BankAccount[];
+  totals: {
+    cashTotal: string;
+    bankTotal: string;
+    totalLiquidity: string;
+  };
+}
+
+export interface BankTransaction {
+  id: string;
+  bankAccountId: string;
+  type: BankTransactionType | string;
+  /** Money into (`in`) or out of (`out`) the account. Amount is always positive. */
+  direction: BankTransactionDirection;
+  amount: string;
+  balanceAfter?: string;
+  description?: string;
+  refType?: string;
+  refId?: string;
+  createdById?: string;
+  bankAccount?: BankAccount;
+  createdAt?: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+}
+
+export interface Expense {
+  id: string;
+  categoryId: string;
+  bankAccountId: string;
+  amount: string;
+  description?: string;
+  expenseDate: string;
+  category?: ExpenseCategory;
+}
+
+export interface CreditRecord {
+  id: string;
+  customerId?: string;
+  supplierId?: string;
+  saleId?: string;
+  purchaseId?: string;
+  source?: CreditSource;
+  /** Prior-system invoice / document number (opening credits). */
+  reference?: string | null;
+  notes?: string | null;
+  amount: string;
+  paidAmount: string;
+  balance?: string;
+  status: CreditStatus;
+  dueDate?: string;
+  customer?: Customer;
+  supplier?: Supplier;
+  sale?: Pick<
+    Sale,
+    "id" | "total" | "subtotal" | "totalAmount" | "createdAt" | "paymentMethod" | "status"
+  >;
+  purchase?: Pick<
+    Purchase,
+    "id" | "total" | "subtotal" | "totalAmount" | "createdAt" | "paymentMethod" | "status"
+  >;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DashboardData {
+  totalInventoryValue: string;
+  stockValueByLocation: {
+    locationId: string;
+    locationName: string;
+    value: string;
+  }[];
+  showroomCount: number;
+  dailySales: string;
+  dailyPurchases: string;
+  profitAndLoss: {
+    revenue: string;
+    costOfGoodsSold: string;
+    grossProfit: string;
+    totalExpenses: string;
+    netProfit: string;
+  };
+  financialOverview: {
+    cashTotal?: string;
+    bankTotal?: string;
+    totalLiquidity?: string;
+    totalBankBalance: string;
+    bankAccounts: {
+      id: string;
+      name: string;
+      balance: string;
+      accountType?: BankAccountType;
+      bankName?: string | null;
+    }[];
+  };
+  currency?: Currency;
+}
+
+export interface ProfitLossItem {
+  itemId: string;
+  description: string;
+  quantitySold: string;
+  revenue: string;
+  cost: string;
+  profit: string;
+  marginPercent: string;
+}
+
+export interface Permission {
+  id: string;
+  code: string;
+  description?: string;
+}
+
+export interface PurchaseLine {
+  id?: string;
+  itemId: string;
+  quantity: string;
+  unitPrice: string;
+  lineTotal?: string;
+  amount?: string;
+  item?: Item;
+}
+
+export interface Purchase {
+  id: string;
+  supplierId?: string;
+  locationId?: string;
+  paymentMethod: PaymentMethod;
+  bankAccountId?: string;
+  notes?: string;
+  creditDueDate?: string;
+  status?: DocumentStatus;
+  subtotal?: string;
+  total?: string;
+  /** @deprecated Prefer `total` */
+  totalAmount?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  supplier?: Supplier;
+  location?: Location;
+  bankAccount?: BankAccount;
+  supplierCredit?: LinkedCredit;
+  lines?: PurchaseLine[];
+}
+
+export interface SaleLine {
+  id?: string;
+  itemId: string;
+  quantity: string;
+  unitPrice: string;
+  lineTotal?: string;
+  amount?: string;
+  item?: Item;
+}
+
+export interface SaleUserRef {
+  id: string;
+  fullName: string;
+  email?: string;
+}
+
+export interface Sale {
+  id: string;
+  customerId?: string;
+  locationId?: string;
+  paymentMethod: PaymentMethod;
+  bankAccountId?: string;
+  notes?: string;
+  creditDueDate?: string;
+  status?: DocumentStatus;
+  subtotal?: string;
+  total?: string;
+  /** @deprecated Prefer `total` */
+  totalAmount?: string;
+  soldByUserId?: string;
+  commissionPercent?: string | number;
+  commissionBasis?: CommissionBasis;
+  commissionAmount?: string;
+  soldByUser?: SaleUserRef;
+  /** @deprecated Prefer `soldByUser` */
+  soldBy?: SaleUserRef;
+  createdBy?: SaleUserRef;
+  createdAt?: string;
+  updatedAt?: string;
+  customer?: Customer;
+  location?: Location;
+  bankAccount?: BankAccount;
+  customerCredit?: LinkedCredit;
+  lines?: SaleLine[];
+}
+
+export interface SalesCommissionSummaryRow {
+  soldByUserId: string;
+  soldByUserName?: string;
+  soldByUser?: SaleUserRef;
+  /** @deprecated Prefer `soldByUserName` / `totalSubtotal` */
+  soldBy?: SaleUserRef;
+  saleCount: number;
+  totalSubtotal?: string;
+  /** @deprecated Prefer `totalSubtotal` */
+  totalSales?: string;
+  totalCommission: string;
+}
+
+export interface ReportPeriod {
+  from?: string;
+  to?: string;
+}
+
+export interface ReportsSummary {
+  currency?: Currency;
+  totalRevenue: string;
+  totalPurchases?: string;
+  /** @deprecated Use totalPurchases */
+  totalCost?: string;
+  totalExpenses: string;
+  grossProfit: string;
+  netProfit: string;
+  marginPercent: string;
+  period?: ReportPeriod;
+}
+
+export interface ReportPaymentMethodRow {
+  paymentMethod: PaymentMethod;
+  count: number;
+  total: string;
+}
+
+export interface ReportLocationBreakdownRow {
+  locationId: string;
+  locationName: string;
+  count: number;
+  total: string;
+}
+
+export interface ReportSales {
+  currency?: Currency;
+  period?: ReportPeriod;
+  totals: {
+    count: number;
+    subtotal: string;
+    total: string;
+    commission: string;
+  };
+  byPaymentMethod: ReportPaymentMethodRow[];
+  byLocation: ReportLocationBreakdownRow[];
+}
+
+export interface ReportPurchases {
+  currency?: Currency;
+  period?: ReportPeriod;
+  totals: { count: number; total: string };
+  byPaymentMethod: ReportPaymentMethodRow[];
+  byLocation: ReportLocationBreakdownRow[];
+}
+
+export interface ReportExpenseCategoryRow {
+  categoryId: string;
+  categoryName: string;
+  count: number;
+  total: string;
+}
+
+export interface ReportExpenses {
+  currency?: Currency;
+  period?: ReportPeriod;
+  totals: { count: number; total: string };
+  byCategory: ReportExpenseCategoryRow[];
+}
+
+export interface ReportPurchasesByItemRow {
+  itemId: string;
+  sku?: string;
+  description: string;
+  quantityPurchased: string;
+  total?: string;
+  /** @deprecated Prefer `total` */
+  totalSpend?: string;
+}
+
+export interface ReportPurchasesByItem {
+  currency?: Currency;
+  period?: { from?: string | null; to?: string | null };
+  items: ReportPurchasesByItemRow[];
+}
+
+export interface ReportCommissionRow {
+  soldByUserId: string;
+  soldByUserName: string;
+  saleCount: number;
+  totalSubtotal?: string;
+  totalCommission: string;
+}
+
+export interface ReportCommissions {
+  currency?: Currency;
+  period?: { from?: string | null; to?: string | null };
+  totalCommission: string;
+  reps: ReportCommissionRow[];
+}
+
+export interface ReportCreditByCustomerRow {
+  customerId: string;
+  customerName: string;
+  creditCount: number;
+  outstanding: string;
+}
+
+export interface ReportCreditBySupplierRow {
+  supplierId: string;
+  supplierName: string;
+  creditCount: number;
+  outstanding: string;
+}
+
+export interface ReportCreditPartySummary {
+  totalOutstanding: string;
+  creditCount: number;
+  byCustomer?: ReportCreditByCustomerRow[];
+  bySupplier?: ReportCreditBySupplierRow[];
+}
+
+export interface ReportCredits {
+  currency?: Currency;
+  customers?: ReportCreditPartySummary;
+  suppliers?: ReportCreditPartySummary;
+  /** @deprecated Prefer `customers` */
+  customerReceivables?: {
+    count: number;
+    total: string;
+    outstanding: string;
+  };
+  /** @deprecated Prefer `suppliers` */
+  supplierPayables?: {
+    count: number;
+    total: string;
+    outstanding: string;
+  };
+}
+
+export interface ReportSalesByItemRow {
+  itemId: string;
+  sku?: string;
+  description: string;
+  itemDescription?: string;
+  quantitySold: string;
+  revenue: string;
+  cost: string;
+  profit: string;
+  marginPercent: string;
+}
+
+export interface ReportSalesByItem {
+  currency?: Currency;
+  period?: { from?: string | null; to?: string | null };
+  items: ReportSalesByItemRow[];
+}
+
+export interface ReportInventoryAgingRow {
+  itemId: string;
+  locationId?: string;
+  sku?: string;
+  description?: string;
+  itemDescription?: string;
+  locationName?: string;
+  quantity: string;
+  purchasePrice?: string;
+  inventoryValue?: string;
+  value?: string;
+  lastPurchaseDate?: string;
+  lastUpdated?: string;
+  ageDays?: number | string;
+}
+
+export interface ReportInventoryAging {
+  currency?: Currency;
+  totalInventoryValue: string;
+  items: ReportInventoryAgingRow[];
+}
+
+export interface ReportCustomerActivityRow {
+  customerId: string;
+  customerName?: string;
+  name?: string;
+  phone?: string;
+  saleCount?: number;
+  salesCount?: number;
+  totalSpend?: string;
+  totalSpent?: string;
+  paidAmount?: string;
+  creditAmount?: string;
+  outstandingAmount?: string;
+}
+
+export interface ReportCustomerActivity {
+  currency?: Currency;
+  period?: { from?: string | null; to?: string | null };
+  customers: ReportCustomerActivityRow[];
+}
+
+export interface ReportSupplierActivityRow {
+  supplierId: string;
+  supplierName?: string;
+  name?: string;
+  phone?: string;
+  purchaseCount: number;
+  totalPurchased: string;
+  paidAmount?: string;
+  creditAmount?: string;
+  outstandingAmount?: string;
+}
+
+export interface ReportSupplierActivity {
+  currency?: Currency;
+  period?: { from?: string | null; to?: string | null };
+  suppliers: ReportSupplierActivityRow[];
+}
+
+export interface ReportCashFlowRow {
+  date: string;
+  cashIn?: string;
+  cashOut?: string;
+  netMovement?: string;
+  inflow?: string;
+  outflow?: string;
+  net?: string;
+}
+
+export interface ReportCashFlow {
+  period?: ReportPeriod;
+  dailyBalances: ReportCashFlowRow[];
+}
+
+export interface StockTransferLine {
+  id?: string;
+  itemId: string;
+  quantity: string;
+  item?: Item;
+}
+
+export interface StockTransfer {
+  id: string;
+  status: TransferStatus;
+  fromLocationId?: string;
+  toLocationId?: string;
+  notes?: string;
+  createdAt?: string;
+  fromLocation?: Location;
+  toLocation?: Location;
+  lines?: StockTransferLine[];
+}
+
+export interface BomLine {
+  id?: string;
+  componentItemId: string;
+  quantity: string | number;
+  scrapPercent?: string | number | null;
+  componentItem?: Item;
+}
+
+export interface Bom {
+  id: string;
+  finishedItemId: string;
+  name: string;
+  version?: string | null;
+  notes?: string | null;
+  isActive?: boolean;
+  finishedItem?: Item;
+  lines?: BomLine[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductionOrderLine {
+  id?: string;
+  componentItemId: string;
+  quantityRequired?: string;
+  quantityIssued?: string;
+  scrapPercent?: string | null;
+  componentItem?: Item;
+}
+
+export interface ProductionOrder {
+  id: string;
+  bomId: string;
+  locationId: string;
+  finishedItemId?: string;
+  quantityPlanned: string;
+  quantityCompleted?: string;
+  status: ProductionOrderStatus;
+  notes?: string | null;
+  bom?: Bom;
+  location?: Location;
+  finishedItem?: Item;
+  lines?: ProductionOrderLine[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserAdmin {
+  id: string;
+  email: string;
+  fullName: string;
+  roleId?: string;
+  role?: Role;
+  isActive?: boolean;
+}
+
+export interface ApiError {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
+}
+
+export type NotificationType =
+  | "LOW_STOCK"
+  | "STOCK_TRANSFER"
+  | "SALE"
+  | "PURCHASE"
+  | "CREDIT_DUE"
+  | "EXPENSE"
+  | "SYSTEM"
+  | "INQUIRY";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  module: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  isRead: boolean;
+  readAt?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationUnreadCount {
+  count: number;
+}
+
+export type InquiryStatus =
+  | "NEW"
+  | "IN_PROGRESS"
+  | "QUOTED"
+  | "CONVERTED"
+  | "CLOSED"
+  | "CANCELLED";
+
+export type InquirySource = "PUBLIC" | "INTERNAL";
+
+export type InquiryPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+
+/** CRM assignment ownership — assign → PENDING → Accept/Decline */
+export type InquiryAssignmentStatus =
+  | "UNASSIGNED"
+  | "PENDING"
+  | "ACCEPTED"
+  | "DECLINED";
+
+export interface InquiryLine {
+  id?: string;
+  itemId: string;
+  quantity?: string | null;
+  notes?: string | null;
+  item?: Item | null;
+}
+
+export interface InquiryLineInput {
+  itemId: string;
+  quantity?: number;
+  notes?: string;
+}
+
+export interface Inquiry {
+  id: string;
+  contactName: string;
+  phone?: string | null;
+  email?: string | null;
+  subject: string;
+  message: string;
+  status: InquiryStatus;
+  priority: InquiryPriority;
+  source: InquirySource;
+  customerId?: string | null;
+  /** @deprecated Prefer `lines`; may still appear on older payloads */
+  itemId?: string | null;
+  assignedToUserId?: string | null;
+  assignmentStatus?: InquiryAssignmentStatus;
+  assignedAt?: string | null;
+  acceptedAt?: string | null;
+  createdById?: string | null;
+  internalNotes?: string | null;
+  followUpAt?: string | null;
+  convertedSaleId?: string | null;
+  customer?: Customer | null;
+  /** @deprecated Prefer `lines` */
+  item?: Item | null;
+  lines?: InquiryLine[];
+  assignedTo?: UserAdmin | null;
+  createdBy?: UserAdmin | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicCatalogItem {
+  id: string;
+  sku?: string | null;
+  description: string;
+  imageUrl?: string | null;
+}
+
+export interface PublicInquiryResponse {
+  id: string;
+  status: InquiryStatus;
+  message: string;
+}
+
+export interface CreatePublicInquiryBody {
+  contactName: string;
+  subject: string;
+  message: string;
+  phone?: string;
+  email?: string;
+  lines?: InquiryLineInput[];
+  /** @deprecated Prefer `lines` */
+  itemId?: string;
+}
+
+export interface CreateInquiryBody extends CreatePublicInquiryBody {
+  priority?: InquiryPriority;
+  customerId?: string;
+  assignedToUserId?: string;
+  internalNotes?: string;
+  followUpAt?: string;
+}
+
+export interface UpdateInquiryBody {
+  contactName?: string;
+  phone?: string | null;
+  email?: string | null;
+  subject?: string;
+  message?: string;
+  status?: InquiryStatus;
+  priority?: InquiryPriority;
+  customerId?: string | null;
+  lines?: InquiryLineInput[];
+  /** @deprecated Prefer `lines` */
+  itemId?: string | null;
+  assignedToUserId?: string | null;
+  internalNotes?: string | null;
+  followUpAt?: string | null;
+  convertedSaleId?: string | null;
+}
+
+/** Public + admin branding / site appearance settings */
+export interface BrandingSettings {
+  appName: string;
+  /** Absolute URL or path to the hero image; null = use frontend default */
+  heroImageUrl?: string | null;
+  headline?: string | null;
+  supportingText?: string | null;
+  updatedAt?: string;
+}
+
+export interface UpdateBrandingBody {
+  appName?: string;
+  headline?: string | null;
+  supportingText?: string | null;
+}

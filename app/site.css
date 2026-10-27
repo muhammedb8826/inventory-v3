@@ -1,0 +1,110 @@
+/* Customer marketing site — scoped under .site */
+.site {
+  --site-ink: #14221f;
+  --site-ink-soft: #3d524c;
+  --site-paper: #eef1ef;
+  --site-paper-deep: #e2e8e5;
+  --site-surface: #f7f9f8;
+  --site-accent: #0f6e6a;
+  --site-accent-hover: #0c5a57;
+  --site-accent-soft: color-mix(in oklab, var(--site-accent) 14%, white);
+  --site-line: color-mix(in oklab, var(--site-ink) 12%, transparent);
+  --site-hero-veil: color-mix(in oklab, var(--site-ink) 55%, transparent);
+  --font-site-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-site-body: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  color: var(--site-ink);
+  background: var(--site-paper);
+  font-family: var(--font-site-body);
+  min-height: 100svh;
+}
+
+.site * {
+  box-sizing: border-box;
+}
+
+.site-display {
+  font-family: var(--font-site-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+.site-grain {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 20% -10%,
+      color-mix(in oklab, var(--site-accent) 18%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 100% 0%,
+      color-mix(in oklab, #8a9a6a 16%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(180deg, var(--site-paper) 0%, var(--site-paper-deep) 100%);
+}
+
+@keyframes site-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes site-ken {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes site-line-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.site-animate-rise {
+  animation: site-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.site-animate-rise-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.site-animate-rise-delay-2 {
+  animation-delay: 0.24s;
+}
+
+.site-animate-rise-delay-3 {
+  animation-delay: 0.36s;
+}
+
+.site-hero-media {
+  animation: site-ken 12s ease-out both;
+}
+
+.site-rule {
+  transform-origin: left center;
+  animation: site-line-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-animate-rise,
+  .site-animate-rise-delay-1,
+  .site-animate-rise-delay-2,
+  .site-animate-rise-delay-3,
+  .site-hero-media,
+  .site-rule {
+    animation: none;
+  }
+}
