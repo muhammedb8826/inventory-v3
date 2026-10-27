@@ -56,6 +56,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExportInventoryButton } from "@/components/inventory/export-inventory-button";
 import { InventoryAdjustmentsPanel } from "@/components/inventory/inventory-adjustments-panel";
+import { InventoryMovementsPanel } from "@/components/inventory/inventory-movements-panel";
 import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { StockDetailDialog } from "@/components/inventory/stock-detail-dialog";
 import { StockFormDialog } from "@/components/inventory/stock-form-dialog";
@@ -166,6 +167,7 @@ export default function InventoryPage() {
           <TabsList>
             <TabsTrigger value="stock">Stock</TabsTrigger>
             <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
+            <TabsTrigger value="movements">Movements</TabsTrigger>
           </TabsList>
           <TabsContent value="stock" className="mt-0 space-y-0">
         <FrappeFilterBar>
@@ -422,6 +424,9 @@ export default function InventoryPage() {
           </TabsContent>
           <TabsContent value="adjustments" className="mt-0">
             <InventoryAdjustmentsPanel />
+          </TabsContent>
+          <TabsContent value="movements" className="mt-0">
+            <InventoryMovementsPanel />
           </TabsContent>
         </Tabs>
       </PermissionGate>

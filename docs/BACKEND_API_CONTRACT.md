@@ -167,7 +167,7 @@ Many list endpoints return:
 | `from` / `to` | ISO date range on list `createdAt` (or `expenseDate` for expenses) |
 | `search` | Case-insensitive text search (fields vary per endpoint — see below) |
 
-**Paginated** `{ data, meta }`: `/purchases`, `/sales`, `/inventory`, `/inventory/low-stock`, `/inventory/adjustments`, `/boms`, `/production-orders`, `/stock-transfers`, `/credits/customers`, `/credits/suppliers`, `/expenses`, `/suppliers`, `/customers`, `/inquiries`, `/banks/transactions`, `/users`, `/roles`, `/locations`, `/notifications`.
+**Paginated** `{ data, meta }`: `/purchases`, `/sales`, `/inventory`, `/inventory/low-stock`, `/inventory/adjustments`, `/inventory/movements`, `/boms`, `/production-orders`, `/stock-transfers`, `/credits/customers`, `/credits/suppliers`, `/expenses`, `/suppliers`, `/customers`, `/inquiries`, `/banks/transactions`, `/users`, `/roles`, `/locations`, `/notifications`.
 
 **List `totals`** (summed over the filtered set, not just the page): `/inventory`, `/purchases`, `/sales`, `/expenses`, `/credits/*`.
 
@@ -201,6 +201,7 @@ All report endpoints require `reports.read`. Optional query filters on date-base
 | `/inventory` | `locationId` (optional — omit for all locations), `search` (item description, SKU) |
 | `/inventory/low-stock` | `locationId` (optional), `page`, `limit` |
 | `/inventory/adjustments` | `locationId`, `itemId`, `direction` (`in` \| `out`), `reason`, `search`, `from`/`to` |
+| `/inventory/movements` | `locationId`, `itemId`, `type`, `refType`, `refId`, `search`, `from`/`to` |
 | `/boms` | `finishedItemId`, `isActive` (`true`\|`false`), `search` |
 | `/production-orders` | `locationId`, `finishedItemId`, `bomId`, `status`, `search`, `from`/`to` |
 | `/suppliers`, `/customers` | `search` (name, email, phone) |
@@ -254,6 +255,7 @@ The frontend builds query strings with `lib/list-query.ts` (`buildListPath`) and
 | GET | `/inventory/low-stock?locationId=` | `inventory.read` |
 | GET | `/inventory/adjustments` | `inventory.read` |
 | POST | `/inventory/adjustments` | `inventory.adjust` |
+| GET | `/inventory/movements` | `inventory.read` |
 | GET | `/inventory/:id` | `inventory.read` |
 | POST | `/inventory` | `inventory.write` |
 | PATCH | `/inventory/:id` | `inventory.write` |
@@ -392,6 +394,16 @@ Rules:
   "meta": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
 }
 ```
+
+### Stock movements (immutable ledger)
+
+Every qty change writes a ledger row. UI: Inventory → **Movements** tab.
+
+**List** `GET /inventory/movements` — `inventory.read`
+
+Filters: `locationId`, `itemId`, `type`, `refType`, `refId`, `search`, `from`/`to`, `page`/`limit`
+
+Types: `SALE`, `SALE_VOID`, `SALE_REVERSAL`, `PURCHASE`, `PURCHASE_VOID`, `PURCHASE_REVERSAL`, `TRANSFER_OUT`, `TRANSFER_IN`, `ADJUSTMENT`, `PRODUCTION_ISSUE`, `PRODUCTION_RECEIPT`, `PRODUCTION_REVERSE`, `OPENING`, `IMPORT`
 
 **Excel import** — `multipart/form-data`, field name `file`.
 

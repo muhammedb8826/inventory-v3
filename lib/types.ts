@@ -19,6 +19,22 @@ export type StockAdjustmentReason =
   | "OPENING"
   | "RETURN"
   | "OTHER";
+
+export type StockMovementType =
+  | "SALE"
+  | "SALE_VOID"
+  | "SALE_REVERSAL"
+  | "PURCHASE"
+  | "PURCHASE_VOID"
+  | "PURCHASE_REVERSAL"
+  | "TRANSFER_OUT"
+  | "TRANSFER_IN"
+  | "ADJUSTMENT"
+  | "PRODUCTION_ISSUE"
+  | "PRODUCTION_RECEIPT"
+  | "PRODUCTION_REVERSE"
+  | "OPENING"
+  | "IMPORT";
 export type ItemType = "RAW" | "SEMI" | "FINISHED" | "OTHER";
 export type ProductionOrderStatus =
   | "DRAFT"
@@ -157,6 +173,26 @@ export interface StockAdjustment {
   reference?: string | null;
   purchasePrice?: string | null;
   createdById?: string;
+  createdBy?: { id: string; fullName?: string; email?: string };
+  item?: Item;
+  location?: Location;
+  createdAt?: string;
+}
+
+/** Immutable stock ledger row (every qty change). */
+export interface StockMovement {
+  id: string;
+  locationId: string;
+  itemId: string;
+  type: StockMovementType | string;
+  quantityDelta: string;
+  quantityBefore: string;
+  quantityAfter: string;
+  unitCost?: string | null;
+  refType?: string | null;
+  refId?: string | null;
+  notes?: string | null;
+  createdById?: string | null;
   createdBy?: { id: string; fullName?: string; email?: string };
   item?: Item;
   location?: Location;

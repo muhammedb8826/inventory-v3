@@ -13,6 +13,7 @@ import type {
   ProductionOrderStatus,
   StockAdjustmentDirection,
   StockAdjustmentReason,
+  StockMovementType,
   TransferStatus,
 } from "@/lib/types";
 import { MAX_LIMIT } from "@/lib/pagination";
@@ -41,6 +42,14 @@ export type InventoryAdjustmentsListQueryParams = GenericListQueryParams & {
   itemId?: string;
   direction?: StockAdjustmentDirection;
   reason?: StockAdjustmentReason;
+};
+
+export type InventoryMovementsListQueryParams = GenericListQueryParams & {
+  locationId?: string;
+  itemId?: string;
+  type?: StockMovementType;
+  refType?: string;
+  refId?: string;
 };
 
 export type CustomerSupplierListQueryParams = GenericListQueryParams;
@@ -234,6 +243,14 @@ export function buildInventoryAdjustmentsListPath(
   limit?: number
 ): string {
   return buildListPath("/inventory/adjustments", { params, page, limit });
+}
+
+export function buildInventoryMovementsListPath(
+  params?: InventoryMovementsListQueryParams,
+  page?: number,
+  limit?: number
+): string {
+  return buildListPath("/inventory/movements", { params, page, limit });
 }
 
 export function buildCustomersListPath(
