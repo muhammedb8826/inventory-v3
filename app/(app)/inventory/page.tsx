@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
@@ -72,8 +73,62 @@ const ALL_LOCATIONS = "__all__";
 const VIEW_ALL = "all";
 const VIEW_LOW_STOCK = "low-stock";
 
+type InventoryTab = "stock" | "adjustments" | "movements";
+
 export default function InventoryPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab: InventoryTab =
+    tabParam === "adjustments" || tabParam === "movements"
+      ? tabParam
+      : "stock";
+
+  const movementLockedFilters = useMemo(
+    () => ({
+      refType: searchParams.get("refType") ?? undefined,
+      refId: searchParams.get("refId") ?? undefined,
+      itemId: searchParams.get("itemId") ?? undefined,
+      locationId: searchParams.get("locationId") ?? undefined,
+    }),
+    [searchParams]
+  );
+
+  const setInventoryTab = useCallback(
+    (tab: string) => {
+      const next = new URLSearchParams(searchParams.toString());
+      if (tab === "stock") {
+        next.delete("tab");
+        next.delete("refType");
+        next.delete("refId");
+        next.delete("itemId");
+        next.delete("locationId");
+      } else {
+        next.set("tab", tab);
+        if (tab !== "movements") {
+          next.delete("refType");
+          next.delete("refId");
+          next.delete("itemId");
+          next.delete("locationId");
+        }
+      }
+      const qs = next.toString();
+      router.replace(qs ? `/inventory?${qs}` : "/inventory", { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  const clearMovementLockedFilters = useCallback(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("tab", "movements");
+    next.delete("refType");
+    next.delete("refId");
+    next.delete("itemId");
+    next.delete("locationId");
+    router.replace(`/inventory?${next.toString()}`, { scroll: false });
+  }, [router, searchParams]);
+
   const [locationFilter, setLocationFilter] = useState(ALL_LOCATIONS);
   const [viewMode, setViewMode] = useState<typeof VIEW_ALL | typeof VIEW_LOW_STOCK>(
     VIEW_ALL
@@ -166,7 +221,11 @@ export default function InventoryPage() {
       }
     >
       <PermissionGate permission="inventory.read" showDenied>
-        <Tabs defaultValue="stock" className="gap-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={setInventoryTab}
+          className="gap-4"
+        >
           <TabsList className="mb-1 h-11 rounded-full bg-muted/60 p-1 shadow-none">
             <TabsTrigger value="stock" className="rounded-full px-4">
               All products
@@ -490,7 +549,10 @@ export default function InventoryPage() {
             <InventoryAdjustmentsPanel />
           </TabsContent>
           <TabsContent value="movements" className="mt-0">
-            <InventoryMovementsPanel />
+            <InventoryMovementsPanel
+              lockedFilters={movementLockedFilters}
+              onClearLockedFilters={clearMovementLockedFilters}
+            />
           </TabsContent>
         </Tabs>
       </PermissionGate>

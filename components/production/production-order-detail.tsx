@@ -23,6 +23,7 @@ import {
 import { PermissionGate } from "@/components/permission-gate";
 import { api } from "@/lib/api";
 import { errorMessage, formatDate, formatQty } from "@/lib/format";
+import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import { productionStatusLabel } from "@/lib/production";
 import type { ProductionOrder } from "@/lib/types";
@@ -112,6 +113,14 @@ export function ProductionOrderDetail({
       <div className="flex flex-wrap items-center gap-2">
         <FrappeButtonLink href="/production-orders">
           ← Back to list
+        </FrappeButtonLink>
+        <FrappeButtonLink
+          href={inventoryMovementsHref({
+            refType: "production_order",
+            refId: order.id,
+          })}
+        >
+          Stock movements
         </FrappeButtonLink>
         <Badge variant="outline" className="ml-auto">
           {productionStatusLabel(status)}

@@ -11,6 +11,7 @@ import {
 import { SaleDocumentActions } from "@/components/transactions/document-actions";
 import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { documentTotal } from "@/lib/document-utils";
+import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import {
   formatCommissionBasis,
   formatCommissionRate,
@@ -67,6 +68,14 @@ export function SaleDetail({ sale }: { sale: Sale }) {
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <FrappeButtonLink href="/sales">← Back to list</FrappeButtonLink>
+        <FrappeButtonLink
+          href={inventoryMovementsHref({
+            refType: "sale",
+            refId: sale.id,
+          })}
+        >
+          Stock movements
+        </FrappeButtonLink>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {isVoided ? (
             <Badge variant="secondary">Voided</Badge>

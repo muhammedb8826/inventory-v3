@@ -11,6 +11,7 @@ import {
 import { PurchaseDocumentActions } from "@/components/transactions/document-actions";
 import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { documentTotal } from "@/lib/document-utils";
+import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import type { Purchase, PurchaseLine } from "@/lib/types";
 
 function DetailField({
@@ -61,6 +62,14 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <FrappeButtonLink href="/purchases">← Back to list</FrappeButtonLink>
+        <FrappeButtonLink
+          href={inventoryMovementsHref({
+            refType: "purchase",
+            refId: purchase.id,
+          })}
+        >
+          Stock movements
+        </FrappeButtonLink>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {isVoided ? (
             <Badge variant="secondary">Voided</Badge>

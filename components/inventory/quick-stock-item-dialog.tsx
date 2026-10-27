@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { reorderPointBodyValue } from "@/lib/inventory-stock";
 import { ITEM_TYPE_OPTIONS } from "@/lib/item-types";
 import { errorMessage } from "@/lib/format";
+import { skuConflictMessage } from "@/lib/inventory-movements";
 import type { ItemType, StockRecord } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -46,6 +47,7 @@ export function QuickStockItemDialog({
   const [purchasePrice, setPurchasePrice] = useState("");
   const [reorderPoint, setReorderPoint] = useState("");
   const [saving, setSaving] = useState(false);
+  const [skuError, setSkuError] = useState<string | null>(null);
 
   function openDialog() {
     if (disabled) return;
@@ -62,6 +64,7 @@ export function QuickStockItemDialog({
       return;
     }
     setSaving(true);
+    setSkuError(null);
     try {
       const reorderValue = reorderPointBodyValue(reorderPoint);
       if (reorderValue === undefined) {
@@ -89,6 +92,7 @@ export function QuickStockItemDialog({
       setOpen(false);
       setDescription("");
       setSku("");
+      setSkuError(null);
       setUnit("pcs");
       setItemType("");
       setQuantity("0");
@@ -96,7 +100,13 @@ export function QuickStockItemDialog({
       setReorderPoint("");
       onCreated(record);
     } catch (err) {
-      toast.error(errorMessage(err));
+      const skuMsg = skuConflictMessage(err);
+      if (skuMsg) {
+        setSkuError(skuMsg);
+        toast.error(skuMsg);
+      } else {
+        toast.error(errorMessage(err));
+      }
     } finally {
       setSaving(false);
     }
@@ -147,8 +157,16 @@ export function QuickStockItemDialog({
               <Input
                 id="item-sku"
                 value={sku}
-                onChange={(e) => setSku(e.target.value)}
+                aria-invalid={Boolean(skuError)}
+                className={skuError ? "border-destructive" : undefined}
+                onChange={(e) => {
+                  setSku(e.target.value);
+                  if (skuError) setSkuError(null);
+                }}
               />
+              {skuError ? (
+                <p className="text-destructive text-xs">{skuError}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="item-unit">Unit</Label>

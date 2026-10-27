@@ -11,6 +11,7 @@ import {
   FrappeButtonLink,
 } from "@/components/frappe";
 import { formatDate, formatQty, errorMessage } from "@/lib/format";
+import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import { api } from "@/lib/api";
 import type { StockTransfer } from "@/lib/types";
 import { toast } from "sonner";
@@ -66,6 +67,14 @@ export function TransferDetail({
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <FrappeButtonLink href="/stock-transfers">← Back to list</FrappeButtonLink>
+        <FrappeButtonLink
+          href={inventoryMovementsHref({
+            refType: "stock_transfer",
+            refId: transfer.id,
+          })}
+        >
+          Stock movements
+        </FrappeButtonLink>
         {transfer.status === "COMPLETED" ? (
           <PermissionGate permission="stock_transfer.write">
             <Button

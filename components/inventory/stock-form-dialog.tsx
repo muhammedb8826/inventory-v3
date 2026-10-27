@@ -33,6 +33,7 @@ import {
 } from "@/lib/inventory-stock";
 import { ITEM_TYPE_OPTIONS } from "@/lib/item-types";
 import { formatQty, errorMessage } from "@/lib/format";
+import { skuConflictMessage } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import type { ItemType, StockRecord } from "@/lib/types";
 import { toast } from "sonner";
@@ -67,6 +68,7 @@ export function StockFormDialog({
   );
   const [reorderPoint, setReorderPoint] = useState(record?.reorderPoint ?? "");
   const [saving, setSaving] = useState(false);
+  const [skuError, setSkuError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
@@ -99,6 +101,7 @@ export function StockFormDialog({
       setQuantity(record?.quantity ?? "");
       setPurchasePrice(record?.purchasePrice ?? "");
       setReorderPoint(record?.reorderPoint ?? "");
+      setSkuError(null);
       resetImageState(record);
     }
   }
@@ -127,6 +130,7 @@ export function StockFormDialog({
       return;
     }
     setSaving(true);
+    setSkuError(null);
     try {
       const reorderValue = reorderPointBodyValue(reorderPoint);
       if (reorderValue === undefined) {
@@ -189,7 +193,13 @@ export function StockFormDialog({
       setOpen(false);
       onSuccess();
     } catch (err) {
-      toast.error(errorMessage(err));
+      const skuMsg = skuConflictMessage(err);
+      if (skuMsg) {
+        setSkuError(skuMsg);
+        toast.error(skuMsg);
+      } else {
+        toast.error(errorMessage(err));
+      }
     } finally {
       setSaving(false);
     }
@@ -285,8 +295,24 @@ export function StockFormDialog({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>SKU (optional)</Label>
-                <Input value={sku} onChange={(e) => setSku(e.target.value)} />
+                <Label htmlFor="stock-sku">SKU (optional)</Label>
+                <Input
+                  id="stock-sku"
+                  value={sku}
+                  aria-invalid={Boolean(skuError)}
+                  className={skuError ? "border-destructive" : undefined}
+                  onChange={(e) => {
+                    setSku(e.target.value);
+                    if (skuError) setSkuError(null);
+                  }}
+                />
+                {skuError ? (
+                  <p className="text-destructive text-xs">{skuError}</p>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Unique when set — leave blank if unused.
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label>Unit</Label>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,10 +21,22 @@ import {
 import { PageLoading } from "@/components/shared/page-loading";
 import { api } from "@/lib/api";
 import { resolveItemImageUrl } from "@/lib/inventory-media";
+import {
+  inventoryMovementsHref,
+  stockMovementDocumentHref,
+  stockMovementRefLabel,
+  stockMovementTypeLabel,
+} from "@/lib/inventory-movements";
 import { isLowStockRow } from "@/lib/inventory-stock";
 import { itemTypeLabel } from "@/lib/item-types";
-import { errorMessage, formatMoney, formatQty } from "@/lib/format";
-import type { LowStockRecord, StockRecord } from "@/lib/types";
+import { buildInventoryMovementsListPath } from "@/lib/list-query";
+import { errorMessage, formatDate, formatMoney, formatQty } from "@/lib/format";
+import type {
+  LowStockRecord,
+  PaginatedResponse,
+  StockMovement,
+  StockRecord,
+} from "@/lib/types";
 import { toast } from "sonner";
 import { EyeIcon, ImageIcon } from "lucide-react";
 
@@ -42,19 +55,36 @@ export function StockDetailDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<StockRecord | null>(null);
+  const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
     if (!nextOpen) {
       setDetail(null);
+      setMovements([]);
       return;
     }
     setDetail(record);
     setLoading(true);
     try {
-      const fresh = await api<StockRecord>(`/inventory/${record.id}`);
+      const [fresh, movementPage] = await Promise.all([
+        api<StockRecord>(`/inventory/${record.id}`),
+        api<PaginatedResponse<StockMovement> | StockMovement[]>(
+          buildInventoryMovementsListPath(
+            {
+              itemId: record.itemId,
+              locationId: record.locationId,
+            },
+            1,
+            8
+          )
+        ),
+      ]);
       setDetail(fresh);
+      setMovements(
+        Array.isArray(movementPage) ? movementPage : (movementPage.data ?? [])
+      );
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -73,6 +103,10 @@ export function StockDetailDialog({
   const outOfStock =
     lowRow.status === "OUT_OF_STOCK" || (!Number.isNaN(qty) && qty <= 0);
   const lowStock = isLowStockRow(shown);
+  const allMovementsHref = inventoryMovementsHref({
+    itemId: shown.itemId,
+    locationId: shown.locationId,
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -83,7 +117,7 @@ export function StockDetailDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
           <DialogTitle className="text-base">Stock details</DialogTitle>
         </DialogHeader>
@@ -99,10 +133,10 @@ export function StockDetailDialog({
                     <img
                       src={imageSrc}
                       alt={shown.item.description}
-                      className="aspect-[4/3] w-full object-cover"
+                      className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
                     />
                   ) : (
-                    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-[var(--frappe-text-muted)]">
+                    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-[var(--frappe-text-muted)] sm:aspect-[21/9]">
                       <ImageIcon className="size-10" />
                       <p className="text-xs">No image</p>
                     </div>
@@ -170,6 +204,90 @@ export function StockDetailDialog({
                     <DetailValue>{formatMoney(stockValue)}</DetailValue>
                   </FrappeField>
                 </FrappeFormGrid>
+              </FrappeSection>
+              <FrappeSection
+                title="Recent movements"
+                description="Ledger for this item at this location"
+              >
+                {loading && movements.length === 0 ? (
+                  <p className="text-sm text-[var(--frappe-text-muted)]">
+                    Loading…
+                  </p>
+                ) : movements.length === 0 ? (
+                  <p className="text-sm text-[var(--frappe-text-muted)]">
+                    No movements recorded yet.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="frappe-list-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th className="text-right">Delta</th>
+                          <th className="text-right">After</th>
+                          <th>Reference</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {movements.map((m) => {
+                          const delta = Number(m.quantityDelta);
+                          const sign = delta > 0 ? "+" : "";
+                          const refHref = stockMovementDocumentHref(
+                            m.refType,
+                            m.refId
+                          );
+                          const refLabel = stockMovementRefLabel(
+                            m.refType,
+                            m.refId
+                          );
+                          return (
+                            <tr key={m.id}>
+                              <td className="whitespace-nowrap">
+                                {formatDate(m.createdAt)}
+                              </td>
+                              <td>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-normal"
+                                >
+                                  {stockMovementTypeLabel(m.type)}
+                                </Badge>
+                              </td>
+                              <td className="text-right tabular-nums">
+                                {sign}
+                                {formatQty(m.quantityDelta)}
+                              </td>
+                              <td className="text-right tabular-nums">
+                                {formatQty(m.quantityAfter)}
+                              </td>
+                              <td>
+                                {refHref ? (
+                                  <Link
+                                    href={refHref}
+                                    className="text-[var(--frappe-primary)] hover:underline"
+                                  >
+                                    {refLabel}
+                                  </Link>
+                                ) : (
+                                  refLabel
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="mt-3">
+                  <Link
+                    href={allMovementsHref}
+                    className="text-sm font-medium text-[var(--frappe-primary)] hover:underline"
+                  >
+                    View full movement history →
+                  </Link>
+                </div>
               </FrappeSection>
             </FrappeDocument>
           )}
