@@ -35,7 +35,7 @@ export function ListSearchField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-9 w-full min-w-[160px] pl-9 sm:w-[220px]"
+        className="h-9 w-full min-w-[160px] rounded-lg pl-9 sm:w-[200px]"
       />
     </div>
   );

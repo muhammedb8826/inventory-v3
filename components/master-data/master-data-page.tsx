@@ -8,7 +8,6 @@ import { AccessDenied } from "@/components/shared/access-denied";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
-  FrappeListToolbar,
   FrappeButtonPrimary,
   FrappeField,
   FrappeFormGrid,
@@ -162,13 +161,6 @@ export function MasterDataPage<
         loading={loading}
         emptyTitle="Nothing to show"
         emptyDescription={emptyDescription}
-        leading={
-          <FrappeListToolbar>
-            <span>
-              {meta.total} record{meta.total === 1 ? "" : "s"}
-            </span>
-          </FrappeListToolbar>
-        }
         filters={
           <FrappeFilterBar>
             <ListSearchField

@@ -34,6 +34,10 @@ export interface Column<T> {
   defaultVisible?: boolean;
 }
 
+function isRightAligned(className?: string) {
+  return Boolean(className?.includes("text-right"));
+}
+
 export function DataCardTable<T extends { id: string }>({
   columns,
   rows,
@@ -42,7 +46,6 @@ export function DataCardTable<T extends { id: string }>({
   pagination,
   storageKey,
   filters,
-  leading,
   toolbar,
   loading,
   className,
@@ -56,8 +59,6 @@ export function DataCardTable<T extends { id: string }>({
   storageKey?: string;
   /** Search + filters — rendered on the same row as Customize Columns. */
   filters?: React.ReactNode;
-  /** Optional count / totals on the toolbar. */
-  leading?: React.ReactNode;
   /** Extra controls on the right (beside Customize Columns). */
   toolbar?: React.ReactNode;
   loading?: boolean;
@@ -99,44 +100,44 @@ export function DataCardTable<T extends { id: string }>({
       />
     ) : null;
 
-  const hasToolbar = Boolean(filters || leading || toolbar || columnMenu);
+  const hasToolbar = Boolean(filters || toolbar || columnMenu);
 
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-[var(--frappe-shadow)]",
+        "overflow-hidden rounded-2xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-[var(--frappe-shadow)]",
         className
       )}
     >
       {hasToolbar ? (
-        <div className="flex flex-col gap-3 border-b border-[var(--frappe-border)] px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 sm:px-4">
+        <div className="flex flex-col gap-3 border-b border-[var(--frappe-border)] px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-            {leading}
             {filters}
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {toolbar}
-            {columnMenu}
-          </div>
+          {(toolbar || columnMenu) && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {toolbar}
+              {columnMenu}
+            </div>
+          )}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="p-6">
+        <div className="p-8">
           <PageLoading />
         </div>
       ) : list.length === 0 ? (
-        <div className="p-4 sm:p-6">
+        <div className="p-6 sm:p-8">
           <EmptyState title={emptyTitle} description={emptyDescription} />
         </div>
       ) : (
         <>
-          {/* Mobile card list */}
           <div className="space-y-3 p-3 md:hidden">
             {list.map((row) => (
               <article
                 key={row.id}
-                className="rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)]/40 p-3.5"
+                className="rounded-xl border border-[var(--frappe-border)] bg-muted/30 p-4"
               >
                 <dl className="space-y-2.5">
                   {mobileColumns.map((col) => (
@@ -144,10 +145,10 @@ export function DataCardTable<T extends { id: string }>({
                       key={col.key}
                       className="flex items-start justify-between gap-3"
                     >
-                      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <dt className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         {col.header || col.key}
                       </dt>
-                      <dd className="min-w-0 text-right text-sm">
+                      <dd className="min-w-0 text-right text-sm text-foreground">
                         {col.cell(row)}
                       </dd>
                     </div>
@@ -157,16 +158,18 @@ export function DataCardTable<T extends { id: string }>({
             ))}
           </div>
 
-          {/* Desktop shadcn table */}
           <div className="hidden md:block">
-            <Table>
+            <Table className="min-w-full">
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  {visibleColumns.map((col) => (
+                <TableRow className="border-b border-[var(--frappe-border)] hover:bg-transparent">
+                  {visibleColumns.map((col, index) => (
                     <TableHead
                       key={col.key}
                       className={cn(
-                        "h-11 bg-muted/40 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                        "h-12 bg-muted/50 px-4 text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground",
+                        index === 0 && "pl-5",
+                        index === visibleColumns.length - 1 && "pr-5",
+                        isRightAligned(col.className) && "text-right",
                         col.className
                       )}
                     >
@@ -177,11 +180,20 @@ export function DataCardTable<T extends { id: string }>({
               </TableHeader>
               <TableBody>
                 {list.map((row) => (
-                  <TableRow key={row.id}>
-                    {visibleColumns.map((col) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-b border-[var(--frappe-border)]/70 transition-colors last:border-0 hover:bg-muted/35"
+                  >
+                    {visibleColumns.map((col, index) => (
                       <TableCell
                         key={col.key}
-                        className={cn("px-3 py-3", col.className)}
+                        className={cn(
+                          "px-4 py-3.5 text-sm text-foreground",
+                          index === 0 && "pl-5",
+                          index === visibleColumns.length - 1 && "pr-5",
+                          isRightAligned(col.className) && "text-right",
+                          col.className
+                        )}
                       >
                         {col.cell(row)}
                       </TableCell>

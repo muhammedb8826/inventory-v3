@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -171,13 +171,6 @@ export default function InquiriesPage() {
           storageKey="inquiries-list"
           rows={rows}
           loading={loading}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} inquir{meta.total === 1 ? "y" : "ies"}
-              </span>
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar>
               <ListSearchField

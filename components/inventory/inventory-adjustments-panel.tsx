@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -67,13 +67,6 @@ export function InventoryAdjustmentsPanel() {
       loading={loading}
       emptyTitle="No adjustments"
       emptyDescription="Post an adjustment from a stock row to change quantity with an audit trail."
-      leading={
-        <FrappeListToolbar>
-          <span>
-            {meta.total} adjustment{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-      }
       filters={
         <FrappeFilterBar>
           <Select value={locationId} onValueChange={setLocationId}>

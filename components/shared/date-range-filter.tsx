@@ -39,7 +39,7 @@ export function DateRangeFilter({
           onChange={(e) => onFromChange(e.target.value)}
           disabled={disabled}
           aria-label="From date"
-          className="h-9 w-[140px]"
+          className="h-9 w-[138px] rounded-lg"
         />
       </div>
       <div className={cn(!compact && "grid gap-1.5")}>
@@ -55,7 +55,7 @@ export function DateRangeFilter({
           onChange={(e) => onToChange(e.target.value)}
           disabled={disabled}
           aria-label="To date"
-          className="h-9 w-[140px]"
+          className="h-9 w-[138px] rounded-lg"
         />
       </div>
     </div>

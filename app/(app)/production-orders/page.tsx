@@ -8,7 +8,6 @@ import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeButtonPrimary,
   FrappeFilterBar,
-  FrappeListToolbar,
 } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
@@ -85,13 +84,6 @@ export default function ProductionOrdersPage() {
           storageKey="production-orders-list"
           rows={rows}
           loading={loading}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} order{meta.total === 1 ? "" : "s"}
-              </span>
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar>
               <ListSearchField

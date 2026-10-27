@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -46,11 +46,12 @@ import type {
   StockRecord,
 } from "@/lib/types";
 import { itemTypeLabel } from "@/lib/item-types";
-import { ListPageTotals } from "@/components/shared/list-page-totals";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { useLocations } from "@/hooks/use-locations";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BoxesIcon, PackageIcon, WalletIcon } from "lucide-react";
 import { ExportInventoryButton } from "@/components/inventory/export-inventory-button";
 import { InventoryAdjustmentsPanel } from "@/components/inventory/inventory-adjustments-panel";
 import { InventoryMovementsPanel } from "@/components/inventory/inventory-movements-panel";
@@ -174,6 +175,41 @@ export default function InventoryPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="stock" className="mt-0 space-y-0">
+          {!isLowStockView ? (
+            <ListSummaryCards
+              items={[
+                {
+                  label: "Items",
+                  value: meta.total.toLocaleString(),
+                  icon: PackageIcon,
+                  tone: "slate",
+                },
+                {
+                  label: "Total qty",
+                  value: formatQty(totals?.quantity ?? 0),
+                  icon: BoxesIcon,
+                  tone: "sky",
+                },
+                {
+                  label: "Stock value",
+                  value: formatMoney(totals?.inventoryValue ?? 0),
+                  icon: WalletIcon,
+                  tone: "teal",
+                },
+              ]}
+            />
+          ) : (
+            <ListSummaryCards
+              items={[
+                {
+                  label: "Low-stock items",
+                  value: meta.total.toLocaleString(),
+                  icon: PackageIcon,
+                  tone: "amber",
+                },
+              ]}
+            />
+          )}
           <DataCardTable
             storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
             rows={rows}
@@ -189,25 +225,6 @@ export default function InventoryPage() {
               isLowStockView
                 ? "Items at or below their reorder point will appear here."
                 : undefined
-            }
-            leading={
-              <FrappeListToolbar>
-                <span>
-                  {meta.total} {isLowStockView ? "low-stock item" : "item"}
-                  {meta.total === 1 ? "" : "s"}
-                </span>
-                {!isLowStockView && totals ? (
-                  <ListPageTotals
-                    items={[
-                      { label: "Total qty", value: formatQty(totals.quantity) },
-                      {
-                        label: "Stock value",
-                        value: formatMoney(totals.inventoryValue),
-                      },
-                    ]}
-                  />
-                ) : null}
-              </FrappeListToolbar>
             }
             filters={
               <FrappeFilterBar>

@@ -8,7 +8,6 @@ import { useNotifications } from "@/components/notifications/notifications-provi
 import {
   FrappeFilterBar,
   FrappeButtonPrimary,
-  FrappeListToolbar,
 } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
@@ -133,13 +132,6 @@ export default function NotificationsPage() {
         storageKey="notifications-list"
         rows={rows}
         loading={loading}
-        leading={
-          <FrappeListToolbar>
-            <span className="text-[var(--frappe-text-muted)]">
-              {meta.total} notification{meta.total === 1 ? "" : "s"}
-            </span>
-          </FrappeListToolbar>
-        }
         filters={
           <FrappeFilterBar>
             <ListSearchField

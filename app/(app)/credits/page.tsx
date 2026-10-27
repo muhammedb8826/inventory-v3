@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -44,6 +44,7 @@ import {
   buildCreditsSuppliersListPath,
 } from "@/lib/list-query";
 import { formatMoney, formatDate, errorMessage } from "@/lib/format";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import type {
   BankAccount,
   CreditListTotals,
@@ -51,12 +52,17 @@ import type {
   CreditSource,
   CreditStatus,
 } from "@/lib/types";
-import { ListPageTotals } from "@/components/shared/list-page-totals";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
+import {
+  CircleDollarSignIcon,
+  PlusIcon,
+  ScaleIcon,
+  Trash2Icon,
+  WalletIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PlusIcon, Trash2Icon } from "lucide-react";
 
 function creditSourceLabel(r: CreditRecord, partyKey: "customer" | "supplier") {
   if (r.source === "OPENING") return "Opening";
@@ -278,7 +284,17 @@ export default function CreditsPage() {
   };
 
   return (
-    <AppShell title="Credits">
+    <AppShell
+      title="Credits"
+      actions={
+        <PermissionGate permission="credit.write">
+          <OpeningCreditDialog
+            type={tab === "customers" ? "customer" : "supplier"}
+            onSuccess={reloadAll}
+          />
+        </PermissionGate>
+      }
+    >
       <PermissionGate permission="credit.read" showDenied>
         <Tabs
           value={tab}
@@ -289,42 +305,38 @@ export default function CreditsPage() {
             <TabsTrigger value="suppliers">Supplier credit</TabsTrigger>
           </TabsList>
           <TabsContent value="customers" className="mt-4">
+            <ListSummaryCards
+              items={[
+                {
+                  label: "Credits",
+                  value: customerList.meta.total.toLocaleString(),
+                  icon: CircleDollarSignIcon,
+                  tone: "slate",
+                },
+                {
+                  label: "Amount",
+                  value: formatMoney(customerList.totals?.amount ?? 0),
+                  icon: WalletIcon,
+                  tone: "sky",
+                },
+                {
+                  label: "Paid",
+                  value: formatMoney(customerList.totals?.paidAmount ?? 0),
+                  icon: WalletIcon,
+                  tone: "teal",
+                },
+                {
+                  label: "Balance",
+                  value: formatMoney(customerList.totals?.balance ?? 0),
+                  icon: ScaleIcon,
+                  tone: "amber",
+                },
+              ]}
+            />
             <DataCardTable
               storageKey="credits-list"
               rows={customerList.rows}
               loading={customerList.loading}
-              leading={
-                <FrappeListToolbar>
-                  <span className="text-[var(--frappe-text-muted)]">
-                    {customerList.meta.total} record
-                    {customerList.meta.total === 1 ? "" : "s"}
-                  </span>
-                  {customerList.totals ? (
-                    <ListPageTotals
-                      items={[
-                        {
-                          label: "Amount",
-                          value: formatMoney(customerList.totals.amount),
-                        },
-                        {
-                          label: "Paid",
-                          value: formatMoney(customerList.totals.paidAmount),
-                        },
-                        {
-                          label: "Balance",
-                          value: formatMoney(customerList.totals.balance),
-                        },
-                      ]}
-                    />
-                  ) : null}
-                  <PermissionGate permission="credit.write">
-                    <OpeningCreditDialog
-                      type="customer"
-                      onSuccess={reloadAll}
-                    />
-                  </PermissionGate>
-                </FrappeListToolbar>
-              }
               filters={
                 <FrappeFilterBar>
                   <ListSearchField
@@ -386,42 +398,38 @@ export default function CreditsPage() {
             />
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
+            <ListSummaryCards
+              items={[
+                {
+                  label: "Credits",
+                  value: supplierList.meta.total.toLocaleString(),
+                  icon: CircleDollarSignIcon,
+                  tone: "slate",
+                },
+                {
+                  label: "Amount",
+                  value: formatMoney(supplierList.totals?.amount ?? 0),
+                  icon: WalletIcon,
+                  tone: "sky",
+                },
+                {
+                  label: "Paid",
+                  value: formatMoney(supplierList.totals?.paidAmount ?? 0),
+                  icon: WalletIcon,
+                  tone: "teal",
+                },
+                {
+                  label: "Balance",
+                  value: formatMoney(supplierList.totals?.balance ?? 0),
+                  icon: ScaleIcon,
+                  tone: "amber",
+                },
+              ]}
+            />
             <DataCardTable
               storageKey="credits-secondary"
               rows={supplierList.rows}
               loading={supplierList.loading}
-              leading={
-                <FrappeListToolbar>
-                  <span className="text-[var(--frappe-text-muted)]">
-                    {supplierList.meta.total} record
-                    {supplierList.meta.total === 1 ? "" : "s"}
-                  </span>
-                  {supplierList.totals ? (
-                    <ListPageTotals
-                      items={[
-                        {
-                          label: "Amount",
-                          value: formatMoney(supplierList.totals.amount),
-                        },
-                        {
-                          label: "Paid",
-                          value: formatMoney(supplierList.totals.paidAmount),
-                        },
-                        {
-                          label: "Balance",
-                          value: formatMoney(supplierList.totals.balance),
-                        },
-                      ]}
-                    />
-                  ) : null}
-                  <PermissionGate permission="credit.write">
-                    <OpeningCreditDialog
-                      type="supplier"
-                      onSuccess={reloadAll}
-                    />
-                  </PermissionGate>
-                </FrappeListToolbar>
-              }
               filters={
                 <FrappeFilterBar>
                   <ListSearchField

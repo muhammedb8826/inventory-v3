@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -59,13 +59,6 @@ export function InventoryMovementsPanel() {
       loading={loading}
       emptyTitle="No stock movements"
       emptyDescription="Sales, purchases, transfers, production, and adjustments appear here as an immutable ledger."
-      leading={
-        <FrappeListToolbar>
-          <span>
-            {meta.total} movement{meta.total === 1 ? "" : "s"}
-          </span>
-        </FrappeListToolbar>
-      }
       filters={
         <FrappeFilterBar>
           <Select value={locationId} onValueChange={setLocationId}>

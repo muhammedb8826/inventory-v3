@@ -6,7 +6,6 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
-  FrappeListToolbar,
   FrappeButtonPrimary,
 } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -30,15 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusIcon } from "lucide-react";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
+import { PlusIcon, ShoppingCartIcon, WalletIcon } from "lucide-react";
 
 import type {
   PaymentMethod,
   Purchase,
   PurchaseListTotals,
 } from "@/lib/types";
-import { ListPageTotals } from "@/components/shared/list-page-totals";
-
 type PurchaseRow = Pick<
   Purchase,
   | "id"
@@ -109,27 +107,34 @@ export default function PurchasesPage() {
       }
     >
       <PermissionGate permission="purchase.read" showDenied>
+          <ListSummaryCards
+            items={[
+              {
+                label: "Purchases",
+                value: meta.total.toLocaleString(),
+                icon: ShoppingCartIcon,
+                tone: "slate",
+              },
+              {
+                label: "Subtotal",
+                value: formatMoney(totals?.subtotal ?? 0),
+                icon: WalletIcon,
+                tone: "sky",
+              },
+              {
+                label: "Total",
+                value: formatMoney(totals?.total ?? 0),
+                icon: WalletIcon,
+                tone: "teal",
+              },
+            ]}
+          />
           <DataCardTable
             storageKey="purchases-list"
             rows={rows}
             loading={loading}
             emptyTitle="Nothing to show"
             emptyDescription="Create your first purchase to receive stock."
-            leading={
-              <FrappeListToolbar>
-                <span>
-                  {meta.total} record{meta.total === 1 ? "" : "s"}
-                </span>
-                {totals ? (
-                  <ListPageTotals
-                    items={[
-                      { label: "Subtotal", value: formatMoney(totals.subtotal) },
-                      { label: "Total", value: formatMoney(totals.total) },
-                    ]}
-                  />
-                ) : null}
-              </FrappeListToolbar>
-            }
             filters={
               <FrappeFilterBar>
                 <ListSearchField

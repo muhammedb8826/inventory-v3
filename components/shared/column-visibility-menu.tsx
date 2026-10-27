@@ -36,9 +36,9 @@ export function ColumnVisibilityMenu({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 gap-1.5 rounded-lg"
+          className="h-9 gap-2 rounded-lg border-border bg-background px-3 font-medium shadow-none"
         >
-          <Columns3Icon className="size-3.5" />
+          <Columns3Icon className="size-4 opacity-80" />
           <span className="hidden sm:inline">Customize Columns</span>
           <span className="sm:hidden">Columns</span>
         </Button>

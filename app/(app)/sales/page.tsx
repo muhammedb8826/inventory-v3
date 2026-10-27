@@ -8,7 +8,6 @@ import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
-  FrappeListToolbar,
   FrappeButtonPrimary,
   FrappeButtonLink,
 } from "@/components/frappe";
@@ -36,14 +35,19 @@ import type {
   SaleListTotals,
   UserAdmin,
 } from "@/lib/types";
-import { ListPageTotals } from "@/components/shared/list-page-totals";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ListSearchField } from "@/components/shared/list-search-field";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
-import { PlusIcon } from "lucide-react";
+import {
+  BadgePercentIcon,
+  PlusIcon,
+  ReceiptIcon,
+  WalletIcon,
+} from "lucide-react";
 
 type SaleRow = Pick<
   Sale,
@@ -149,31 +153,40 @@ export default function SalesPage() {
       }
     >
       <PermissionGate permission="sales.read" showDenied>
+          <ListSummaryCards
+            items={[
+              {
+                label: "Sales",
+                value: meta.total.toLocaleString(),
+                icon: ReceiptIcon,
+                tone: "slate",
+              },
+              {
+                label: "Subtotal",
+                value: formatMoney(totals?.subtotal ?? 0),
+                icon: WalletIcon,
+                tone: "sky",
+              },
+              {
+                label: "Total",
+                value: formatMoney(totals?.total ?? 0),
+                icon: WalletIcon,
+                tone: "teal",
+              },
+              {
+                label: "Commission",
+                value: formatMoney(totals?.commission ?? 0),
+                icon: BadgePercentIcon,
+                tone: "violet",
+              },
+            ]}
+          />
           <DataCardTable
             storageKey="sales-list"
             rows={rows}
             loading={loading}
             emptyTitle="Nothing to show"
             emptyDescription="Create your first sale invoice."
-            leading={
-              <FrappeListToolbar>
-                <span>
-                  {meta.total} record{meta.total === 1 ? "" : "s"}
-                </span>
-                {totals ? (
-                  <ListPageTotals
-                    items={[
-                      { label: "Subtotal", value: formatMoney(totals.subtotal) },
-                      { label: "Total", value: formatMoney(totals.total) },
-                      {
-                        label: "Commission",
-                        value: formatMoney(totals.commission),
-                      },
-                    ]}
-                  />
-                ) : null}
-              </FrappeListToolbar>
-            }
             filters={
               <FrappeFilterBar>
                 <ListSearchField

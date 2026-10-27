@@ -84,7 +84,7 @@ export function FrappeFilterBar({
   return (
     <div
       className={cn(
-        "frappe-filter-bar flex min-w-0 flex-1 flex-wrap items-center gap-2",
+        "frappe-filter-bar flex min-w-0 flex-wrap items-center gap-2 [&_[data-slot=select-trigger]]:h-9 [&_[data-slot=select-trigger]]:rounded-lg",
         className
       )}
     >
@@ -103,7 +103,7 @@ export function FrappeListToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 text-sm text-[var(--frappe-text-muted)]",
+        "flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground [&>:not(:first-child)]:before:mr-2 [&>:not(:first-child)]:before:text-muted-foreground/40 [&>:not(:first-child)]:before:content-['·']",
         className
       )}
     >

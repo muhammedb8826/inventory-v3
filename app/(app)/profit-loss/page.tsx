@@ -7,7 +7,7 @@ import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { PageLoading } from "@/components/shared/page-loading";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import {
   Card,
   CardDescription,
@@ -99,13 +99,6 @@ export default function ProfitLossPage() {
           storageKey="profit-loss-by-item"
           rows={rows}
           loading={il}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} item{meta.total === 1 ? "" : "s"}
-              </span>
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar>
               <ListSearchField

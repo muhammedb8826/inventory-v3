@@ -8,7 +8,6 @@ import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeButtonPrimary,
   FrappeFilterBar,
-  FrappeListToolbar,
 } from "@/components/frappe";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -66,13 +65,6 @@ export default function BomsPage() {
           storageKey="boms-list"
           rows={rows}
           loading={loading}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} BOM{meta.total === 1 ? "" : "s"}
-              </span>
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar>
               <ListSearchField

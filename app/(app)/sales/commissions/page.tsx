@@ -8,7 +8,6 @@ import { ListSearchField } from "@/components/shared/list-search-field";
 import { PermissionGate } from "@/components/permission-gate";
 import {
   FrappeFilterBar,
-  FrappeListToolbar,
   FrappeButtonLink,
 } from "@/components/frappe";
 import { Input } from "@/components/ui/input";
@@ -136,13 +135,6 @@ export default function SalesCommissionsPage() {
           storageKey="sales-commissions"
           rows={displayRows}
           loading={loading}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} rep{meta.total === 1 ? "" : "s"}
-              </span>
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar className="items-end">
               <ListSearchField

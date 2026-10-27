@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
-import { FrappeFilterBar, FrappeListToolbar } from "@/components/frappe";
+import { FrappeFilterBar } from "@/components/frappe";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -45,11 +45,11 @@ import type {
   ExpenseCategory,
   ExpenseListTotals,
 } from "@/lib/types";
-import { ListPageTotals } from "@/components/shared/list-page-totals";
 import { useFetch } from "@/hooks/use-fetch";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
+import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { toast } from "sonner";
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { BanknoteIcon, PlusIcon, ReceiptIcon, Trash2Icon } from "lucide-react";
 
 export default function ExpensesPage() {
   const [search, setSearch] = useState("");
@@ -93,27 +93,26 @@ export default function ExpensesPage() {
       }
     >
       <PermissionGate permission="expense.read" showDenied>
+        <ListSummaryCards
+          items={[
+            {
+              label: "Expenses",
+              value: meta.total.toLocaleString(),
+              icon: ReceiptIcon,
+              tone: "slate",
+            },
+            {
+              label: "Total amount",
+              value: formatMoney(totals?.amount ?? 0),
+              icon: BanknoteIcon,
+              tone: "coral",
+            },
+          ]}
+        />
         <DataCardTable
           storageKey="expenses-list"
           rows={rows}
           loading={loading}
-          leading={
-            <FrappeListToolbar>
-              <span className="text-[var(--frappe-text-muted)]">
-                {meta.total} expense{meta.total === 1 ? "" : "s"}
-              </span>
-              {totals ? (
-                <ListPageTotals
-                  items={[
-                    {
-                      label: "Total amount",
-                      value: formatMoney(totals.amount),
-                    },
-                  ]}
-                />
-              ) : null}
-            </FrappeListToolbar>
-          }
           filters={
             <FrappeFilterBar>
               <ListSearchField
