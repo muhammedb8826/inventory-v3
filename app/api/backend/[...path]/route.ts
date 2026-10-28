@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAllowedRequestOrigin } from '@/lib/request-origin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -55,8 +56,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   const { path } = await context.params;
   if (path.some(p => p === '.' || p === '..' || /[\\/?#]/.test(p))) return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
   if (!['GET', 'HEAD'].includes(request.method)) {
-    const origin = request.headers.get('origin');
-    if (!origin || origin !== request.nextUrl.origin || request.headers.get('sec-fetch-site') === 'cross-site') {
+    if (!isAllowedRequestOrigin(request.headers, request.nextUrl.origin, process.env.APP_ORIGIN)) {
       return NextResponse.json({ message: 'Invalid request origin' }, { status: 403 });
     }
   }

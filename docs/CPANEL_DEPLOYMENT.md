@@ -56,3 +56,15 @@ Certificate trust uses Python's [SSL context API](https://docs.python.org/3/libr
 The certificate-verification warning is informational. Earlier script versions produced no progress output between that warning and upload completion. The uploader now flushes connection, authentication, application-directory and individual file progress immediately; the workflow also runs Python unbuffered. Large files report transferred bytes at least every ten seconds while data is moving. Socket operations time out after 90 seconds without activity; a healthy complete upload can take longer, subject to the deploy job's 30-minute limit.
 
 The final visible stage identifies what to inspect. Connection/authentication failures can involve host access restrictions. An upload timeout after login can involve blocked passive FTP data ports or FTPS data-channel requirements on the hosting firewall. Ask the provider to check those settings if that is the logged failure stage. The script does not fall back to plaintext FTP. The payload summary shows the number of files and size; uploading a Next.js build may involve many small files.
+
+## Login returns 403: Invalid request origin
+
+Set this runtime variable on the **frontend** Node.js app in cPanel (or its root `.env`), then restart:
+
+```env
+APP_ORIGIN=https://factory.vgatefurnishing.com
+```
+
+Use the frontend's public origin only, without `/api`, `/api/v1` or any other path. `API_URL` still points to the backend base URL including `/api/v1`; these settings serve different purposes. `CORS_ORIGIN` on the backend does not configure the frontend proxy's origin check.
+
+cPanel can terminate HTTPS and forward an internal HTTP request to Node. Without APP_ORIGIN, the browser origin and internal URL can differ. The proxy uses the explicit APP_ORIGIN to validate writes and continues rejecting cross-site, missing and invalid Origin headers. It does not trust arbitrary X-Forwarded-Host/Proto values. APP_ORIGIN is server-only, is read at runtime and does not need a GitHub build variable. Deploy the updated proxy code before applying this setting; the older code does not read it. If cPanel defines the same variable and a `.env` does too, keep both consistent (the process environment takes precedence).
