@@ -74,6 +74,7 @@ export function FrappeGridRow({
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Remove line"
             className="size-7 text-[var(--frappe-text-muted)] hover:text-[var(--frappe-red)]"
             onClick={onRemove}
             disabled={!canRemove}

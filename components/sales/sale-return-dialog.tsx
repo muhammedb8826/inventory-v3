@@ -1,4 +1,5 @@
 "use client";
+import type { components } from '@/lib/generated/api-schema';
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useFetch } from '@/hooks/use-fetch';
+import { apiList } from '@/lib/list-response';
+import type { BankAccount } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from "@/lib/api";
 import { errorMessage, formatQty } from "@/lib/format";
 import type { Sale, SaleLine } from "@/lib/types";
@@ -29,6 +34,8 @@ export function SaleReturnDialog({
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [qtys, setQtys] = useState<Record<string, string>>({});
+  const [bankAccountId, setBankAccountId] = useState('');
+  const { data: accounts } = useFetch(() => apiList<BankAccount>('/banks/accounts'), []);
   const [saving, setSaving] = useState(false);
 
   const lines = useMemo(
@@ -74,10 +81,10 @@ export function SaleReturnDialog({
     try {
       await api(`/sales/${sale.id}/returns`, {
         method: "POST",
-        body: { lines: returnLines, notes: notes.trim() || undefined },
+        body: { lines: returnLines, bankAccountId: bankAccountId || undefined, notes: notes.trim() || undefined } satisfies components['schemas']['CreateSaleReturnDto'],
         idempotent: true,
       });
-      toast.success("Return recorded — stock restocked");
+      toast.success("Return posted with stock and financial settlement");
       setOpen(false);
       onSuccess?.();
     } catch (err) {
@@ -109,6 +116,8 @@ export function SaleReturnDialog({
             <DialogTitle>Customer return</DialogTitle>
           </DialogHeader>
           <div className="grid max-h-[60vh] gap-3 overflow-y-auto py-4">
+            <p className="text-sm text-muted-foreground">Unpaid credit is reduced first. Any paid portion is refunded to the selected account or the original payment account. Tracked lots are restored in their original expiry order. Verify the physical batch before posting.</p>
+            <div className="grid gap-2"><Label htmlFor="return-account">Refund account</Label><Select value={bankAccountId} onValueChange={setBankAccountId}><SelectTrigger id="return-account"><SelectValue placeholder="Use original payment account" /></SelectTrigger><SelectContent>{(accounts ?? []).filter(a => a.isActive !== false).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></div>
             {lines.map((line) => (
               <ReturnLineRow
                 key={line.id}

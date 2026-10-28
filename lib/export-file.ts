@@ -1,21 +1,6 @@
-function escapeCsvCell(value: string | number | undefined | null): string {
-  const text = value === undefined || value === null ? "" : String(value);
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
+import { csvDocument } from './table-export';
 
-export function rowsToCsv(
-  headers: string[],
-  rows: (string | number | undefined | null)[][]
-): string {
-  const lines = [
-    headers.map(escapeCsvCell).join(","),
-    ...rows.map((row) => row.map(escapeCsvCell).join(",")),
-  ];
-  return `\uFEFF${lines.join("\r\n")}`;
-}
+export function rowsToCsv(headers: string[], rows: (string | number | undefined | null)[][]): string { return csvDocument([headers, ...rows]); }
 
 export function downloadTextFile(
   filename: string,

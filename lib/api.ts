@@ -1,7 +1,6 @@
 import type { ApiError } from "@/lib/types";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+const API_BASE = '/api/backend';
 
 export class ApiRequestError extends Error {
   status: number;
@@ -20,61 +19,14 @@ export function isForbiddenError(err: unknown): boolean {
 const TOKEN_KEY = "stock_access_token";
 const REFRESH_KEY = "stock_refresh_token";
 
-export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(REFRESH_KEY);
-}
-
-export function setTokens(access: string, refresh: string) {
-  localStorage.setItem(TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_KEY, refresh);
-}
-
+// Remove credentials left by earlier app versions. Sessions now use HttpOnly cookies.
 export function clearTokens() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
 }
-
 function parseErrorMessage(data: ApiError): string {
-  if (Array.isArray(data.message)) return data.message.join(", ");
-  return data.message ?? "Request failed";
-}
-
-let refreshPromise: Promise<string | null> | null = null;
-
-async function refreshAccessToken(): Promise<string | null> {
-  const refresh = localStorage.getItem(REFRESH_KEY);
-  if (!refresh) return null;
-
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/auth/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken: refresh }),
-        });
-        if (!res.ok) {
-          clearTokens();
-          return null;
-        }
-        const data = await res.json();
-        setTokens(data.accessToken, data.refreshToken);
-        return data.accessToken as string;
-      } catch {
-        clearTokens();
-        return null;
-      } finally {
-        refreshPromise = null;
-      }
-    })();
-  }
-  return refreshPromise;
+  return Array.isArray(data.message) ? data.message.join(', ') : data.message ?? 'Request failed';
 }
 
 export type ApiRequestInit = Omit<RequestInit, "body"> & {
@@ -90,8 +42,8 @@ export async function api<T>(
 ): Promise<T> {
   const {
     body,
-    auth = true,
-    idempotent = false,
+    auth: _auth = true,
+    idempotent = ['POST', 'PATCH', 'DELETE'].includes(init.method ?? 'GET') && !path.startsWith('/auth/') && !(body instanceof FormData),
     headers: initHeaders,
     ...rest
   } = init;
@@ -101,49 +53,25 @@ export async function api<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (idempotent && !headers.has("Idempotency-Key")) {
-    headers.set(
-      "Idempotency-Key",
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    );
+  let retryStorageKey: string | undefined;
+  if (idempotent && !headers.has('Idempotency-Key')) {
+    const fingerprint = JSON.stringify({ path, method: init.method, body });
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint));
+    retryStorageKey = 'inventory_retry_' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+    const key = sessionStorage.getItem(retryStorageKey) ?? crypto.randomUUID();
+    sessionStorage.setItem(retryStorageKey, key);
+    headers.set('Idempotency-Key', key);
   }
+  void _auth; // Authentication is provided by the same-origin session proxy.
 
-  if (auth) {
-    const token = getAccessToken();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-  let res = await fetch(url, {
-    ...rest,
-    headers,
-    body:
-      body === undefined
-        ? undefined
-        : body instanceof FormData
-          ? body
-          : JSON.stringify(body),
+  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('API path must be relative');
+  clearTokens();
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...rest, headers, credentials: 'same-origin',
+    body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
   });
 
-  if (res.status === 401 && auth) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      headers.set("Authorization", `Bearer ${newToken}`);
-      res = await fetch(url, {
-        ...rest,
-        headers,
-        body:
-          body === undefined
-            ? undefined
-            : body instanceof FormData
-              ? body
-              : JSON.stringify(body),
-      });
-    }
-  }
-
+  if (retryStorageKey && (res.ok || (res.status < 500 && res.status !== 409))) sessionStorage.removeItem(retryStorageKey);
   if (!res.ok) {
     let message = res.statusText;
     try {

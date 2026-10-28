@@ -1,49 +1,8 @@
-name: Deploy VGate Furnishing Next.js App to cPanel via FTP
-
+name: Legacy deployment disabled
 on:
-  push:
-    branches:
-      - main
-
+  workflow_dispatch:
 jobs:
-  web-deploy:
+  instructions:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.18.0
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Create env file for build
-      run: |
-        rm -f .env.production
-        {
-          echo "NEXT_PUBLIC_API_URL=https://api.vgatefurnishing.com/api/v1";
-        } >> .env.production
-
-    - name: Build Next.js app
-      run: npm run build
-
-    - name: Deploy to cPanel via FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-      with:
-        server: ${{ secrets.FTP_SERVER_VGATE }}
-        username: ${{ secrets.FTP_USERNAME_VGATE }}
-        password: ${{ secrets.FTP_PASSWORD_VGATE }}
-        server-dir: ${{ secrets.CPANEL_DIR_VGATE }}
-        local-dir: ./
-        protocol: ftp
-        exclude: |
-         .git/**
-         .github/**
-          node_modules/**
-         .next/cache/**
-         .env.production
-      # Optionally add any other files you don't need on the remote server
+      - run: echo "Use the SSH release workflow. Plain FTP deployment has been retired."

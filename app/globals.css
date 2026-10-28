@@ -393,3 +393,49 @@
   max-width: 100%;
   overflow-x: clip;
 }
+
+/* Workspace design system: shared by lists, reports, forms and detail pages. */
+:root {
+  --frappe-primary: #4f46e5;
+  --frappe-primary-hover: #4338ca;
+  --frappe-desk: #f6f7fb;
+  --frappe-section-head: #f8fafc;
+  --frappe-border: #e4e7ee;
+  --frappe-text-muted: #596579;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --ring: #6366f1;
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
+  --sidebar-primary: #4f46e5;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #3730a3;
+  --frappe-sidebar-active: #4f46e5;
+  --radius: .65rem;
+}
+.dark {
+  --frappe-primary: #a5b4fc;
+  --frappe-primary-hover: #c7d2fe;
+  --primary: #a5b4fc;
+  --primary-foreground: #161b32;
+  --ring: #818cf8;
+  --accent: #252c4a;
+  --accent-foreground: #e0e7ff;
+  --sidebar-primary: #a5b4fc;
+  --sidebar-accent: #252c4a;
+  --sidebar-accent-foreground: #e0e7ff;
+  --frappe-sidebar-active: #a5b4fc;
+}
+.workspace-page { background: var(--frappe-desk); }
+.workspace-page-header { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 4%, var(--frappe-desk)), var(--frappe-desk) 70%); }
+.workspace-content { outline: none; }
+.workspace-content .app-surface, .workspace-content .sms-panel { border-radius: 1rem; border-color: var(--frappe-border); box-shadow: 0 2px 8px #0f172a04; }
+.modern-data-table { background: var(--card); }
+.modern-data-table thead { position: sticky; top: 0; z-index: 1; }
+.modern-data-table td { font-variant-numeric: tabular-nums; }
+.modern-data-table tbody tr:last-child { border-bottom: none; }
+.workspace-content [data-slot="card"] { border-radius: 1rem; box-shadow: 0 2px 8px #0f172a04; }
+.workspace-content input, .workspace-content textarea, .workspace-content [data-slot="select-trigger"] { transition: border-color .15s, box-shadow .15s; }
+.workspace-content input:focus-visible, .workspace-content textarea:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media print { [data-slot="sidebar"], .frappe-app-header, nav, button, [role="checkbox"] { display: none !important; } .workspace-content { overflow: visible; padding: 0; } }

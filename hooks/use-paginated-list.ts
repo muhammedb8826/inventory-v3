@@ -95,6 +95,12 @@ export function usePaginatedList<T, Totals = undefined>(
     reload();
   }, [reload]);
 
+  useEffect(() => {
+    const refresh = () => { void reload(); };
+    window.addEventListener('inventory:records-changed', refresh);
+    return () => window.removeEventListener('inventory:records-changed', refresh);
+  }, [reload]);
+
   const setLimitAndReset = useCallback((nextLimit: number) => {
     setLimit(nextLimit);
     setPage(DEFAULT_PAGE);

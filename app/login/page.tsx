@@ -32,7 +32,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  const requestedRedirect = searchParams.get('redirect') ?? '/dashboard';
+  const redirectTo = requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') && !requestedRedirect.includes('\\') ? requestedRedirect : '/dashboard';
   const loginMessage =
     searchParams.get("message") === "password-changed"
       ? "Password updated. Sign in with your new password."
@@ -68,7 +69,7 @@ export default function LoginPage() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(15,118,110,0.18), transparent 55%), radial-gradient(ellipse 70% 50% at 90% 80%, rgba(240,113,103,0.12), transparent 50%), linear-gradient(180deg, #eef2f6 0%, #e8eef5 100%)",
+            "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,70,229,0.16), transparent 55%), radial-gradient(ellipse 70% 50% at 90% 80%, rgba(129,140,248,0.12), transparent 50%), linear-gradient(180deg, #eef2f6 0%, #e8eef5 100%)",
         }}
       />
       <div className="absolute right-4 top-4 z-10">
@@ -129,7 +130,7 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="h-11 w-full rounded-xl bg-teal-700 text-white hover:bg-teal-600"
+              className="h-11 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={loading}
             >
               {loading ? <Spinner className="size-4" /> : "Sign in"}

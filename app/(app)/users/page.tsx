@@ -389,7 +389,7 @@ function UserDialog({
             <div className="grid gap-2">
               <Label>Location access</Label>
               <p className="text-xs text-muted-foreground">
-                Leave none selected for all locations. Admins with
+                Users with no assignments cannot access locations. Roles with
                 locations.all always see everything.
               </p>
               <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">

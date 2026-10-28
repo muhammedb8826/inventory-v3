@@ -1,5 +1,7 @@
 # Stock Management System — Frontend
 
+> Production hardening and UI upgrade: see [docs/UPGRADE.md](docs/UPGRADE.md) for migration, session, access-control and deployment changes.
+
 Next.js frontend for the multi-location stock and business management platform. It uses [shadcn/ui](https://ui.shadcn.com) and talks to the NestJS API documented in **[docs/BACKEND_API_CONTRACT.md](docs/BACKEND_API_CONTRACT.md)**.
 
 ## Features

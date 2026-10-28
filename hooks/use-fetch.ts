@@ -52,5 +52,11 @@ export function useFetch<T>(
     reload();
   }, [reload]);
 
+  useEffect(() => {
+    const refresh = () => { void reload(); };
+    window.addEventListener('inventory:records-changed', refresh);
+    return () => window.removeEventListener('inventory:records-changed', refresh);
+  }, [reload]);
+
   return { data, loading, error, reload, setData };
 }

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { api, clearTokens, getAccessToken, setTokens } from "@/lib/api";
+import { api, clearTokens } from "@/lib/api";
 import type { AuthResponse, User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -33,11 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
-      setUser(null);
-      return;
-    }
     const me = await api<User>("/auth/me");
     setUser(me);
   }, []);
@@ -45,7 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        if (getAccessToken()) await refreshUser();
+        clearTokens();
+        await refreshUser();
       } catch {
         clearTokens();
         setUser(null);
@@ -62,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: { email, password },
         auth: false,
       });
-      setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       router.push("/dashboard");
     },
@@ -70,21 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    const refreshToken =
-      typeof window !== "undefined"
-        ? localStorage.getItem("stock_refresh_token")
-        : null;
     try {
-      if (refreshToken) {
-        await api("/auth/logout", {
-          method: "POST",
-          body: { refreshToken },
-          auth: false,
-        });
-      }
-    } catch {
-      /* ignore */
-    }
+      await api('/auth/logout', { method: 'POST', body: {} });
+    } catch { /* Local UI is cleared even when the service is unavailable. */ }
     clearTokens();
     setUser(null);
     router.push("/login");

@@ -1,3 +1,4 @@
+process.env.NODE_ENV ??= 'production';
 import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'

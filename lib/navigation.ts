@@ -153,6 +153,7 @@ export const masterNav: NavItem[] = [
 ];
 
 export const adminNav: NavItem[] = [
+  { title: 'Audit trail', href: '/settings/audit', icon: Shield, permission: 'settings.read' },
   {
     title: "Branding",
     href: "/settings/branding",
