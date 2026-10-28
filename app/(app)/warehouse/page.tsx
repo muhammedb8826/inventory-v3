@@ -186,7 +186,7 @@ function MoveForm({ mode }: { mode: "putaway" | "pick" }) {
             <FormField label="Item" required>
               <ItemSearchSelect
                 value={itemId}
-                onChange={setItemId}
+                onValueChange={setItemId}
                 options={itemOptions}
                 disabled={!fromLocationId}
               />
