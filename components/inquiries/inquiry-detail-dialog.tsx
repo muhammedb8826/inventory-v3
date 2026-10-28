@@ -302,7 +302,6 @@ export function InquiryDetailDialog({
                 ) : null}
               <InquiryFormFields
                 mode="edit"
-                compact
                 idPrefix="inquiry-edit"
                 values={values}
                 onChange={(patch) =>
@@ -330,7 +329,7 @@ export function InquiryDetailDialog({
                   <Button
                     type="button"
                     variant="destructive"
-                    className="mr-auto h-8 text-xs"
+                    className="mr-auto"
                     disabled={cancelling || acting}
                     onClick={() => void handleCancel()}
                   >
@@ -341,7 +340,6 @@ export function InquiryDetailDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-8 text-xs"
                     disabled={acting}
                     onClick={() => {
                       setProduceLocationId(locations?.[0]?.id ?? "");
@@ -352,12 +350,7 @@ export function InquiryDetailDialog({
                   </Button>
                 ) : null}
                 {canCreateSale && inquiryId ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-8 text-xs"
-                    asChild
-                  >
+                  <Button type="button" variant="outline" asChild>
                     <Link
                       href={`/sales/new?inquiryId=${encodeURIComponent(inquiryId)}`}
                       onClick={() => onOpenChange(false)}
@@ -370,7 +363,6 @@ export function InquiryDetailDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-8 text-xs"
                     disabled={acting}
                     onClick={() => void handleAssignmentAction("claim")}
                   >
@@ -382,7 +374,6 @@ export function InquiryDetailDialog({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-8 text-xs"
                       disabled={acting}
                       onClick={() => void handleAssignmentAction("decline")}
                     >
@@ -390,7 +381,6 @@ export function InquiryDetailDialog({
                     </Button>
                     <Button
                       type="button"
-                      className="h-8 text-xs"
                       disabled={acting}
                       onClick={() => void handleAssignmentAction("accept")}
                     >
@@ -401,7 +391,6 @@ export function InquiryDetailDialog({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-8 text-xs"
                   onClick={() => onOpenChange(false)}
                 >
                   Close
@@ -418,27 +407,22 @@ export function InquiryDetailDialog({
       </Dialog>
 
       <Dialog open={produceOpen} onOpenChange={setProduceOpen}>
-        <DialogContent className="gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-md">
-          <DialogHeader className="space-y-1 border-b border-border/80 bg-muted/30 px-6 py-4 text-left">
-            <DialogTitle className="text-lg font-semibold tracking-tight">
-              Start production
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
+        <DialogContent className="gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
+          <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+            <DialogTitle>Start production</DialogTitle>
+            <p className="text-sm text-[var(--frappe-text-muted)]">
               Creates a draft production order from this inquiry&apos;s item and
               its default BOM.
             </p>
           </DialogHeader>
-          <div className="grid gap-4 px-6 py-5">
+          <div className="app-canvas grid gap-4 px-6 py-5">
             <div className="grid gap-2">
               <Label htmlFor="mto-produce-location">Issue / FG location</Label>
               <Select
                 value={produceLocationId}
                 onValueChange={setProduceLocationId}
               >
-                <SelectTrigger
-                  id="mto-produce-location"
-                  className="h-10 w-full"
-                >
+                <SelectTrigger id="mto-produce-location" className="w-full">
                   <SelectValue placeholder="Select location…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -451,18 +435,17 @@ export function InquiryDetailDialog({
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2 border-t border-border/80 bg-muted/30 px-6 py-3.5 sm:justify-end">
+          <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
             <Button
               type="button"
               variant="outline"
-              className="h-9"
               onClick={() => setProduceOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              className="h-9 min-w-28"
+              className="min-w-32"
               disabled={producing || !produceLocationId}
               onClick={() => void handleStartProduction()}
             >

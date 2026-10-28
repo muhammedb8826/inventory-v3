@@ -55,10 +55,12 @@
    */
   --frappe-primary: #0f766e;
   --frappe-primary-hover: #0d9488;
-  --frappe-desk: #f3f4f6;
+  --frappe-desk: #eef1f5;
   --frappe-surface: #ffffff;
-  --frappe-section-head: #f7f9fb;
-  --frappe-border: #e2e8f0;
+  --frappe-section-head: #f4f6f8;
+  --frappe-border: #d8dee6;
+  --frappe-input: #ffffff;
+  --frappe-input-border: #c5ced9;
   --frappe-text: #0f172a;
   --frappe-text-muted: #64748b;
   --frappe-red: #e11d48;
@@ -97,7 +99,8 @@
   --chart-3: oklch(0.65 0.14 250);
   --chart-4: oklch(0.75 0.14 85);
   --chart-5: oklch(0.55 0.08 220);
-  --radius: 0.875rem;
+  /* Controls ~10px; cards/modals use radius-xl (~14px) — avoid over-round pills */
+  --radius: 0.625rem;
   /* Light sidebar: bright paper panel (not the dark ink desk) */
   --sidebar: oklch(0.995 0.002 250);
   --sidebar-foreground: oklch(0.38 0.03 250);
@@ -114,6 +117,8 @@
   --frappe-surface: #1a222d;
   --frappe-section-head: #222b38;
   --frappe-border: #2f3a4a;
+  --frappe-input: #151c27;
+  --frappe-input-border: #3d4a5c;
   --frappe-text: #e8eef5;
   --frappe-text-muted: #9aa8b8;
   --frappe-sidebar: #080c14;
@@ -230,8 +235,72 @@
 .sms-panel {
   border: 1px solid var(--frappe-border);
   background: var(--frappe-surface);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow: var(--frappe-shadow);
+}
+
+/*
+ * Shared surface language — modals, forms, inputs, cards.
+ * Hierarchy: desk (gray) → surface/card (white) → input (white + stronger border).
+ */
+.app-canvas {
+  background: var(--frappe-desk);
+}
+
+.app-surface {
+  background: var(--frappe-surface);
+  border: 1px solid var(--frappe-border);
+  border-radius: 0.75rem; /* 12px — not over-round */
+  box-shadow: var(--frappe-shadow);
+}
+
+.app-modal {
+  background: var(--frappe-surface);
+  border: 1px solid var(--frappe-border);
+  border-radius: 0.75rem; /* 12px */
+  box-shadow: var(--frappe-shadow-lg);
+}
+
+.app-modal-header {
+  padding: 1.25rem 1.5rem 1rem;
+}
+
+.app-modal-body {
+  padding: 1rem 1.5rem;
+  background: var(--frappe-desk);
+}
+
+.app-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  /* Extra inset so actions clear the 12px radius */
+  padding: 1rem 1.5rem 1.5rem !important;
+  margin: 0 !important;
+}
+
+.app-control {
+  border: 1px solid var(--frappe-input-border);
+  background: var(--frappe-input);
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: none;
+}
+
+.app-control:hover {
+  border-color: color-mix(in oklab, var(--frappe-input-border) 70%, var(--frappe-text-muted));
+}
+
+.app-control:focus,
+.app-control:focus-visible,
+.app-control:focus-within {
+  border-color: var(--frappe-primary);
+}
+
+.app-section-muted {
+  background: var(--frappe-section-head);
+  border-color: var(--frappe-border);
 }
 
 .sms-metric-icon {

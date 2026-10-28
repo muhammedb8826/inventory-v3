@@ -102,7 +102,7 @@ export function DataCardTable<T extends { id: string }>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm",
+        "app-surface overflow-hidden",
         className
       )}
     >

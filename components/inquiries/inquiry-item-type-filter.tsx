@@ -63,10 +63,10 @@ export function InquiryItemTypeFilter({
             title={opt.label}
             onClick={() => toggle(opt.value)}
             className={cn(
-              "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+              "inline-flex h-9 items-center rounded-lg border px-3 text-xs font-medium transition-colors",
               active
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                ? "border-[var(--frappe-primary)]/35 bg-[color-mix(in_oklab,var(--frappe-primary)_12%,white)] text-[var(--frappe-primary)]"
+                : "border-[var(--frappe-border)] bg-[var(--frappe-surface)] text-[var(--frappe-text-muted)] hover:bg-[var(--frappe-section-head)] hover:text-[var(--frappe-text)]",
             )}
           >
             {opt.short}

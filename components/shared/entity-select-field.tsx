@@ -79,7 +79,7 @@ export function EntitySelectField({
           }))}
           placeholder={
             hasOptions
-              ? (placeholder ?? `Select ${label.toLowerCase()}`)
+              ? (placeholder ?? `Select ${label.toLowerCase()}…`)
               : `No ${label.toLowerCase()}s`
           }
           searchPlaceholder={
@@ -90,23 +90,18 @@ export function EntitySelectField({
           loading={loading}
           filterLocally={filterLocally}
           onQueryChange={onQueryChange}
-          className="sm:flex-1"
+          className="min-w-0 sm:flex-1"
         />
         <div className="flex shrink-0 flex-wrap items-center gap-3">
           {quickCreate}
           <Link
             href={listHref}
-            className="text-xs text-muted-foreground hover:text-primary hover:underline"
+            className="text-xs font-medium text-[var(--frappe-primary)] hover:underline"
           >
             {listLabel}
           </Link>
         </div>
       </div>
-      {!hasOptions && !loading ? (
-        <div className="mt-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-          {emptyMessage}
-        </div>
-      ) : null}
     </FormField>
   );
 }

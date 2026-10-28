@@ -54,7 +54,6 @@ export function InquiryFormFields({
   itemOptions,
   itemsLoading,
   onCustomerCreated,
-  compact,
 }: {
   values: InquiryFormValues;
   onChange: (patch: Partial<InquiryFormValues>) => void;
@@ -65,8 +64,6 @@ export function InquiryFormFields({
   itemOptions: ItemSearchOption[];
   itemsLoading?: boolean;
   onCustomerCreated: (customer: Customer) => void;
-  /** Slightly tighter spacing inside a modal. */
-  compact?: boolean;
 }) {
   const [itemTypes, setItemTypes] = useState<ItemType[]>(
     DEFAULT_INQUIRY_ITEM_TYPES,
@@ -101,10 +98,8 @@ export function InquiryFormFields({
     });
   }, [itemOptions, itemTypes, selectedItemIds]);
 
-  const cardClass = compact ? "border-0 shadow-none rounded-none" : undefined;
-
   return (
-    <PageFormCard className={cardClass}>
+    <PageFormCard>
       <PageFormSection
         title="Contact"
         description="Who submitted this request — phone or email required for follow-up."
@@ -187,8 +182,8 @@ export function InquiryFormFields({
           className="mb-4"
         />
 
-        <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
-          <div className="hidden grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] gap-3 border-b border-border/70 bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:grid">
+        <div className="overflow-hidden rounded-lg border border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
+          <div className="hidden grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] gap-3 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-[var(--frappe-text-muted)] sm:grid">
             <span>Item</span>
             <span>Qty</span>
             <span>Line notes</span>

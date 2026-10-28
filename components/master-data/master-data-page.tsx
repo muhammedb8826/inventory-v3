@@ -340,14 +340,14 @@ function CreateDialog({
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-border bg-muted/40 px-4 py-3">
-          <DialogTitle className="text-base">New {title}</DialogTitle>
+        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+          <DialogTitle>New {title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="p-4">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
-              <div className="space-y-1 border-b border-border/70 px-4 pt-4">
-                <h2 className="text-base font-semibold tracking-tight">
+          <div className="app-canvas px-6 py-5">
+            <div className="app-surface overflow-hidden">
+              <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
+                <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
                   Details
                 </h2>
               </div>
@@ -360,7 +360,7 @@ function CreateDialog({
               </div>
             </div>
           </div>
-          <DialogFooter className="border-t border-border bg-muted/40 px-4 py-3">
+          <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
             <Button
               type="button"
               variant="outline"
@@ -432,14 +432,14 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-border bg-muted/40 px-4 py-3">
-          <DialogTitle className="text-base">Edit {row.name}</DialogTitle>
+        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+          <DialogTitle>Edit {row.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="p-4">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
-              <div className="space-y-1 border-b border-border/70 px-4 pt-4">
-                <h2 className="text-base font-semibold tracking-tight">
+          <div className="app-canvas px-6 py-5">
+            <div className="app-surface overflow-hidden">
+              <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
+                <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
                   Details
                 </h2>
               </div>
@@ -454,7 +454,7 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
               </div>
             </div>
           </div>
-          <DialogFooter className="border-t border-border bg-muted/40 px-4 py-3">
+          <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
             <Button
               type="button"
               variant="outline"

@@ -115,8 +115,8 @@ export function StockDetailDialog({
         )}
       </DialogTrigger>
       <DialogContent className="flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="shrink-0 border-b border-border bg-muted/40 px-4 py-3">
-          <DialogTitle className="text-base">Stock details</DialogTitle>
+        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+          <DialogTitle>Stock details</DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {loading && !detail ? (
@@ -289,7 +289,7 @@ export function StockDetailDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none border-t border-border bg-muted/40 px-4 py-3">
+        <DialogFooter className="app-modal-footer shrink-0 border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Close
           </Button>

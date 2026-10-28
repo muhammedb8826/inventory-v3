@@ -97,20 +97,20 @@ export function SearchSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "h-10 min-h-10 w-full justify-between gap-2 rounded-lg border-input bg-transparent px-3 font-normal text-sm shadow-none hover:bg-transparent",
-            !selected && "text-muted-foreground",
+            "app-control h-10 min-h-10 w-full justify-between gap-2 px-3 font-normal text-sm text-[var(--frappe-text)] shadow-none hover:bg-[var(--frappe-input)]",
+            !selected && "text-[var(--frappe-text-muted)]",
             className,
           )}
         >
           <span
             className={cn(
-              "min-w-0 flex-1 truncate text-left",
-              !selected && "text-muted-foreground",
+              "min-w-0 flex-1 truncate text-left leading-5",
+              !selected && "text-[var(--frappe-text-muted)]",
             )}
           >
             {selected?.label ?? placeholder}
           </span>
-          <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+          <ChevronsUpDownIcon className="size-4 shrink-0 text-[var(--frappe-text-muted)] opacity-70" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

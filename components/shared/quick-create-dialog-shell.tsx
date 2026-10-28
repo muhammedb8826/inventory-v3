@@ -28,12 +28,12 @@ export function QuickCreateDialogShell({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
-          <DialogTitle className="text-base">{title}</DialogTitle>
+      <DialogContent className="gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
+        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div>{children}</div>
-        <DialogFooter className="border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-3">
+        <div className="app-canvas px-6 py-5">{children}</div>
+        <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
           {footer}
         </DialogFooter>
       </DialogContent>

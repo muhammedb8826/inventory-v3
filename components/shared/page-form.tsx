@@ -19,7 +19,11 @@ export function PageForm({
   return (
     <form
       onSubmit={onSubmit}
-      className={cn("mx-auto w-full space-y-6 pb-24", maxWidth, className)}
+      className={cn(
+        "mx-auto w-full space-y-6 pb-24",
+        maxWidth,
+        className,
+      )}
     >
       {children}
     </form>
@@ -36,7 +40,7 @@ export function PageFormCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm",
+        "app-surface overflow-hidden",
         className,
       )}
     >
@@ -57,13 +61,18 @@ export function PageFormSection({
   className?: string;
 }) {
   return (
-    <section className={cn("border-b border-border/70 last:border-b-0", className)}>
+    <section
+      className={cn(
+        "border-b border-[var(--frappe-border)] last:border-b-0",
+        className,
+      )}
+    >
       <div className="space-y-1 px-5 pt-5 sm:px-6">
-        <h2 className="text-base font-semibold tracking-tight text-foreground">
+        <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
           {title}
         </h2>
         {description ? (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-[var(--frappe-text-muted)]">{description}</p>
         ) : null}
       </div>
       <div className="space-y-4 px-5 py-5 sm:px-6">{children}</div>
@@ -138,7 +147,7 @@ export function PageFormActions({
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 border-t border-border/80 bg-background/95 px-1 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        "sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-2.5 border-t border-[var(--frappe-border)] bg-[color-mix(in_oklab,var(--frappe-desk)_92%,transparent)] py-4 backdrop-blur",
         className,
       )}
     >
