@@ -32,6 +32,7 @@ interface BomLineRow {
   componentItemId: string;
   quantity: string;
   scrapPercent: string;
+  isPhantom: boolean;
 }
 
 function linesFromBom(bom: Bom): BomLineRow[] {
@@ -42,10 +43,19 @@ function linesFromBom(bom: Bom): BomLineRow[] {
       line.scrapPercent != null && line.scrapPercent !== ""
         ? String(line.scrapPercent)
         : "",
+    isPhantom:
+      line.isPhantom === true || line.componentItem?.isPhantom === true,
   }));
   return rows.length > 0
     ? rows
-    : [{ componentItemId: "", quantity: "1", scrapPercent: "" }];
+    : [
+        {
+          componentItemId: "",
+          quantity: "1",
+          scrapPercent: "",
+          isPhantom: false,
+        },
+      ];
 }
 
 export function BomForm({ bom }: { bom?: Bom }) {
@@ -71,14 +81,21 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const [lines, setLines] = useState<BomLineRow[]>(() =>
     bom
       ? linesFromBom(bom)
-      : [{ componentItemId: "", quantity: "1", scrapPercent: "" }],
+      : [
+          {
+            componentItemId: "",
+            quantity: "1",
+            scrapPercent: "",
+            isPhantom: false,
+          },
+        ],
   );
   const [saving, setSaving] = useState(false);
 
   const { data: stock, loading } = useFetch(() => fetchAllInventory(), []);
+  const catalogItems = uniqueItemsFromStock(stock ?? []);
   const itemOptions = (() => {
-    const items = uniqueItemsFromStock(stock ?? []);
-    const options = items.map((item) => ({
+    const options = catalogItems.map((item) => ({
       itemId: item.id,
       label: item.sku
         ? `${item.description} (${item.sku})`
@@ -128,6 +145,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
       componentItemId: string;
       quantity: number;
       scrapPercent?: number;
+      isPhantom: boolean;
     }[] = [];
     for (const line of lines) {
       if (!line.componentItemId) continue;
@@ -144,9 +162,11 @@ export function BomForm({ bom }: { bom?: Bom }) {
         componentItemId: string;
         quantity: number;
         scrapPercent?: number;
+        isPhantom: boolean;
       } = {
         componentItemId: line.componentItemId,
         quantity,
+        isPhantom: line.isPhantom,
       };
       if (line.scrapPercent.trim()) {
         const scrap = parseFloat(line.scrapPercent);
@@ -271,7 +291,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
               <div className="flex h-10 items-center gap-2">
                 <Switch checked={isDefault} onCheckedChange={setIsDefault} />
                 <Label className="text-sm font-normal">
-                  Use for multi-level explode
+                  Primary BOM for this finished item
                 </Label>
               </div>
             </FormField>
@@ -298,26 +318,39 @@ export function BomForm({ bom }: { bom?: Bom }) {
 
         <PageFormSection
           title="Components"
-          description="Quantities are per 1 finished unit. Scrap % increases required material."
+          description="Quantities are per 1 finished unit. Mark Phantom to pass through to the component’s BOM instead of issuing stock (industry non-stocked assembly)."
         >
           <div className="overflow-hidden rounded-xl border">
-            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
               <span>Component</span>
               <span>Qty / FG</span>
               <span>Scrap %</span>
+              <span>Phantom</span>
               <span className="sr-only">Remove</span>
             </div>
             <div className="divide-y">
               {lines.map((line, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_2.5rem] sm:items-center"
+                  className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] sm:items-center"
                 >
                   <ItemSearchSelect
                     value={line.componentItemId}
-                    onValueChange={(componentItemId) =>
-                      updateLine(index, { componentItemId })
-                    }
+                    onValueChange={(componentItemId) => {
+                      const fromCatalog = catalogItems.find(
+                        (i) => i.id === componentItemId,
+                      );
+                      const fromBomLine = (bom?.lines ?? []).find(
+                        (l) => l.componentItemId === componentItemId,
+                      )?.componentItem;
+                      const inheritPhantom =
+                        fromCatalog?.isPhantom === true ||
+                        fromBomLine?.isPhantom === true;
+                      updateLine(index, {
+                        componentItemId,
+                        isPhantom: inheritPhantom,
+                      });
+                    }}
                     options={itemOptions}
                     placeholder="Select component…"
                     searchPlaceholder="Search component…"
@@ -343,6 +376,17 @@ export function BomForm({ bom }: { bom?: Bom }) {
                     }
                     placeholder="0"
                   />
+                  <div className="flex h-10 items-center gap-2">
+                    <Switch
+                      checked={line.isPhantom}
+                      onCheckedChange={(isPhantom) =>
+                        updateLine(index, { isPhantom })
+                      }
+                    />
+                    <Label className="text-xs font-normal text-muted-foreground sm:sr-only">
+                      Phantom
+                    </Label>
+                  </div>
                   <Button
                     type="button"
                     size="icon"
@@ -372,7 +416,12 @@ export function BomForm({ bom }: { bom?: Bom }) {
                 onClick={() =>
                   setLines((prev) => [
                     ...prev,
-                    { componentItemId: "", quantity: "1", scrapPercent: "" },
+                    {
+                      componentItemId: "",
+                      quantity: "1",
+                      scrapPercent: "",
+                      isPhantom: false,
+                    },
                   ])
                 }
               >

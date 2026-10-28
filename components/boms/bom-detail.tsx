@@ -201,6 +201,7 @@ export function BomDetail({
                     <th className="px-4 py-2.5">Component</th>
                     <th className="px-4 py-2.5">Type</th>
                     <th className="px-4 py-2.5">SKU</th>
+                    <th className="px-4 py-2.5">Phantom</th>
                     <th className="px-4 py-2.5 text-right tabular-nums">
                       Qty / FG
                     </th>
@@ -221,6 +222,13 @@ export function BomDetail({
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground">
                         {line.componentItem?.sku ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {line.isPhantom || line.componentItem?.isPhantom ? (
+                          <Badge variant="outline">Phantom</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
                         {formatQty(String(line.quantity))}
@@ -243,7 +251,7 @@ export function BomDetail({
 
         <PageFormSection
           title="Multi-level & costing"
-          description="Explode nested SEMI BOMs and roll up material cost from stock AVG."
+          description="Explode shows full leaf RAW (planning). Cost rollup uses stocked SEMI costs and only passes through phantoms."
         >
           <div className="mb-3 flex flex-wrap gap-2">
             <Button

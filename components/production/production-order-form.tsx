@@ -13,6 +13,7 @@ import {
 } from "@/components/shared/page-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import { fetchAllBoms } from "@/lib/bom-fetch";
 import { errorMessage } from "@/lib/format";
@@ -35,6 +37,7 @@ export function ProductionOrderForm() {
   const [locationId, setLocationId] = useState("");
   const [finishedLocationId, setFinishedLocationId] = useState("");
   const [quantityPlanned, setQuantityPlanned] = useState("1");
+  const [explodeBom, setExplodeBom] = useState(false);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -68,7 +71,7 @@ export function ProductionOrderForm() {
           locationId,
           finishedLocationId: finishedLocationId || locationId,
           quantityPlanned: qty,
-          explodeBom: true,
+          explodeBom,
           notes: notes.trim() || undefined,
         },
       });
@@ -94,7 +97,7 @@ export function ProductionOrderForm() {
       <PageFormCard>
         <PageFormSection
           title="Production order"
-          description="Multi-level BOM is exploded to leaf components. Release reserves materials."
+          description="Materials follow the BOM: stocked components are issued; phantom components explode to their child BOM. Use force-explode only to ignore phantom flags and flatten everything to RAW."
         >
           <FormGrid>
             <FormField label="BOM" required className="sm:col-span-2">
@@ -180,6 +183,25 @@ export function ProductionOrderForm() {
                 placeholder="Optional"
               />
             </FormField>
+            <div className="sm:col-span-2 flex items-start justify-between gap-4 rounded-md border border-border/60 px-3 py-3">
+              <div className="space-y-1">
+                <Label htmlFor="explode-bom" className="text-sm font-medium">
+                  Force explode all to RAW
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Off (industry default): issue stocked SEMIs; only{" "}
+                  <span className="font-medium">phantom</span> components
+                  pass through to their BOM. On: flatten every SEMI/FINISHED
+                  to leaf RAW (ignore phantom flags).
+                </p>
+              </div>
+              <Switch
+                id="explode-bom"
+                checked={explodeBom}
+                onCheckedChange={setExplodeBom}
+                className="mt-0.5 shrink-0"
+              />
+            </div>
           </FormGrid>
         </PageFormSection>
       </PageFormCard>

@@ -181,6 +181,8 @@ export interface Item {
   description: string;
   unit?: string | null;
   itemType?: ItemType | null;
+  /** Phantom / non-stocked: BOM pass-through by default */
+  isPhantom?: boolean;
   /** Relative path from API, e.g. `/uploads/items/...` */
   imagePath?: string | null;
   /** Absolute or relative image URL for display */
@@ -738,6 +740,8 @@ export interface BomLine {
   componentItemId: string;
   quantity: string | number;
   scrapPercent?: string | number | null;
+  /** Pass-through: explode child BOM instead of issuing this component */
+  isPhantom?: boolean;
   componentItem?: Item;
 }
 

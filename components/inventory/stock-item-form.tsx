@@ -13,6 +13,7 @@ import {
 } from "@/components/shared/page-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import {
   clearStockItemImage,
@@ -65,6 +67,9 @@ export function StockItemForm({
   const [unit, setUnit] = useState(record?.item.unit ?? "pcs");
   const [itemType, setItemType] = useState<ItemType | "">(
     record?.item.itemType ?? "",
+  );
+  const [isPhantom, setIsPhantom] = useState(
+    record?.item.isPhantom === true,
   );
   const [quantity, setQuantity] = useState(record?.quantity ?? "0");
   const [purchasePrice, setPurchasePrice] = useState(
@@ -141,6 +146,7 @@ export function StockItemForm({
             barcode: optionalStringBodyValue(barcode),
             unit: optionalStringBodyValue(unit),
             itemType: itemType || null,
+            isPhantom,
             purchasePrice: parseFloat(purchasePrice),
             reorderPoint: reorderValue,
           },
@@ -160,6 +166,7 @@ export function StockItemForm({
           sku: optionalStringBodyValue(sku) ?? undefined,
           barcode: optionalStringBodyValue(barcode) ?? undefined,
           unit: optionalStringBodyValue(unit) ?? undefined,
+          isPhantom,
         };
         if (itemType) body.itemType = itemType;
         if (reorderValue !== null) body.reorderPoint = reorderValue;
@@ -362,6 +369,18 @@ export function StockItemForm({
                   ))}
                 </SelectContent>
               </Select>
+            </FormField>
+            <FormField
+              label="Phantom assembly"
+              hint="When used on a BOM, requirements pass through to this item’s default BOM instead of issuing stock."
+              className="sm:col-span-2"
+            >
+              <div className="flex h-10 items-center gap-2">
+                <Switch checked={isPhantom} onCheckedChange={setIsPhantom} />
+                <Label className="text-sm font-normal">
+                  {isPhantom ? "Phantom (non-stocked in BOMs)" : "Stocked"}
+                </Label>
+              </div>
             </FormField>
           </FormGrid>
         </PageFormSection>
