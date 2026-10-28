@@ -31,6 +31,7 @@ export function InquiryForm() {
     customerOptions,
     userOptions,
     itemOptions,
+    itemsLoading,
     reloadCustomers,
     setCustomers,
   } = useInquiryFormOptions();
@@ -59,7 +60,7 @@ export function InquiryForm() {
   }
 
   return (
-    <PageForm onSubmit={handleSubmit} maxWidth="max-w-3xl">
+    <PageForm onSubmit={handleSubmit} maxWidth="max-w-5xl">
       <InquiryFormFields
         mode="create"
         idPrefix="inquiry-new"
@@ -68,6 +69,7 @@ export function InquiryForm() {
         customerOptions={customerOptions}
         userOptions={userOptions}
         itemOptions={itemOptions}
+        itemsLoading={itemsLoading}
         onCustomerCreated={(customer) => {
           setCustomers((prev) => [...(prev ?? []), customer]);
           setValues((prev) => ({ ...prev, customerId: customer.id }));

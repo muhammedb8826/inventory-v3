@@ -1,10 +1,24 @@
 "use client";
 
 import { SearchSelect } from "@/components/shared/search-select";
+import type { ItemType } from "@/lib/types";
 
 export interface ItemSearchOption {
   itemId: string;
   label: string;
+  itemType?: ItemType | null;
+}
+
+const TYPE_HINT: Record<ItemType, string> = {
+  FINISHED: "FG",
+  SEMI: "SEMI",
+  RAW: "RAW",
+  OTHER: "OTHER",
+};
+
+export function itemTypeHint(itemType?: ItemType | null): string | undefined {
+  if (!itemType) return "FG";
+  return TYPE_HINT[itemType];
 }
 
 export function ItemSearchSelect({
@@ -19,6 +33,7 @@ export function ItemSearchSelect({
   filterLocally = true,
   onQueryChange,
   className,
+  showTypeHint = true,
 }: {
   value: string;
   onValueChange: (itemId: string) => void;
@@ -31,6 +46,7 @@ export function ItemSearchSelect({
   filterLocally?: boolean;
   onQueryChange?: (query: string) => void;
   className?: string;
+  showTypeHint?: boolean;
 }) {
   return (
     <SearchSelect
@@ -39,6 +55,7 @@ export function ItemSearchSelect({
       options={options.map((option) => ({
         value: option.itemId,
         label: option.label,
+        hint: showTypeHint ? itemTypeHint(option.itemType) : undefined,
       }))}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}

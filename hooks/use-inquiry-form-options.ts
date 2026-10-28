@@ -28,19 +28,19 @@ export function useInquiryFormOptions() {
   } = useFetch(
     () => apiList<Customer>("/customers"),
     [],
-    { enabled: canCustomers }
+    { enabled: canCustomers },
   );
 
   const { data: assignees } = useFetch(
     () => api<UserAdmin[]>("/users/assignees"),
     [],
-    { enabled: canAssignees }
+    { enabled: canAssignees },
   );
 
-  const { data: stock } = useFetch(
+  const { data: stock, loading: itemsLoading } = useFetch(
     () => fetchAllInventory(),
     [],
-    { enabled: canInventory }
+    { enabled: canInventory },
   );
 
   const customerOptions = useMemo(
@@ -48,7 +48,7 @@ export function useInquiryFormOptions() {
       (customers ?? [])
         .filter((c) => c.isActive !== false)
         .map((c) => ({ id: c.id, label: c.name })),
-    [customers]
+    [customers],
   );
 
   const userOptions = useMemo(
@@ -59,7 +59,7 @@ export function useInquiryFormOptions() {
           id: u.id,
           label: u.fullName || u.email,
         })),
-    [assignees]
+    [assignees],
   );
 
   const itemOptions: ItemSearchOption[] = useMemo(
@@ -69,14 +69,16 @@ export function useInquiryFormOptions() {
         label: item.sku
           ? `${item.description} (${item.sku})`
           : item.description,
+        itemType: item.itemType ?? null,
       })),
-    [stock]
+    [stock],
   );
 
   return {
     customerOptions,
     userOptions,
     itemOptions,
+    itemsLoading,
     reloadCustomers,
     setCustomers,
   };

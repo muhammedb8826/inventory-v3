@@ -91,14 +91,36 @@ function linesFromSale(sale: Sale): LineRow[] {
     : [{ itemId: "", quantity: "1", unitPrice: "" }];
 }
 
-export function SaleForm({ sale }: { sale?: Sale }) {
+export function SaleForm({
+  sale,
+  initial,
+}: {
+  sale?: Sale;
+  /** Prefill for MTO: sale from inquiry / completed production. */
+  initial?: {
+    inquiryId?: string;
+    productionOrderId?: string;
+    customerId?: string;
+    locationId?: string;
+    lines?: LineRow[];
+    notes?: string;
+  };
+}) {
   const router = useRouter();
   const { user } = useAuth();
   const isEdit = !!sale?.id;
   const notesOnly = isEdit && creditHasPayments(sale?.customerCredit);
 
-  const [customerId, setCustomerId] = useState(sale?.customerId ?? "");
-  const [locationId, setLocationId] = useState(sale?.locationId ?? "");
+  const mtoInquiryId = initial?.inquiryId ?? sale?.inquiryId ?? "";
+  const mtoProductionOrderId =
+    initial?.productionOrderId ?? sale?.productionOrderId ?? "";
+
+  const [customerId, setCustomerId] = useState(
+    sale?.customerId ?? initial?.customerId ?? "",
+  );
+  const [locationId, setLocationId] = useState(
+    sale?.locationId ?? initial?.locationId ?? "",
+  );
   const [itemQuery, setItemQuery] = useState("");
   const debouncedItemQuery = useDebouncedValue(itemQuery, 300);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
@@ -127,7 +149,7 @@ export function SaleForm({ sale }: { sale?: Sale }) {
   const [commissionBasis, setCommissionBasis] = useState<CommissionBasis>(
     () => sale?.commissionBasis ?? "PROFIT"
   );
-  const [notes, setNotes] = useState(sale?.notes ?? "");
+  const [notes, setNotes] = useState(sale?.notes ?? initial?.notes ?? "");
   const canOnBehalf = hasPermission(user, "sales.on_behalf");
 
   /** Rep for API/UI: explicit pick, or logged-in user on new sales once auth loads. */
@@ -135,9 +157,11 @@ export function SaleForm({ sale }: { sale?: Sale }) {
     soldByUserId ||
     (!isEdit && !notesOnly && user?.id ? user.id : "");
 
-  const [lines, setLines] = useState<LineRow[]>(() =>
-    sale ? linesFromSale(sale) : [{ itemId: "", quantity: "1", unitPrice: "" }]
-  );
+  const [lines, setLines] = useState<LineRow[]>(() => {
+    if (sale) return linesFromSale(sale);
+    if (initial?.lines?.length) return initial.lines;
+    return [{ itemId: "", quantity: "1", unitPrice: "" }];
+  });
   const [saving, setSaving] = useState(false);
 
   const {
@@ -283,6 +307,10 @@ export function SaleForm({ sale }: { sale?: Sale }) {
       lines: documentLines,
     };
     if (customerId) body.customerId = customerId;
+    if (!isEdit && mtoInquiryId) body.inquiryId = mtoInquiryId;
+    if (!isEdit && mtoProductionOrderId) {
+      body.productionOrderId = mtoProductionOrderId;
+    }
     if (needsBankAccount(paymentMethod)) {
       body.bankAccountId = resolveBankAccountId(
         paymentMethod,

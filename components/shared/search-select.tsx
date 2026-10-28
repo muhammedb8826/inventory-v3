@@ -15,6 +15,8 @@ import { Spinner } from "@/components/ui/spinner";
 export interface SearchOption {
   value: string;
   label: string;
+  /** Secondary text shown in the menu (e.g. item type). */
+  hint?: string;
 }
 
 export function SearchSelect({
@@ -55,8 +57,10 @@ export function SearchSelect({
     if (!filterLocally) return options;
     const term = query.trim().toLowerCase();
     if (!term) return options;
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(term)
+    return options.filter(
+      (option) =>
+        option.label.toLowerCase().includes(term) ||
+        (option.hint?.toLowerCase().includes(term) ?? false),
     );
   }, [options, query, filterLocally]);
 
@@ -93,43 +97,50 @@ export function SearchSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "h-8 w-full justify-between border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-3 font-normal text-sm shadow-none hover:bg-[var(--frappe-surface)]",
+            "h-10 min-h-10 w-full justify-between gap-2 rounded-lg border-input bg-transparent px-3 font-normal text-sm shadow-none hover:bg-transparent",
             !selected && "text-muted-foreground",
-            className
+            className,
           )}
         >
-          <span className="truncate">{selected?.label ?? placeholder}</span>
-          <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate text-left",
+              !selected && "text-muted-foreground",
+            )}
+          >
+            {selected?.label ?? placeholder}
+          </span>
+          <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[100] w-[min(100vw-2rem,320px)] overflow-hidden p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] min-w-[min(100vw-2rem,280px)] overflow-hidden p-0"
         align="start"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           inputRef.current?.focus();
         }}
       >
-        <div className="border-b border-[var(--frappe-border)] p-2">
+        <div className="border-b border-border p-2">
           <Input
             ref={inputRef}
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="h-8 border-[var(--frappe-border)] bg-[var(--frappe-surface)]"
+            className="h-9"
           />
         </div>
         <div
-          className="max-h-60 overflow-y-auto overscroll-contain"
+          className="max-h-64 overflow-y-auto overscroll-contain"
           onWheel={keepWheelInList}
         >
           {loading && filtered.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
               <Spinner className="size-4" />
               {loadingMessage}
             </div>
           ) : filtered.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
+            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
               {emptyMessage}
             </p>
           ) : (
@@ -144,8 +155,8 @@ export function SearchSelect({
                   key={option.value}
                   type="button"
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                    value === option.value && "bg-accent/50"
+                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                    value === option.value && "bg-accent/60",
                   )}
                   onClick={() => {
                     onValueChange(option.value);
@@ -155,10 +166,15 @@ export function SearchSelect({
                   <CheckIcon
                     className={cn(
                       "size-4 shrink-0",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      value === option.value ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  <span className="truncate">{option.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {option.hint ? (
+                    <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {option.hint}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>

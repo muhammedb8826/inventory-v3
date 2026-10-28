@@ -185,6 +185,26 @@ export function ProductionOrderDetail({
         {order.materialsReserved ? (
           <Badge variant="secondary">Reserved</Badge>
         ) : null}
+        {status === "COMPLETED" && !order.saleId ? (
+          <PermissionGate permission="sales.write">
+            <Button size="sm" variant="default" asChild>
+              <Link
+                href={`/sales/new?productionOrderId=${encodeURIComponent(order.id)}${
+                  order.inquiryId
+                    ? `&inquiryId=${encodeURIComponent(order.inquiryId)}`
+                    : ""
+                }`}
+              >
+                Create sale
+              </Link>
+            </Button>
+          </PermissionGate>
+        ) : null}
+        {order.saleId ? (
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/sales/${order.saleId}`}>View sale</Link>
+          </Button>
+        ) : null}
         <PermissionGate permission="production.write">
           {status === "DRAFT" ? (
             <Button
@@ -339,6 +359,32 @@ export function ProductionOrderDetail({
                 <span className="font-mono text-xs">{order.id}</span>
               }
             />
+            {order.inquiryId ? (
+              <DetailField
+                label="Inquiry"
+                value={
+                  <Link
+                    href={`/inquiries?id=${order.inquiryId}`}
+                    className="font-mono text-xs text-primary hover:underline"
+                  >
+                    {order.inquiryId.slice(0, 8)}…
+                  </Link>
+                }
+              />
+            ) : null}
+            {order.saleId ? (
+              <DetailField
+                label="Sale"
+                value={
+                  <Link
+                    href={`/sales/${order.saleId}`}
+                    className="font-mono text-xs text-primary hover:underline"
+                  >
+                    {order.saleId.slice(0, 8)}…
+                  </Link>
+                }
+              />
+            ) : null}
             {order.notes ? (
               <div className="sm:col-span-2">
                 <DetailField label="Notes" value={order.notes} />

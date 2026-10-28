@@ -447,6 +447,8 @@ export interface SaleUserRef {
 export interface Sale {
   id: string;
   customerId?: string;
+  inquiryId?: string | null;
+  productionOrderId?: string | null;
   locationId?: string;
   paymentMethod: PaymentMethod;
   bankAccountId?: string;
@@ -809,6 +811,8 @@ export interface ProductionOrder {
   locationId: string;
   finishedLocationId?: string | null;
   finishedItemId?: string;
+  inquiryId?: string | null;
+  saleId?: string | null;
   quantityPlanned: string;
   quantityCompleted?: string;
   quantityScrapped?: string;
@@ -819,6 +823,8 @@ export interface ProductionOrder {
   location?: Location;
   finishedLocation?: Location | null;
   finishedItem?: Item;
+  inquiry?: Inquiry | null;
+  sale?: Sale | null;
   lines?: ProductionOrderLine[];
   createdAt?: string;
   updatedAt?: string;
@@ -948,6 +954,8 @@ export interface Inquiry {
   internalNotes?: string | null;
   followUpAt?: string | null;
   convertedSaleId?: string | null;
+  /** Set when linked production completes — FG ready to sell. */
+  readyForSaleAt?: string | null;
   customer?: Customer | null;
   /** @deprecated Prefer `lines` */
   item?: Item | null;

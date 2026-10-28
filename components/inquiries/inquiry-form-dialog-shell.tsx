@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-/** Wide Frappe-style modal for multi-section inquiry forms. */
+/** Wide CRM-style modal — matches sales / production form width. */
 export const inquiryDialogContentClass =
-  "flex max-h-[min(90vh,720px)] w-full max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl";
+  "flex max-h-[min(92vh,880px)] w-full max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 shadow-xl sm:max-w-5xl";
 
 export function InquiryFormDialogContent({
   children,
@@ -34,8 +34,10 @@ export function InquiryFormDialogHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <DialogHeader className="shrink-0 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-5 py-4">
-      <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
+    <DialogHeader className="shrink-0 space-y-2 border-b border-border/80 bg-muted/30 px-6 py-4 text-left">
+      <DialogTitle className="text-lg font-semibold tracking-tight">
+        {title}
+      </DialogTitle>
       {children}
     </DialogHeader>
   );
@@ -47,7 +49,7 @@ export function InquiryFormDialogBody({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-5">
+    <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-background px-6 py-5">
       {children}
     </div>
   );
@@ -59,7 +61,7 @@ export function InquiryFormDialogFooter({
   children: React.ReactNode;
 }) {
   return (
-    <DialogFooter className="shrink-0 gap-2 border-t border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-5 py-3 sm:justify-end">
+    <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t border-border/80 bg-muted/30 px-6 py-3.5 sm:flex-row sm:items-center sm:justify-end">
       {children}
     </DialogFooter>
   );
