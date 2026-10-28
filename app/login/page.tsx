@@ -32,8 +32,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const requestedRedirect = searchParams.get('redirect') ?? '/dashboard';
-  const redirectTo = requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') && !requestedRedirect.includes('\\') ? requestedRedirect : '/dashboard';
+  const requestedRedirect = searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo =
+    requestedRedirect.startsWith("/") &&
+    !requestedRedirect.startsWith("//") &&
+    !requestedRedirect.includes("\\")
+      ? requestedRedirect
+      : "/dashboard";
   const loginMessage =
     searchParams.get("message") === "password-changed"
       ? "Password updated. Sign in with your new password."
@@ -76,7 +81,7 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
       <div className="relative z-10 mb-8 flex items-center gap-3">
-        <span className="flex size-11 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-600/25">
+        <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
           <BoxesIcon className="size-6" />
         </span>
         <div>

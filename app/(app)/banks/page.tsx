@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import { BankAccountFormFields } from "@/components/banks/bank-account-form-fields";
@@ -142,13 +143,8 @@ export default function BanksPage() {
     [effectiveId, from, to, transactionType, direction, debouncedSearch],
   );
 
-
   const accountsActiveFilterCount = useMemo(
-    () =>
-      countActiveFilters([
-        accountTypeFilter,
-        showInactive,
-      ]),
+    () => countActiveFilters([accountTypeFilter, showInactive]),
     [accountTypeFilter, showInactive],
   );
 
@@ -158,14 +154,7 @@ export default function BanksPage() {
   }
 
   const transactionsActiveFilterCount = useMemo(
-    () =>
-      countActiveFilters([
-        accountId,
-        from,
-        to,
-        transactionType,
-        direction,
-      ]),
+    () => countActiveFilters([accountId, from, to, transactionType, direction]),
     [accountId, from, to, transactionType, direction],
   );
 
@@ -330,7 +319,7 @@ export default function BanksPage() {
                   className: "w-16 text-right",
                   cell: (r) => (
                     <PermissionGate permission="bank.write">
-                      <EditAccountDialog account={r} onSuccess={refreshAll} />
+                      <AccountRowActions account={r} onSuccess={refreshAll} />
                     </PermissionGate>
                   ),
                 },
@@ -548,11 +537,17 @@ function AccountDialog({ onSuccess }: { onSuccess: () => void }) {
 function EditAccountDialog({
   account,
   onSuccess,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   account: BankAccount;
   onSuccess: () => void;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [values, setValues] = useState(() =>
     bankAccountFormFromRecord(account),
   );
@@ -572,6 +567,7 @@ function EditAccountDialog({
       });
       toast.success("Account updated");
       setOpen(false);
+      onOpenChange?.(false);
       onSuccess();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -585,15 +581,18 @@ function EditAccountDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        onOpenChange?.(next);
         if (next) setValues(bankAccountFormFromRecord(account));
       }}
     >
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="size-8">
-          <PencilIcon className="size-4" />
-          <span className="sr-only">Edit</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className="size-8">
+            <PencilIcon className="size-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -726,5 +725,38 @@ function AdjustmentDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AccountRowActions({
+  account,
+  onSuccess,
+}: {
+  account: BankAccount;
+  onSuccess: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <RowActionsMenu
+        label={account.name}
+        actions={[
+          {
+            label: "Edit account",
+            icon: PencilIcon,
+            onSelect: () => setOpen(true),
+          },
+        ]}
+      />
+      {open && (
+        <EditAccountDialog
+          account={account}
+          onSuccess={onSuccess}
+          defaultOpen
+          hideTrigger
+          onOpenChange={setOpen}
+        />
+      )}
+    </>
   );
 }

@@ -12,7 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
-import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  LogOutIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-react";
 
 export function HeaderUserMenu() {
   const { user, logout } = useAuth();
@@ -29,12 +34,13 @@ export function HeaderUserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="Open account menu"
           type="button"
           variant="ghost"
           className="h-10 gap-2 rounded-xl px-1.5 hover:bg-[var(--frappe-section-head)] sm:px-2"
         >
           <Avatar className="size-8 rounded-full">
-            <AvatarFallback className="rounded-full bg-teal-600/15 text-xs font-semibold text-teal-800 dark:text-teal-200">
+            <AvatarFallback className="rounded-full bg-primary/10 text-xs font-semibold text-primary">
               {initials}
             </AvatarFallback>
           </Avatar>

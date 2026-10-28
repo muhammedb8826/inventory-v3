@@ -36,17 +36,24 @@ export function ColumnVisibilityMenu({
           type="button"
           variant="outline"
           size="sm"
+          aria-label="Choose table columns"
           className="h-9 gap-2 rounded-xl border-border/80 bg-background px-3 text-sm font-medium shadow-none hover:bg-muted/60"
         >
           <Columns3Icon className="size-4 opacity-70" />
           <span className="hidden sm:inline">Columns</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-xl">
-        <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+      <DropdownMenuContent
+        align="end"
+        className="w-64 max-h-[min(70vh,520px)] overflow-y-auto rounded-xl p-1.5"
+      >
+        <DropdownMenuLabel className="px-2.5 py-2 text-xs text-muted-foreground">
+          Customize columns
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {tunable.map((col) => (
           <DropdownMenuCheckboxItem
+            className="min-h-9 rounded-lg px-2.5"
             key={col.key}
             checked={isVisible(col.key)}
             disabled={locked.has(col.key)}

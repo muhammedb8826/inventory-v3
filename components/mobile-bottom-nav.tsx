@@ -60,9 +60,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const visible = ITEMS.filter((item) =>
-    hasPermission(user, item.permission)
-  );
+  const visible = ITEMS.filter((item) => hasPermission(user, item.permission));
 
   if (visible.length === 0) return null;
 
@@ -85,8 +83,8 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="-mt-5 flex size-14 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg shadow-teal-700/30 ring-4 ring-[var(--frappe-desk)] transition hover:bg-teal-500 dark:ring-[var(--frappe-desk)]"
-                aria-label={item.label}
+                className="-mt-5 flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-4 ring-[var(--frappe-desk)] transition hover:bg-primary/90 dark:ring-[var(--frappe-desk)]"
+                aria-label="Create sale"
               >
                 <Icon className="size-6" />
               </Link>
@@ -97,11 +95,12 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 text-[10px] font-medium transition",
                 active
-                  ? "bg-slate-900 text-white dark:bg-teal-500/20 dark:text-teal-200"
-                  : "text-[var(--frappe-text-muted)] hover:bg-[var(--frappe-section-head)] hover:text-[var(--frappe-text)]"
+                  ? "bg-primary/10 text-primary"
+                  : "text-[var(--frappe-text-muted)] hover:bg-[var(--frappe-section-head)] hover:text-[var(--frappe-text)]",
               )}
             >
               <Icon className="size-4" />

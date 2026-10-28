@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,10 +13,7 @@ import {
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import type { PaginatedMeta } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 export interface TablePaginationProps {
   meta: PaginatedMeta;
@@ -40,6 +38,7 @@ export function TablePagination({
   className,
   disabled = false,
 }: TablePaginationProps) {
+  const rowsId = useId();
   const { page, limit, total, totalPages } = meta;
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -57,7 +56,7 @@ export function TablePagination({
         </p>
         <div className="flex items-center gap-2">
           <Label
-            htmlFor="rows-per-page"
+            htmlFor={rowsId}
             className="whitespace-nowrap text-sm font-normal text-[var(--frappe-text-muted)]"
           >
             Rows
@@ -68,7 +67,7 @@ export function TablePagination({
             disabled={disabled}
           >
             <SelectTrigger
-              id="rows-per-page"
+              id={rowsId}
               className="app-control h-9 w-[4.5rem] px-2.5 shadow-none"
             >
               <SelectValue />

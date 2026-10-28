@@ -15,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
@@ -22,10 +23,7 @@ import { adminNav, mainNav, masterNav, type NavItem } from "@/lib/navigation";
 import { useBranding } from "@/components/branding/branding-provider";
 import { BoxesIcon } from "lucide-react";
 
-function filterNav(
-  items: NavItem[],
-  user: ReturnType<typeof useAuth>["user"]
-) {
+function filterNav(items: NavItem[], user: ReturnType<typeof useAuth>["user"]) {
   return items.filter((item) => {
     if (item.permission) return hasPermission(user, item.permission);
     if (item.permissions) return hasAnyPermission(user, item.permissions);
@@ -41,6 +39,7 @@ function NavItems({
   user: ReturnType<typeof useAuth>["user"];
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
   const visible = filterNav(items, user);
 
   if (visible.length === 0) return null;
@@ -57,9 +56,13 @@ function NavItems({
               asChild
               isActive={active}
               tooltip={item.title}
-              className="h-10 rounded-xl px-3 text-[13px] font-medium"
+              className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
             >
-              <Link href={item.href}>
+              <Link
+                href={item.href}
+                onClick={() => setOpenMobile(false)}
+                aria-current={active ? "page" : undefined}
+              >
                 <Icon className="size-4 opacity-90" />
                 <span>{item.title}</span>
               </Link>
@@ -71,9 +74,7 @@ function NavItems({
   );
 }
 
-export function AppSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const { appName } = useBranding();
   const adminVisible = filterNav(adminNav, user);
@@ -89,7 +90,7 @@ export function AppSidebar({
               className="h-12 rounded-xl px-2.5 data-[slot=sidebar-menu-button]:p-2!"
             >
               <Link href="/dashboard">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 text-teal-700 ring-1 ring-teal-600/25 dark:from-teal-500/25 dark:to-teal-700/20 dark:text-teal-300 dark:ring-teal-400/30">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 ring-1 ring-primary/20">
                   <BoxesIcon className="size-5" />
                 </span>
                 <div className="grid min-w-0 flex-1 text-left leading-tight">
@@ -97,7 +98,7 @@ export function AppSidebar({
                     {appName}
                   </span>
                   <span className="truncate text-[11px] text-slate-500 dark:text-muted-foreground">
-                    Stock operations
+                    Inventory workspace
                   </span>
                 </div>
               </Link>
@@ -105,21 +106,59 @@ export function AppSidebar({
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="px-2 py-3">
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="mb-1 px-3">Operations</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <NavItems items={mainNav} user={user} />
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup className="mt-4 p-0">
-          <SidebarGroupLabel className="mb-1 px-3">Master data</SidebarGroupLabel>
+      <SidebarContent className="gap-1 px-2.5 py-3">
+        {[
+          { label: "Overview", paths: ["/dashboard"] },
+          {
+            label: "Daily operations",
+            paths: [
+              "/inventory",
+              "/sales",
+              "/purchases",
+              "/stock-transfers",
+              "/inquiries",
+            ],
+          },
+          {
+            label: "Warehouse & production",
+            paths: ["/warehouse", "/stocktakes", "/boms", "/production-orders"],
+          },
+          {
+            label: "Finance & insights",
+            paths: [
+              "/credits",
+              "/expenses",
+              "/banks",
+              "/profit-loss",
+              "/reports",
+            ],
+          },
+          { label: "Communication", paths: ["/messages"] },
+        ].map((group) => {
+          const items = group.paths.flatMap((path) =>
+            mainNav.filter((item) => item.href === path),
+          );
+          return filterNav(items, user).length > 0 ? (
+            <SidebarGroup key={group.label} className="px-0 pb-1 pt-2">
+              <SidebarGroupLabel className="mb-1 px-3">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <NavItems items={items} user={user} />
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null;
+        })}
+        <SidebarGroup className="mt-1 p-0">
+          <SidebarGroupLabel className="mb-1 px-3">
+            Master data
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <NavItems items={masterNav} user={user} />
           </SidebarGroupContent>
         </SidebarGroup>
         {adminVisible.length > 0 ? (
-          <SidebarGroup className="mt-4 p-0">
+          <SidebarGroup className="mt-1 p-0">
             <SidebarGroupLabel className="mb-1 px-3">
               Administration
             </SidebarGroupLabel>
@@ -135,7 +174,7 @@ export function AppSidebar({
             user={{
               name: user.fullName,
               email: user.email,
-              role: user.role.name,
+              role: user.role?.name,
             }}
           />
         ) : null}

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const frappePrimary =
-  "h-10 rounded-lg border-0 bg-[var(--frappe-primary)] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[var(--frappe-primary-hover)]";
+  "h-10 rounded-lg border-0 bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90";
 
 const frappeSecondary =
   "h-10 rounded-lg border border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 text-sm font-medium text-[var(--frappe-text)] shadow-none hover:bg-[var(--frappe-section-head)]";
@@ -20,7 +20,11 @@ export function FrappeButtonSecondary({
   ...props
 }: React.ComponentProps<typeof Button>) {
   return (
-    <Button variant="outline" className={cn(frappeSecondary, className)} {...props} />
+    <Button
+      variant="outline"
+      className={cn(frappeSecondary, className)}
+      {...props}
+    />
   );
 }
 
@@ -34,7 +38,11 @@ export function FrappeButtonLink({
   className?: string;
 }) {
   return (
-    <Button variant="outline" className={cn(frappeSecondary, className)} asChild>
+    <Button
+      variant="outline"
+      className={cn(frappeSecondary, className)}
+      asChild
+    >
       <Link href={href}>{children}</Link>
     </Button>
   );

@@ -1,4 +1,6 @@
 "use client";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { ConfirmRecordAction } from "@/components/shared/confirm-record-action";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -196,10 +198,7 @@ function RolesPageContent() {
             className: "w-24 text-right",
             cell: (r) => (
               <PermissionGate permission="roles.write">
-                <div className="flex justify-end gap-1">
-                  <RoleDialog mode="edit" role={r} onSuccess={reload} />
-                  <DeleteRoleButton role={r} onSuccess={reload} />
-                </div>
+                <RoleRowActions role={r} onSuccess={reload} />
               </PermissionGate>
             ),
           },
@@ -213,12 +212,18 @@ function RoleDialog({
   mode,
   role,
   onSuccess,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   mode: "create" | "edit";
   role?: Role;
   onSuccess: () => void;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [permSearch, setPermSearch] = useState("");
@@ -250,6 +255,7 @@ function RoleDialog({
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
     if (nextOpen) {
       permissionsHydratedRef.current = false;
       setName(role?.name ?? "");
@@ -308,6 +314,7 @@ function RoleDialog({
         toast.success("Role updated");
       }
       setOpen(false);
+      onOpenChange?.(false);
       onSuccess();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -316,24 +323,35 @@ function RoleDialog({
     }
   }
 
+  useEffect(() => {
+    if (defaultOpen) handleOpenChange(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpen]);
   const selectedCount = selectedIds.size;
   const totalCount = catalog?.length ?? 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {mode === "create" ? (
-          <Button type="button">
-            <PlusIcon className="size-3.5" />
-            Add role
-          </Button>
-        ) : (
-          <Button type="button" variant="ghost" size="icon" className="size-8">
-            <PencilIcon className="size-4" />
-            <span className="sr-only">Edit</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          {mode === "create" ? (
+            <Button type="button">
+              <PlusIcon className="size-3.5" />
+              Add role
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+            >
+              <PencilIcon className="size-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="shrink-0 border-b border-border bg-muted/40 px-5 py-4">
@@ -507,46 +525,55 @@ function RoleDialog({
   );
 }
 
-function DeleteRoleButton({
+function RoleRowActions({
   role,
   onSuccess,
 }: {
   role: Role;
   onSuccess: () => void;
 }) {
-  const [deleting, setDeleting] = useState(false);
-
-  async function handleDelete() {
-    if (
-      !confirm(
-        `Delete role "${role.name}"? Users assigned to this role may lose access.`,
-      )
-    ) {
-      return;
-    }
-    setDeleting(true);
-    try {
-      await api(`/roles/${role.id}`, { method: "DELETE" });
-      toast.success("Role deleted");
-      onSuccess();
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setDeleting(false);
-    }
-  }
-
+  const [edit, setEdit] = useState(false);
+  const [remove, setRemove] = useState(false);
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="size-8 text-destructive"
-      disabled={deleting}
-      onClick={handleDelete}
-    >
-      <Trash2Icon className="size-4" />
-      <span className="sr-only">Delete</span>
-    </Button>
+    <>
+      <RowActionsMenu
+        label={role.name}
+        actions={[
+          {
+            label: "Edit permissions",
+            icon: PencilIcon,
+            onSelect: () => setEdit(true),
+          },
+          {
+            label: "Delete role",
+            icon: Trash2Icon,
+            destructive: true,
+            onSelect: () => setRemove(true),
+          },
+        ]}
+      />
+      {edit && (
+        <RoleDialog
+          mode="edit"
+          role={role}
+          onSuccess={onSuccess}
+          defaultOpen
+          hideTrigger
+          onOpenChange={setEdit}
+        />
+      )}
+      <ConfirmRecordAction
+        open={remove}
+        onOpenChange={setRemove}
+        title="Delete role?"
+        description={`Users assigned to ${role.name} may lose access. Review assignments before deleting.`}
+        label="Delete role"
+        onConfirm={async () => {
+          await api(`/roles/${role.id}`, { method: "DELETE" });
+          toast.success("Role deleted");
+          onSuccess();
+        }}
+      />
+    </>
   );
 }

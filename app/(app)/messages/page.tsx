@@ -43,12 +43,7 @@ import {
 import { hasPermission } from "@/lib/permissions";
 import type { InternalMessage, UserAdmin } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  InboxIcon,
-  PenSquareIcon,
-  SendIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { InboxIcon, PenSquareIcon, SendIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 export default function MessagesPage() {
@@ -76,9 +71,9 @@ export default function MessagesPage() {
             unreadOnly: folder === "inbox" ? unreadOnly : false,
           },
           page,
-          limit
+          limit,
         ),
-      [folder, debouncedSearch, unreadOnly]
+      [folder, debouncedSearch, unreadOnly],
     );
 
   const openMessage = useCallback(
@@ -100,7 +95,7 @@ export default function MessagesPage() {
         setDetailLoading(false);
       }
     },
-    [reload, router, user?.id]
+    [reload, router, user?.id],
   );
 
   useEffect(() => {
@@ -153,11 +148,17 @@ export default function MessagesPage() {
             >
               <div className="border-b border-[var(--frappe-border)] px-3 pt-3">
                 <TabsList className="h-10 w-full rounded-xl bg-[var(--frappe-section-head)] p-1">
-                  <TabsTrigger value="inbox" className="flex-1 rounded-lg gap-1.5">
+                  <TabsTrigger
+                    value="inbox"
+                    className="flex-1 rounded-lg gap-1.5"
+                  >
                     <InboxIcon className="size-3.5" />
                     Inbox
                   </TabsTrigger>
-                  <TabsTrigger value="sent" className="flex-1 rounded-lg gap-1.5">
+                  <TabsTrigger
+                    value="sent"
+                    className="flex-1 rounded-lg gap-1.5"
+                  >
                     <SendIcon className="size-3.5" />
                     Sent
                   </TabsTrigger>
@@ -208,10 +209,10 @@ export default function MessagesPage() {
                             onClick={() => void openMessage(msg.id)}
                             className={cn(
                               "flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors hover:bg-[var(--frappe-section-head)]",
-                              active && "bg-teal-500/8",
+                              active && "bg-primary/8",
                               folder === "inbox" &&
                                 !msg.isRead &&
-                                "border-l-2 border-l-teal-600"
+                                "border-l-2 border-l-teal-600",
                             )}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -226,7 +227,7 @@ export default function MessagesPage() {
                               {msg.body}
                             </span>
                             {folder === "inbox" && !msg.isRead ? (
-                              <Badge className="mt-1 w-fit rounded-md bg-teal-600/15 text-[10px] text-teal-700 dark:text-teal-300">
+                              <Badge className="mt-1 w-fit rounded-md bg-primary/10 text-[10px] text-primary">
                                 Unread
                               </Badge>
                             ) : null}
@@ -355,12 +356,15 @@ function ComposeMessageDialog({
   const { data: assignees } = useFetch(
     () => api<UserAdmin[]>("/users/assignees"),
     [open],
-    { enabled: open }
+    { enabled: open },
   );
 
   const recipients = useMemo(
-    () => (assignees ?? []).filter((u) => u.id !== user?.id && u.isActive !== false),
-    [assignees, user?.id]
+    () =>
+      (assignees ?? []).filter(
+        (u) => u.id !== user?.id && u.isActive !== false,
+      ),
+    [assignees, user?.id],
   );
 
   useEffect(() => {
@@ -399,7 +403,7 @@ function ComposeMessageDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button className="h-9 rounded-xl bg-teal-700 hover:bg-teal-600">
+          <Button className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
             <PenSquareIcon className="size-4" />
             Compose
           </Button>
@@ -449,7 +453,7 @@ function ComposeMessageDialog({
             <Button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-teal-700 hover:bg-teal-600"
+              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {saving ? "Sending…" : "Send"}
             </Button>

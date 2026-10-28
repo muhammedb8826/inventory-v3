@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import {
-  CheckCheckIcon,
-  Loader2Icon,
-  MessageSquareIcon,
-} from "lucide-react";
+import { CheckCheckIcon, Loader2Icon, MessageSquareIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +47,7 @@ export function MessagesBell() {
     setLoading(true);
     try {
       const res = await fetchMessages(
-        buildMessagesListPath({ folder: "inbox" }, 1, 8)
+        buildMessagesListPath({ folder: "inbox" }, 1, 8),
       );
       setRows(res.data);
     } catch (e) {
@@ -112,7 +108,7 @@ export function MessagesBell() {
         >
           <MessageSquareIcon className="size-4" />
           {count > 0 ? (
-            <Badge className="absolute -right-0.5 -top-0.5 h-4 min-w-4 rounded-full bg-teal-600 px-1 text-[10px] text-white hover:bg-teal-600">
+            <Badge className="absolute -right-0.5 -top-0.5 h-4 min-w-4 rounded-full bg-teal-600 px-1 text-[10px] text-white hover:bg-primary/90">
               {count > 99 ? "99+" : count}
             </Badge>
           ) : null}
@@ -122,9 +118,7 @@ export function MessagesBell() {
         <div className="flex items-center justify-between border-b px-3 py-2.5">
           <div>
             <p className="text-sm font-semibold">Messages</p>
-            <p className="text-xs text-muted-foreground">
-              {count} unread
-            </p>
+            <p className="text-xs text-muted-foreground">{count} unread</p>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -162,7 +156,7 @@ export function MessagesBell() {
                 onClick={() => void onOpenMessage(msg)}
                 className={cn(
                   "block rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/70",
-                  !msg.isRead && "bg-teal-500/5"
+                  !msg.isRead && "bg-primary/5",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">

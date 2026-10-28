@@ -7,7 +7,7 @@ export type StockLevelKind = "high" | "ok" | "low" | "out";
 
 export function getStockLevelKind(
   quantity: string | number,
-  reorderPoint?: string | number | null
+  reorderPoint?: string | number | null,
 ): StockLevelKind {
   const qty = typeof quantity === "number" ? quantity : parseFloat(quantity);
   if (!Number.isFinite(qty) || qty <= 0) return "out";
@@ -33,9 +33,9 @@ const KIND_META: Record<
   },
   ok: {
     label: "OK",
-    bar: "bg-teal-500",
-    text: "text-teal-700 dark:text-teal-300",
-    track: "bg-teal-500/15",
+    bar: "bg-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-300",
+    track: "bg-emerald-500/15",
     fill: 62,
   },
   low: {
@@ -74,14 +74,20 @@ export function StockLevelBar({
 
   // Prefer proportional fill when reorder exists
   let fill = meta.fill;
-  const qty = typeof quantity === "number" ? quantity : parseFloat(String(quantity));
+  const qty =
+    typeof quantity === "number" ? quantity : parseFloat(String(quantity));
   const reorder =
     reorderPoint == null || reorderPoint === ""
       ? null
       : typeof reorderPoint === "number"
         ? reorderPoint
         : parseFloat(String(reorderPoint));
-  if (reorder != null && Number.isFinite(reorder) && reorder > 0 && Number.isFinite(qty)) {
+  if (
+    reorder != null &&
+    Number.isFinite(reorder) &&
+    reorder > 0 &&
+    Number.isFinite(qty)
+  ) {
     fill = Math.max(4, Math.min(100, Math.round((qty / (reorder * 3)) * 100)));
   }
 
@@ -99,11 +105,17 @@ export function StockLevelBar({
         ) : null}
       </div>
       <div
-        className={cn("mt-1.5 h-1.5 w-full overflow-hidden rounded-full", meta.track)}
+        className={cn(
+          "mt-1.5 h-1.5 w-full overflow-hidden rounded-full",
+          meta.track,
+        )}
         aria-hidden
       >
         <div
-          className={cn("h-full rounded-full transition-all duration-500", meta.bar)}
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            meta.bar,
+          )}
           style={{ width: `${fill}%` }}
         />
       </div>

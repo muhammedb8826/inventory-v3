@@ -47,3 +47,6 @@ build-review.log
 lint-review.log
 
 !.env.example
+
+.next-e2e/
+.next-build-check/

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { ArrowUpRightIcon } from "lucide-react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import { FrappeButtonPrimary } from "@/components/frappe";
@@ -187,9 +189,7 @@ export default function NotificationsPage() {
             <FilterField label="Module">
               <Select
                 value={moduleFilter || "__all__"}
-                onValueChange={(v) =>
-                  setModuleFilter(v === "__all__" ? "" : v)
-                }
+                onValueChange={(v) => setModuleFilter(v === "__all__" ? "" : v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Module" />
@@ -279,29 +279,35 @@ export default function NotificationsPage() {
             header: "",
             className: "w-28 text-right",
             cell: (n) => (
-              <div className="flex justify-end gap-1">
-                {!n.isRead ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => void handleMarkRead(n.id)}
-                  >
-                    Read
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-[var(--frappe-text-muted)] hover:text-destructive"
-                  onClick={() => void handleDismiss(n.id)}
-                  aria-label="Dismiss"
-                >
-                  <Trash2Icon className="size-4" />
-                </Button>
-              </div>
+              <RowActionsMenu
+                label={n.title}
+                actions={[
+                  {
+                    label: "Open notification",
+                    icon: ArrowUpRightIcon,
+                    href: notificationDetailPath(n.id),
+                  },
+                  ...(!n.isRead
+                    ? [
+                        {
+                          label: "Mark as read",
+                          icon: CheckCheckIcon,
+                          onSelect: () => {
+                            void handleMarkRead(n.id);
+                          },
+                        },
+                      ]
+                    : []),
+                  {
+                    label: "Dismiss notification",
+                    icon: Trash2Icon,
+                    destructive: true,
+                    onSelect: () => {
+                      void handleDismiss(n.id);
+                    },
+                  },
+                ]}
+              />
             ),
           },
         ]}

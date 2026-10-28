@@ -7,15 +7,19 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // React Compiler is not enabled. Report its migration diagnostics without
   // blocking the existing effect-based form and data-fetching components.
-  { rules: {
-    'react-hooks/set-state-in-effect': 'warn',
-    'react-hooks/preserve-manual-memoization': 'warn',
-    'react-hooks/use-memo': 'warn',
-  } },
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/use-memo": "warn",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-e2e/**",
+    ".next-build-check/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

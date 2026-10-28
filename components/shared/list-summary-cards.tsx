@@ -9,16 +9,19 @@ export type ListSummaryItem = {
   icon?: LucideIcon;
   tone?: "teal" | "coral" | "sky" | "amber" | "slate" | "violet";
   /** Small status chip under/beside the value (Fleety-style). */
-  badge?: { label: string; tone?: "success" | "danger" | "warning" | "info" | "muted" };
+  badge?: {
+    label: string;
+    tone?: "success" | "danger" | "warning" | "info" | "muted";
+  };
 };
 
 const ICON_TONE: Record<NonNullable<ListSummaryItem["tone"]>, string> = {
-  teal: "bg-teal-500/10 text-teal-600 dark:text-teal-300",
-  coral: "bg-rose-500/10 text-rose-600 dark:text-rose-300",
-  sky: "bg-sky-500/10 text-sky-600 dark:text-sky-300",
-  amber: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  slate: "bg-slate-500/10 text-slate-600 dark:text-slate-300",
-  violet: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
+  teal: "bg-primary/10 text-primary",
+  coral: "bg-primary/10 text-primary",
+  sky: "bg-primary/10 text-primary",
+  amber: "bg-primary/10 text-primary",
+  slate: "bg-primary/10 text-primary",
+  violet: "bg-primary/10 text-primary",
 };
 
 const BADGE_TONE = {
@@ -26,7 +29,7 @@ const BADGE_TONE = {
   danger: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
   warning: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   info: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  muted: "bg-slate-500/10 text-slate-600 dark:text-slate-300",
+  muted: "bg-primary/10 text-primary",
 } as const;
 
 /** Clean KPI strip above list tables (Fleety / SaaS style). */
@@ -63,14 +66,14 @@ export function ListSummaryCards({
                 <p className="text-sm font-medium text-muted-foreground">
                   {item.label}
                 </p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+                <p className="mt-2 whitespace-nowrap text-2xl font-semibold xl:text-[1.65rem] tracking-tight tabular-nums text-foreground">
                   {item.value}
                 </p>
                 {item.badge ? (
                   <span
                     className={cn(
                       "mt-2.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                      BADGE_TONE[item.badge.tone ?? "muted"]
+                      BADGE_TONE[item.badge.tone ?? "muted"],
                     )}
                   >
                     {item.badge.label}
@@ -81,7 +84,7 @@ export function ListSummaryCards({
                 <span
                   className={cn(
                     "flex size-10 shrink-0 items-center justify-center rounded-full",
-                    ICON_TONE[tone]
+                    ICON_TONE[tone],
                   )}
                 >
                   <Icon className="size-4" />

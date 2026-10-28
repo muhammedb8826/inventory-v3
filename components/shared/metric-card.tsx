@@ -5,27 +5,27 @@ import { cn } from "@/lib/utils";
 
 const TONE_STYLES = {
   teal: {
-    icon: "bg-teal-500/15 text-teal-600 dark:text-teal-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-teal-600 dark:text-teal-300",
   },
   coral: {
-    icon: "bg-rose-500/15 text-rose-600 dark:text-rose-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-rose-600 dark:text-rose-300",
   },
   sky: {
-    icon: "bg-sky-500/15 text-sky-600 dark:text-sky-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-sky-600 dark:text-sky-300",
   },
   amber: {
-    icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-amber-600 dark:text-amber-300",
   },
   slate: {
-    icon: "bg-slate-500/15 text-slate-600 dark:text-slate-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-slate-600 dark:text-slate-300",
   },
   violet: {
-    icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300",
+    icon: "bg-primary/10 text-primary",
     trendUp: "text-indigo-600 dark:text-indigo-300",
   },
 } as const;
@@ -37,7 +37,7 @@ export function MetricCard({
   value,
   hint,
   icon: Icon,
-  tone = "teal",
+  tone = "violet",
   trend,
   className,
 }: {
@@ -54,8 +54,8 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "sms-panel group relative overflow-hidden p-5 transition-transform duration-200 hover:-translate-y-0.5",
-        className
+        "sms-panel group relative overflow-hidden p-5 transition-transform duration-200 hover:border-primary/20 hover:shadow-md",
+        className,
       )}
     >
       <div
@@ -72,7 +72,7 @@ export function MetricCard({
           <p className="text-sm font-medium text-[var(--frappe-text-muted)]">
             {label}
           </p>
-          <p className="mt-2 font-heading text-2xl font-semibold tracking-tight tabular-nums text-[var(--frappe-text)] lg:text-[1.7rem]">
+          <p className="mt-2 font-heading whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums text-[var(--frappe-text)] lg:text-[clamp(1.1rem,1.7vw,1.5rem)]">
             {value}
           </p>
         </div>
@@ -87,8 +87,8 @@ export function MetricCard({
               className={cn(
                 "rounded-full px-2 py-0.5 font-semibold",
                 trend.positive === false
-                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-300"
-                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+                  ? "bg-primary/10 text-primary"
+                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
               )}
             >
               {trend.label}

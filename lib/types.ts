@@ -1,3 +1,4 @@
+import type { RecordMetadata } from "@/components/shared/record-metadata";
 import type { Currency } from "@/lib/currency";
 
 export type LocationType = "WAREHOUSE" | "SHOWROOM" | "BIN";
@@ -112,7 +113,7 @@ export interface LinkedCredit {
   status?: CreditStatus;
 }
 
-export interface Role {
+export interface Role extends RecordMetadata {
   id: string;
   name: string;
   /** Auth/login: codes only. `GET /roles` may return full `Permission` objects. */
@@ -120,7 +121,7 @@ export interface Role {
   description?: string;
 }
 
-export interface User {
+export interface User extends RecordMetadata {
   id: string;
   email: string;
   fullName: string;
@@ -133,7 +134,7 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
-export interface Location {
+export interface Location extends RecordMetadata {
   id: string;
   name: string;
   type: LocationType;
@@ -143,7 +144,7 @@ export interface Location {
   parent?: Location | null;
 }
 
-export interface StockLot {
+export interface StockLot extends RecordMetadata {
   id: string;
   locationId: string;
   itemId: string;
@@ -162,7 +163,7 @@ export interface StocktakeLine {
   item?: Item;
 }
 
-export interface Stocktake {
+export interface Stocktake extends RecordMetadata {
   id: string;
   locationId: string;
   status: StocktakeStatus;
@@ -174,7 +175,7 @@ export interface Stocktake {
   lines?: StocktakeLine[];
 }
 
-export interface Item {
+export interface Item extends RecordMetadata {
   id: string;
   sku?: string | null;
   barcode?: string | null;
@@ -189,7 +190,7 @@ export interface Item {
   imageUrl?: string | null;
 }
 
-export interface StockRecord {
+export interface StockRecord extends RecordMetadata {
   id: string;
   locationId: string;
   itemId: string;
@@ -210,7 +211,7 @@ export interface LowStockRecord extends StockRecord {
   shortage: string;
 }
 
-export interface StockAdjustment {
+export interface StockAdjustment extends RecordMetadata {
   id: string;
   locationId: string;
   itemId: string;
@@ -230,7 +231,7 @@ export interface StockAdjustment {
 }
 
 /** Immutable stock ledger row (every qty change). */
-export interface StockMovement {
+export interface StockMovement extends RecordMetadata {
   id: string;
   locationId: string;
   itemId: string;
@@ -249,7 +250,7 @@ export interface StockMovement {
   createdAt?: string;
 }
 
-export interface Supplier {
+export interface Supplier extends RecordMetadata {
   id: string;
   name: string;
   phone?: string;
@@ -258,7 +259,7 @@ export interface Supplier {
   isActive?: boolean;
 }
 
-export interface Customer {
+export interface Customer extends RecordMetadata {
   id: string;
   name: string;
   phone?: string;
@@ -267,7 +268,7 @@ export interface Customer {
   isActive?: boolean;
 }
 
-export interface BankAccount {
+export interface BankAccount extends RecordMetadata {
   id: string;
   name: string;
   balance: string;
@@ -308,7 +309,7 @@ export interface ExpenseCategory {
   name: string;
 }
 
-export interface Expense {
+export interface Expense extends RecordMetadata {
   id: string;
   categoryId: string;
   bankAccountId: string;
@@ -337,11 +338,23 @@ export interface CreditRecord {
   supplier?: Supplier;
   sale?: Pick<
     Sale,
-    "id" | "total" | "subtotal" | "totalAmount" | "createdAt" | "paymentMethod" | "status"
+    | "id"
+    | "total"
+    | "subtotal"
+    | "totalAmount"
+    | "createdAt"
+    | "paymentMethod"
+    | "status"
   >;
   purchase?: Pick<
     Purchase,
-    "id" | "total" | "subtotal" | "totalAmount" | "createdAt" | "paymentMethod" | "status"
+    | "id"
+    | "total"
+    | "subtotal"
+    | "totalAmount"
+    | "createdAt"
+    | "paymentMethod"
+    | "status"
   >;
   createdAt?: string;
   updatedAt?: string;
@@ -406,7 +419,7 @@ export interface PurchaseLine {
   item?: Item;
 }
 
-export interface Purchase {
+export interface Purchase extends RecordMetadata {
   id: string;
   supplierId?: string;
   locationId?: string;
@@ -444,7 +457,7 @@ export interface SaleUserRef {
   email?: string;
 }
 
-export interface Sale {
+export interface Sale extends RecordMetadata {
   id: string;
   customerId?: string;
   inquiryId?: string | null;
@@ -747,7 +760,7 @@ export interface BomLine {
   componentItem?: Item;
 }
 
-export interface Bom {
+export interface Bom extends RecordMetadata {
   id: string;
   finishedItemId: string;
   name: string;
@@ -804,7 +817,7 @@ export interface ProductionOrderLine {
   componentItem?: Item;
 }
 
-export interface ProductionOrder {
+export interface ProductionOrder extends RecordMetadata {
   id: string;
   orderNumber?: string | null;
   bomId: string;
@@ -830,7 +843,7 @@ export interface ProductionOrder {
   updatedAt?: string;
 }
 
-export interface UserAdmin {
+export interface UserAdmin extends RecordMetadata {
   id: string;
   email: string;
   fullName: string;
@@ -857,7 +870,7 @@ export type NotificationType =
   | "SYSTEM"
   | "INQUIRY";
 
-export interface Notification {
+export interface Notification extends RecordMetadata {
   id: string;
   userId: string;
   module: string;

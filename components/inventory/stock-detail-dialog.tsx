@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -46,17 +47,24 @@ function DetailValue({ children }: { children: React.ReactNode }) {
 export function StockDetailDialog({
   record,
   trigger,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   record: StockRecord;
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [detail, setDetail] = useState<StockRecord | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
     if (!nextOpen) {
       setDetail(null);
       setMovements([]);
@@ -74,13 +82,13 @@ export function StockDetailDialog({
               locationId: record.locationId,
             },
             1,
-            8
-          )
+            8,
+          ),
         ),
       ]);
       setDetail(fresh);
       setMovements(
-        Array.isArray(movementPage) ? movementPage : (movementPage.data ?? [])
+        Array.isArray(movementPage) ? movementPage : (movementPage.data ?? []),
       );
     } catch (err) {
       toast.error(errorMessage(err));
@@ -89,9 +97,15 @@ export function StockDetailDialog({
     }
   }
 
+  useEffect(() => {
+    if (defaultOpen) void handleOpenChange(true);
+    // Fetch fresh details when this dialog is opened from the row action menu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpen, record.id]);
+
   const shown = detail ?? record;
   const imageSrc = resolveItemImageUrl(
-    shown.item.imageUrl ?? shown.item.imagePath
+    shown.item.imageUrl ?? shown.item.imagePath,
   );
   const stockValue =
     parseFloat(shown.quantity) * parseFloat(shown.purchasePrice);
@@ -107,16 +121,22 @@ export function StockDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button size="icon" variant="ghost" aria-label="View stock">
-            <EyeIcon className="size-4" />
-          </Button>
-        )}
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button size="icon" variant="ghost" aria-label="View stock">
+              <EyeIcon className="size-4" />
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
           <DialogTitle>Stock details</DialogTitle>
+          <DialogDescription>
+            Stock levels, item information, and recent movements for this
+            location.
+          </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {loading && !detail ? (
@@ -232,11 +252,11 @@ export function StockDetailDialog({
                           const sign = delta > 0 ? "+" : "";
                           const refHref = stockMovementDocumentHref(
                             m.refType,
-                            m.refId
+                            m.refId,
                           );
                           const refLabel = stockMovementRefLabel(
                             m.refType,
-                            m.refId
+                            m.refId,
                           );
                           return (
                             <tr key={m.id}>
@@ -290,7 +310,11 @@ export function StockDetailDialog({
           )}
         </div>
         <DialogFooter className="app-modal-footer shrink-0 border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
             Close
           </Button>
         </DialogFooter>

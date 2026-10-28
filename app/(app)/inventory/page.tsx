@@ -3,6 +3,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { RecordTimestamp } from "@/components/shared/record-metadata";
+import {
+  EyeIcon,
+  ArrowLeftRightIcon,
+  HistoryIcon,
+  CopyIcon,
+} from "lucide-react";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -42,7 +50,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { api } from "@/lib/api";
-import { buildInventoryListPath, buildLowStockListPath } from "@/lib/list-query";
+import {
+  buildInventoryListPath,
+  buildLowStockListPath,
+} from "@/lib/list-query";
 import { resolveItemImageUrl } from "@/lib/inventory-media";
 import { formatMoney, formatQty, errorMessage } from "@/lib/format";
 import type {
@@ -88,9 +99,7 @@ export default function InventoryPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab: InventoryTab =
-    tabParam === "adjustments" || tabParam === "movements"
-      ? tabParam
-      : "stock";
+    tabParam === "adjustments" || tabParam === "movements" ? tabParam : "stock";
 
   const movementLockedFilters = useMemo(
     () => ({
@@ -99,7 +108,7 @@ export default function InventoryPage() {
       itemId: searchParams.get("itemId") ?? undefined,
       locationId: searchParams.get("locationId") ?? undefined,
     }),
-    [searchParams]
+    [searchParams],
   );
 
   const setInventoryTab = useCallback(
@@ -123,7 +132,7 @@ export default function InventoryPage() {
       const qs = next.toString();
       router.replace(qs ? `/inventory?${qs}` : "/inventory", { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   const clearMovementLockedFilters = useCallback(() => {
@@ -137,9 +146,9 @@ export default function InventoryPage() {
   }, [router, searchParams]);
 
   const [locationFilter, setLocationFilter] = useState(ALL_LOCATIONS);
-  const [viewMode, setViewMode] = useState<typeof VIEW_ALL | typeof VIEW_LOW_STOCK>(
-    VIEW_ALL
-  );
+  const [viewMode, setViewMode] = useState<
+    typeof VIEW_ALL | typeof VIEW_LOW_STOCK
+  >(VIEW_ALL);
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -152,7 +161,7 @@ export default function InventoryPage() {
   const isAllLocations = locationFilter === ALL_LOCATIONS;
 
   const selectedLocation = (locations ?? []).find(
-    (loc) => loc.id === listLocationId
+    (loc) => loc.id === listLocationId,
   );
   const locationLabel = isAllLocations
     ? "all-locations"
@@ -171,27 +180,27 @@ export default function InventoryPage() {
 
   const { rows, meta, totals, setPage, setLimit, loading, reload } =
     usePaginatedList<StockRecord | LowStockRecord, InventoryListTotals>(
-    (page, limit) => {
-      if (isLowStockView) {
-        return buildLowStockListPath(
-          { locationId: listLocationId },
+      (page, limit) => {
+        if (isLowStockView) {
+          return buildLowStockListPath(
+            { locationId: listLocationId },
+            page,
+            limit,
+          );
+        }
+        return buildInventoryListPath(
+          {
+            locationId: listLocationId,
+            from: from || undefined,
+            to: to || undefined,
+            search: debouncedSearch || undefined,
+          },
           page,
-          limit
+          limit,
         );
-      }
-      return buildInventoryListPath(
-        {
-          locationId: listLocationId,
-          from: from || undefined,
-          to: to || undefined,
-          search: debouncedSearch || undefined,
-        },
-        page,
-        limit
-      );
-    },
-    [listLocationId, from, to, debouncedSearch, isLowStockView]
-  );
+      },
+      [listLocationId, from, to, debouncedSearch, isLowStockView],
+    );
 
   return (
     <AppShell
@@ -252,310 +261,364 @@ export default function InventoryPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="stock" className="mt-0 space-y-0">
-          {!isLowStockView ? (
-            <ListSummaryCards
-              items={[
-                {
-                  label: "Items",
-                  value: meta.total.toLocaleString(),
-                  icon: PackageIcon,
-                  tone: "slate",
-                  badge: { label: "Catalog", tone: "muted" },
-                },
-                {
-                  label: "Total qty",
-                  value: formatQty(totals?.quantity ?? 0),
-                  icon: BoxesIcon,
-                  tone: "sky",
-                  badge: { label: "On hand", tone: "info" },
-                },
-                {
-                  label: "Stock value",
-                  value: formatMoney(totals?.inventoryValue ?? 0),
-                  icon: WalletIcon,
-                  tone: "teal",
-                  badge: { label: "Healthy", tone: "success" },
-                },
-              ]}
-            />
-          ) : (
-            <ListSummaryCards
-              items={[
-                {
-                  label: "Low-stock items",
-                  value: meta.total.toLocaleString(),
-                  icon: PackageIcon,
-                  tone: "amber",
-                  badge: { label: "Urgent", tone: "danger" },
-                },
-              ]}
-            />
-          )}
-          <DataCardTable
-            storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
-            rows={rows}
-            loading={loading}
-            emptyTitle={
-              isLowStockView
-                ? "No low-stock items"
-                : isAllLocations
-                  ? "No stock found"
-                  : "No stock at this location"
-            }
-            emptyDescription={
-              isLowStockView
-                ? "Items at or below their reorder point will appear here."
-                : undefined
-            }
-            filters={
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search stock..."
-                disabled={isLowStockView}
-                className={isLowStockView ? "opacity-60" : undefined}
+            {!isLowStockView ? (
+              <ListSummaryCards
+                items={[
+                  {
+                    label: "Items",
+                    value: meta.total.toLocaleString(),
+                    icon: PackageIcon,
+                    tone: "slate",
+                    badge: { label: "Catalog", tone: "muted" },
+                  },
+                  {
+                    label: "Total qty",
+                    value: formatQty(totals?.quantity ?? 0),
+                    icon: BoxesIcon,
+                    tone: "sky",
+                    badge: { label: "On hand", tone: "info" },
+                  },
+                  {
+                    label: "Stock value",
+                    value: formatMoney(totals?.inventoryValue ?? 0),
+                    icon: WalletIcon,
+                    tone: "teal",
+                    badge: { label: "Healthy", tone: "success" },
+                  },
+                ]}
               />
-            }
-            toolbar={
-              <TableFiltersSheet
-                activeCount={countActiveFilters([
-                  locationFilter !== ALL_LOCATIONS ? locationFilter : "",
-                  viewMode !== VIEW_ALL ? viewMode : "",
-                  from,
-                  to,
-                ])}
-                onReset={() => {
-                  setLocationFilter(ALL_LOCATIONS);
-                  setViewMode(VIEW_ALL);
-                  setFrom("");
-                  setTo("");
-                }}
-              >
-                <FilterField label="Location">
-                  <Select
-                    value={locationFilter}
-                    onValueChange={setLocationFilter}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All locations" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_LOCATIONS}>
-                        All locations
-                      </SelectItem>
-                      {(locations ?? []).map((loc) => (
-                        <SelectItem key={loc.id} value={loc.id}>
-                          {loc.name} ({loc.type})
+            ) : (
+              <ListSummaryCards
+                items={[
+                  {
+                    label: "Low-stock items",
+                    value: meta.total.toLocaleString(),
+                    icon: PackageIcon,
+                    tone: "amber",
+                    badge: { label: "Urgent", tone: "danger" },
+                  },
+                ]}
+              />
+            )}
+            <DataCardTable
+              storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
+              rows={rows}
+              loading={loading}
+              emptyTitle={
+                isLowStockView
+                  ? "No low-stock items"
+                  : isAllLocations
+                    ? "No stock found"
+                    : "No stock at this location"
+              }
+              emptyDescription={
+                isLowStockView
+                  ? "Items at or below their reorder point will appear here."
+                  : undefined
+              }
+              filters={
+                <ListSearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search stock..."
+                  disabled={isLowStockView}
+                  className={isLowStockView ? "opacity-60" : undefined}
+                />
+              }
+              toolbar={
+                <TableFiltersSheet
+                  activeCount={countActiveFilters([
+                    locationFilter !== ALL_LOCATIONS ? locationFilter : "",
+                    viewMode !== VIEW_ALL ? viewMode : "",
+                    from,
+                    to,
+                  ])}
+                  onReset={() => {
+                    setLocationFilter(ALL_LOCATIONS);
+                    setViewMode(VIEW_ALL);
+                    setFrom("");
+                    setTo("");
+                  }}
+                >
+                  <FilterField label="Location">
+                    <Select
+                      value={locationFilter}
+                      onValueChange={setLocationFilter}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All locations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL_LOCATIONS}>
+                          All locations
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Stock view">
-                  <Select
-                    value={viewMode}
-                    onValueChange={(v) =>
-                      setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={VIEW_ALL}>All stock</SelectItem>
-                      <SelectItem value={VIEW_LOW_STOCK}>
-                        Low stock only
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Date range">
-                  <DateRangeFilter
-                    from={from}
-                    to={to}
-                    onFromChange={setFrom}
-                    onToChange={setTo}
-                    disabled={isLowStockView}
-                    compact={false}
-                    className={isLowStockView ? "opacity-60" : undefined}
-                  />
-                </FilterField>
-              </TableFiltersSheet>
-            }
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              ...(isAllLocations
-                ? [
-                    {
-                      key: "location",
-                      header: "Location",
-                      mobilePriority: 2,
-                      cell: (r: StockRecord) => r.location?.name ?? "—",
-                    },
-                  ]
-                : []),
-              {
-                key: "item",
-                header: "Item",
-                hideable: false,
-                mobilePriority: 1,
-                cell: (r) => {
-                  const imageSrc = resolveItemImageUrl(
-                    r.item.imageUrl ?? r.item.imagePath
-                  );
-                  return (
-                    <StockDetailDialog
-                      record={r}
-                      trigger={
-                        <button
-                          type="button"
-                          className="flex max-w-full items-center gap-3 text-left"
-                        >
-                          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)] shadow-sm">
-                            {imageSrc ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={imageSrc}
-                                alt=""
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              <ImageIcon className="size-4 text-[var(--frappe-text-muted)]" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-[var(--frappe-text)] transition-colors hover:text-[var(--frappe-primary)]">
-                              {r.item.description}
-                            </p>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              {r.item.sku ? (
-                                <Badge
-                                  variant="outline"
-                                  className="rounded-md px-1.5 py-0 font-mono text-[10px] font-normal"
-                                >
-                                  {r.item.sku}
-                                </Badge>
-                              ) : null}
-                              {r.item.itemType ? (
-                                <Badge
-                                  variant="secondary"
-                                  className="rounded-md px-1.5 py-0 text-[10px] font-normal"
-                                >
-                                  {itemTypeLabel(r.item.itemType)}
-                                </Badge>
-                              ) : null}
-                            </div>
-                          </div>
-                        </button>
+                        {(locations ?? []).map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name} ({loc.type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FilterField>
+                  <FilterField label="Stock view">
+                    <Select
+                      value={viewMode}
+                      onValueChange={(v) =>
+                        setViewMode(
+                          v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK,
+                        )
                       }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={VIEW_ALL}>All stock</SelectItem>
+                        <SelectItem value={VIEW_LOW_STOCK}>
+                          Low stock only
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FilterField>
+                  <FilterField label="Date range">
+                    <DateRangeFilter
+                      from={from}
+                      to={to}
+                      onFromChange={setFrom}
+                      onToChange={setTo}
+                      disabled={isLowStockView}
+                      compact={false}
+                      className={isLowStockView ? "opacity-60" : undefined}
                     />
-                  );
-                },
-              },
-              {
-                key: "qty",
-                header: "Current stock",
-                className: "min-w-[9rem]",
-                hideable: false,
-                mobilePriority: 2,
-                cell: (r) => (
-                  <StockLevelBar
-                    quantity={r.quantity}
-                    reorderPoint={r.reorderPoint}
-                    unit={r.item.unit}
-                  />
-                ),
-              },
-              {
-                key: "unit",
-                header: "Unit",
-                className: "w-20",
-                defaultVisible: false,
-                cell: (r) => r.item.unit || "—",
-              },
-              {
-                key: "sku",
-                header: "SKU",
-                className: "w-28 font-mono text-xs",
-                defaultVisible: false,
-                cell: (r) => r.item.sku || "—",
-              },
-              {
-                key: "reorder",
-                header: "Reorder at",
-                className: "w-28 text-right tabular-nums",
-                mobilePriority: 4,
-                cell: (r) =>
-                  r.reorderPoint != null && r.reorderPoint !== ""
-                    ? formatQty(r.reorderPoint)
-                    : "—",
-              },
-              ...(isLowStockView
-                ? [
-                    {
-                      key: "shortage",
-                      header: "Shortage",
-                      className: "w-28 text-right tabular-nums",
-                      mobilePriority: 3,
-                      cell: (r: StockRecord | LowStockRecord) =>
-                        formatQty((r as LowStockRecord).shortage),
-                    },
-                  ]
-                : []),
-              {
-                key: "price",
-                header: "Purchase price",
-                className: "w-36 text-right tabular-nums",
-                mobilePriority: 3,
-                cell: (r) => formatMoney(r.purchasePrice),
-              },
-              {
-                key: "value",
-                header: "Value",
-                className: "w-36 text-right tabular-nums",
-                cell: (r) =>
-                  formatMoney(
-                    parseFloat(r.quantity) * parseFloat(r.purchasePrice)
-                  ),
-              },
-              {
-                key: "actions",
-                header: "Actions",
-                className: "w-40 text-right",
-                hideable: false,
-                mobilePriority: 5,
-                cell: (r) => (
-                    <div className="flex justify-end gap-1">
-                      <StockDetailDialog record={r} />
-                      {hasPermission(user, "inventory.adjust") ? (
-                        <StockAdjustDialog
-                          record={r}
-                          onSuccess={reload}
-                        />
-                      ) : null}
-                      {hasPermission(user, "inventory.write") ? (
-                        <Button size="icon" variant="ghost" asChild>
-                          <Link
-                            href={`/inventory/${r.id}/edit`}
-                            aria-label="Edit stock"
+                  </FilterField>
+                </TableFiltersSheet>
+              }
+              pagination={{
+                meta,
+                onPageChange: setPage,
+                onLimitChange: setLimit,
+                disabled: loading,
+              }}
+              columns={[
+                ...(isAllLocations
+                  ? [
+                      {
+                        key: "location",
+                        header: "Location",
+                        priority: 40,
+                        sortValue: (r: StockRecord) => r.location?.name ?? "",
+                        mobilePriority: 2,
+                        cell: (r: StockRecord) => r.location?.name ?? "—",
+                      },
+                    ]
+                  : []),
+                {
+                  key: "item",
+                  header: "Item",
+                  priority: 10,
+                  sortValue: (r) => r.item.description,
+                  exportValue: (r) => r.item.description,
+                  className: "min-w-[15rem] max-w-[22rem]",
+                  hideable: false,
+                  mobilePriority: 1,
+                  cell: (r) => {
+                    const imageSrc = resolveItemImageUrl(
+                      r.item.imageUrl ?? r.item.imagePath,
+                    );
+                    return (
+                      <StockDetailDialog
+                        record={r}
+                        trigger={
+                          <button
+                            type="button"
+                            className="flex max-w-full items-center gap-3 text-left"
                           >
-                            <PencilIcon className="size-4" />
-                          </Link>
-                        </Button>
-                      ) : null}
-                      {hasPermission(user, "inventory.delete") ? (
-                        <DeleteStockButton id={r.id} onSuccess={reload} />
-                      ) : null}
-                    </div>
+                            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)] shadow-sm">
+                              {imageSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={imageSrc}
+                                  alt=""
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="size-4 text-[var(--frappe-text-muted)]" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[var(--frappe-text)] transition-colors hover:text-[var(--frappe-primary)]">
+                                {r.item.description}
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                {r.item.sku ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="rounded-md px-1.5 py-0 font-mono text-[10px] font-normal"
+                                  >
+                                    {r.item.sku}
+                                  </Badge>
+                                ) : null}
+                                {r.item.itemType ? (
+                                  <Badge
+                                    variant="secondary"
+                                    className="rounded-md px-1.5 py-0 text-[10px] font-normal"
+                                  >
+                                    {itemTypeLabel(r.item.itemType)}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                            </div>
+                          </button>
+                        }
+                      />
+                    );
+                  },
+                },
+                {
+                  key: "qty",
+                  header: "On hand",
+                  priority: 20,
+                  sortValue: (r) => Number(r.quantity),
+                  exportValue: (r) => r.quantity,
+                  className: "min-w-[9rem]",
+                  hideable: false,
+                  mobilePriority: 2,
+                  cell: (r) => (
+                    <StockLevelBar
+                      quantity={r.quantity}
+                      reorderPoint={r.reorderPoint}
+                      unit={r.item.unit}
+                    />
                   ),
-              },
-            ]}
-          />
+                },
+                {
+                  key: "unit",
+                  header: "Unit",
+                  className: "w-20",
+                  defaultVisible: false,
+                  cell: (r) => r.item.unit || "—",
+                },
+                {
+                  key: "sku",
+                  header: "SKU",
+                  className: "w-28 font-mono text-xs",
+                  defaultVisible: false,
+                  cell: (r) => r.item.sku || "—",
+                },
+                {
+                  key: "reorder",
+                  header: "Reorder at",
+                  defaultVisible: false,
+                  priority: 55,
+                  sortValue: (r) => Number(r.reorderPoint ?? 0),
+                  className: "w-28 text-right tabular-nums",
+                  mobilePriority: 4,
+                  cell: (r) =>
+                    r.reorderPoint != null && r.reorderPoint !== ""
+                      ? formatQty(r.reorderPoint)
+                      : "—",
+                },
+                ...(isLowStockView
+                  ? [
+                      {
+                        key: "shortage",
+                        header: "Shortage",
+                        className: "w-28 text-right tabular-nums",
+                        mobilePriority: 3,
+                        cell: (r: StockRecord | LowStockRecord) =>
+                          formatQty((r as LowStockRecord).shortage),
+                      },
+                    ]
+                  : []),
+                {
+                  key: "price",
+                  header: "Unit cost",
+                  defaultVisible: false,
+                  priority: 60,
+                  sortValue: (r) => Number(r.purchasePrice),
+                  className: "w-36 text-right tabular-nums",
+                  mobilePriority: 3,
+                  cell: (r) => formatMoney(r.purchasePrice),
+                },
+                {
+                  key: "value",
+                  header: "Stock value",
+                  priority: 65,
+                  sortValue: (r) =>
+                    Number(r.quantity) * Number(r.purchasePrice),
+                  className: "w-36 text-right tabular-nums",
+                  cell: (r) =>
+                    formatMoney(
+                      parseFloat(r.quantity) * parseFloat(r.purchasePrice),
+                    ),
+                },
+                {
+                  key: "available",
+                  header: "Available",
+                  priority: 25,
+                  mobilePriority: 3,
+                  sortValue: (r) =>
+                    Number(
+                      r.available ??
+                        Number(r.quantity) - Number(r.reserved ?? 0),
+                    ),
+                  cell: (r) => (
+                    <span className="font-semibold tabular-nums">
+                      {formatQty(
+                        r.available ??
+                          String(Number(r.quantity) - Number(r.reserved ?? 0)),
+                      )}
+                    </span>
+                  ),
+                },
+                {
+                  key: "reserved",
+                  header: "Reserved",
+                  priority: 26,
+                  defaultVisible: false,
+                  sortValue: (r) => Number(r.reserved ?? 0),
+                  cell: (r) => formatQty(r.reserved ?? "0"),
+                },
+                {
+                  key: "barcode",
+                  header: "Barcode",
+                  priority: 75,
+                  defaultVisible: false,
+                  cell: (r) => (
+                    <span className="font-mono text-xs">
+                      {r.item.barcode ?? "\u2014"}
+                    </span>
+                  ),
+                },
+                {
+                  key: "itemType",
+                  header: "Item type",
+                  priority: 76,
+                  defaultVisible: false,
+                  cell: (r) => itemTypeLabel(r.item.itemType),
+                },
+                {
+                  key: "updatedAt",
+                  header: "Updated at",
+                  priority: 80,
+                  defaultVisible: true,
+                  mobilePriority: 6,
+                  sortValue: (r) => r.updatedAt ?? "",
+                  exportValue: (r) => r.updatedAt ?? "",
+                  cell: (r) => <RecordTimestamp value={r.updatedAt} />,
+                },
+                {
+                  key: "actions",
+                  header: "Actions",
+                  className: "w-14 text-right",
+                  hideable: false,
+                  mobilePriority: 5,
+                  cell: (r) => (
+                    <InventoryRowActions record={r} onSuccess={reload} />
+                  ),
+                },
+              ]}
+            />
           </TabsContent>
           <TabsContent value="adjustments" className="mt-0">
             <InventoryAdjustmentsPanel />
@@ -569,6 +632,114 @@ export default function InventoryPage() {
         </Tabs>
       </PermissionGate>
     </AppShell>
+  );
+}
+
+function InventoryRowActions({
+  record,
+  onSuccess,
+}: {
+  record: StockRecord;
+  onSuccess: () => void;
+}) {
+  const { user } = useAuth();
+  const [dialog, setDialog] = useState<"details" | "adjust" | "delete" | null>(
+    null,
+  );
+  const close = (open: boolean) => {
+    if (!open) setDialog(null);
+  };
+  return (
+    <>
+      <RowActionsMenu
+        label={record.item.description}
+        description={record.location?.name}
+        actions={[
+          {
+            label: "View details",
+            icon: EyeIcon,
+            onSelect: () => setDialog("details"),
+          },
+          ...(hasPermission(user, "inventory.write")
+            ? [
+                {
+                  label: "Edit item",
+                  icon: PencilIcon,
+                  href: `/inventory/${record.id}/edit`,
+                },
+              ]
+            : []),
+          ...(hasPermission(user, "inventory.adjust")
+            ? [
+                {
+                  label: "Adjust stock",
+                  icon: ArrowLeftRightIcon,
+                  onSelect: () => setDialog("adjust"),
+                },
+              ]
+            : []),
+          {
+            label: "Stock movements",
+            icon: HistoryIcon,
+            href: `/inventory?tab=movements&itemId=${record.itemId}&locationId=${record.locationId}`,
+          },
+          ...(record.item.sku
+            ? [
+                {
+                  label: "Copy SKU",
+                  icon: CopyIcon,
+                  onSelect: () => {
+                    void navigator.clipboard
+                      .writeText(record.item.sku!)
+                      .then(() => toast.success("SKU copied"))
+                      .catch(() => toast.error("Could not copy SKU"));
+                  },
+                },
+              ]
+            : []),
+          ...(hasPermission(user, "inventory.delete")
+            ? [
+                {
+                  label: "Delete stock record",
+                  icon: Trash2Icon,
+                  destructive: true,
+                  onSelect: () => setDialog("delete"),
+                  disabled:
+                    Number(record.quantity) !== 0 ||
+                    Number(record.reserved ?? 0) !== 0,
+                  hint: "Only zero-balance, unreserved records can be deleted",
+                },
+              ]
+            : []),
+        ]}
+      />
+      {dialog === "details" && (
+        <StockDetailDialog
+          record={record}
+          defaultOpen
+          hideTrigger
+          onOpenChange={close}
+        />
+      )}
+      {dialog === "adjust" && (
+        <StockAdjustDialog
+          record={record}
+          defaultOpen
+          hideTrigger
+          onOpenChange={close}
+          onSuccess={onSuccess}
+        />
+      )}
+      {dialog === "delete" && (
+        <DeleteStockButton
+          id={record.id}
+          defaultOpen
+          hideTrigger
+          onOpenChange={close}
+          onSuccess={onSuccess}
+        />
+      )}
+    </>
   );
 }
 
@@ -622,10 +793,10 @@ function ImportDialog({
           </DialogHeader>
           <p className="py-2 text-sm text-muted-foreground">
             Columns: description, quantity, purchasePrice (or price). Optional:
-            sku, reorderPoint (or reorder_point), itemType (RAW, SEMI,
-            FINISHED, OTHER), imageUrl. For images, insert a picture on the
-            data row in the .xlsx file (preferred), or put a public http/https
-            link in imageUrl. JPEG/PNG/GIF up to 5 MB.
+            sku, reorderPoint (or reorder_point), itemType (RAW, SEMI, FINISHED,
+            OTHER), imageUrl. For images, insert a picture on the data row in
+            the .xlsx file (preferred), or put a public http/https link in
+            imageUrl. JPEG/PNG/GIF up to 5 MB.
           </p>
           <Input
             type="file"
@@ -647,10 +818,17 @@ function ImportDialog({
 function DeleteStockButton({
   id,
   onSuccess,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   id: string;
   onSuccess: () => void;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
@@ -667,12 +845,20 @@ function DeleteStockButton({
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button size="icon" variant="ghost">
-          <Trash2Icon className="size-4 text-destructive" />
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        onOpenChange?.(value);
+      }}
+    >
+      {!hideTrigger && (
+        <AlertDialogTrigger asChild>
+          <Button size="icon" variant="ghost" aria-label="Delete stock record">
+            <Trash2Icon className="size-4 text-destructive" />
+          </Button>
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete stock record?</AlertDialogTitle>

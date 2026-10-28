@@ -1,9 +1,12 @@
 "use client";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { ConfirmRecordAction } from "@/components/shared/confirm-record-action";
 
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -195,16 +198,20 @@ function UsersPageContent() {
             cell: (r) => r.role?.name ?? "�",
           },
           {
+            key: "status",
+            header: "Status",
+            cell: (r) => (
+              <Badge variant={r.isActive === false ? "secondary" : "outline"}>
+                {r.isActive === false ? "Inactive" : "Active"}
+              </Badge>
+            ),
+          },
+          {
             key: "actions",
             header: "",
             className: "w-24 text-right",
             cell: (r) =>
-              canWrite ? (
-                <div className="flex justify-end gap-1">
-                  <UserDialog mode="edit" user={r} onSuccess={reload} />
-                  <DeleteUserButton user={r} onSuccess={reload} />
-                </div>
-              ) : null,
+              canWrite ? <UserRowActions user={r} onSuccess={reload} /> : null,
           },
         ]}
       />
@@ -216,15 +223,21 @@ function UserDialog({
   mode,
   user,
   onSuccess,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   mode: "create" | "edit";
   user?: UserAdmin;
   onSuccess: () => void;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { user: me, refreshUser } = useAuth();
   const canLoadRoles =
     hasPermission(me, "users.write") || hasPermission(me, "roles.read");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(user?.fullName ?? "");
@@ -288,6 +301,7 @@ function UserDialog({
         }
       }
       setOpen(false);
+      onOpenChange?.(false);
       onSuccess();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -301,6 +315,7 @@ function UserDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        onOpenChange?.(next);
         if (next) {
           setEmail(user?.email ?? "");
           setPassword("");
@@ -310,19 +325,26 @@ function UserDialog({
         }
       }}
     >
-      <DialogTrigger asChild>
-        {mode === "create" ? (
-          <Button size="sm">
-            <PlusIcon />
-            Add user
-          </Button>
-        ) : (
-          <Button type="button" variant="ghost" size="icon" className="size-8">
-            <PencilIcon className="size-4" />
-            <span className="sr-only">Edit</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          {mode === "create" ? (
+            <Button size="sm">
+              <PlusIcon />
+              Add user
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+            >
+              <PencilIcon className="size-4" />
+              <span className="sr-only">Edit</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -422,40 +444,57 @@ function UserDialog({
   );
 }
 
-function DeleteUserButton({
+function UserRowActions({
   user,
   onSuccess,
 }: {
   user: UserAdmin;
   onSuccess: () => void;
 }) {
-  const [deleting, setDeleting] = useState(false);
-
-  async function handleDelete() {
-    if (!confirm(`Delete user "${user.fullName}" (${user.email})?`)) return;
-    setDeleting(true);
-    try {
-      await api(`/users/${user.id}`, { method: "DELETE" });
-      toast.success("User deleted");
-      onSuccess();
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setDeleting(false);
-    }
-  }
-
+  const { user: me } = useAuth();
+  const [edit, setEdit] = useState(false);
+  const [deactivate, setDeactivate] = useState(false);
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="size-8 text-destructive"
-      disabled={deleting}
-      onClick={handleDelete}
-    >
-      <Trash2Icon className="size-4" />
-      <span className="sr-only">Delete</span>
-    </Button>
+    <>
+      <RowActionsMenu
+        label={user.fullName}
+        actions={[
+          {
+            label: "Edit user",
+            icon: PencilIcon,
+            onSelect: () => setEdit(true),
+          },
+          {
+            label: "Deactivate user",
+            icon: Trash2Icon,
+            destructive: true,
+            disabled: user.id === me?.id || user.isActive === false,
+            onSelect: () => setDeactivate(true),
+          },
+        ]}
+      />
+      {edit && (
+        <UserDialog
+          mode="edit"
+          user={user}
+          onSuccess={onSuccess}
+          defaultOpen
+          hideTrigger
+          onOpenChange={setEdit}
+        />
+      )}
+      <ConfirmRecordAction
+        open={deactivate}
+        onOpenChange={setDeactivate}
+        title="Deactivate user?"
+        description={`${user.fullName} will lose access. Their transaction history is preserved.`}
+        label="Deactivate user"
+        onConfirm={async () => {
+          await api(`/users/${user.id}`, { method: "DELETE" });
+          toast.success("User deactivated");
+          onSuccess();
+        }}
+      />
+    </>
   );
 }

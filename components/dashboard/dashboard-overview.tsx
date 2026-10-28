@@ -21,6 +21,7 @@ import { PageLoading } from "@/components/shared/page-loading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, isForbiddenError } from "@/lib/api";
+import { hasPermission } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
 import { applyCurrencyFromResponse } from "@/lib/currency";
 import { formatMoney, errorMessage } from "@/lib/format";
@@ -47,8 +48,8 @@ function greetingForHour(hour: number) {
 }
 
 const LOCATION_COLORS = [
-  "#0f766e",
-  "#f07167",
+  "#4f46e5",
+  "#f59e0b",
   "#38bdf8",
   "#f59e0b",
   "#818cf8",
@@ -71,7 +72,10 @@ function ChartTooltip({
         <p className="mb-1 font-medium text-[var(--frappe-text)]">{label}</p>
       ) : null}
       {payload.map((entry) => (
-        <p key={entry.name} className="tabular-nums text-[var(--frappe-text-muted)]">
+        <p
+          key={entry.name}
+          className="tabular-nums text-[var(--frappe-text-muted)]"
+        >
           <span
             className="mr-1.5 inline-block size-2 rounded-full"
             style={{ background: entry.color }}
@@ -102,7 +106,7 @@ export function DashboardOverview() {
               from: from || undefined,
               to: to || undefined,
             },
-          })
+          }),
         );
         applyCurrencyFromResponse(res);
         setData(res);
@@ -114,7 +118,7 @@ export function DashboardOverview() {
                 from: from || undefined,
                 to: to || undefined,
               },
-            })
+            }),
           );
           setCashFlow(flow);
         } catch {
@@ -138,7 +142,9 @@ export function DashboardOverview() {
         date,
         Inflow: inflow,
         Outflow: outflow,
-        Net: parseFloat(row.net ?? row.netMovement ?? String(inflow - outflow)) || 0,
+        Net:
+          parseFloat(row.net ?? row.netMovement ?? String(inflow - outflow)) ||
+          0,
       };
     });
   }, [cashFlow]);
@@ -157,10 +163,22 @@ export function DashboardOverview() {
     if (!data) return [];
     const pnl = data.profitAndLoss;
     return [
-      { name: "Revenue", value: parseFloat(pnl.revenue) || 0, fill: "#0f766e" },
-      { name: "COGS", value: parseFloat(pnl.costOfGoodsSold) || 0, fill: "#f07167" },
-      { name: "Gross", value: parseFloat(pnl.grossProfit) || 0, fill: "#38bdf8" },
-      { name: "Expenses", value: parseFloat(pnl.totalExpenses) || 0, fill: "#f59e0b" },
+      { name: "Revenue", value: parseFloat(pnl.revenue) || 0, fill: "#4f46e5" },
+      {
+        name: "COGS",
+        value: parseFloat(pnl.costOfGoodsSold) || 0,
+        fill: "#818cf8",
+      },
+      {
+        name: "Gross",
+        value: parseFloat(pnl.grossProfit) || 0,
+        fill: "#38bdf8",
+      },
+      {
+        name: "Expenses",
+        value: parseFloat(pnl.totalExpenses) || 0,
+        fill: "#f59e0b",
+      },
       { name: "Net", value: parseFloat(pnl.netProfit) || 0, fill: "#818cf8" },
     ];
   }, [data]);
@@ -180,44 +198,59 @@ export function DashboardOverview() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="relative overflow-hidden rounded-3xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-[var(--frappe-shadow-lg)]">
+      <section className="relative overflow-hidden rounded-2xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] shadow-sm">
         <div
           className="pointer-events-none absolute inset-0 opacity-90 dark:opacity-70"
           style={{
             background:
-              "radial-gradient(ellipse 70% 120% at 0% 0%, color-mix(in oklab, var(--frappe-primary) 28%, transparent), transparent 55%), radial-gradient(ellipse 60% 100% at 100% 0%, color-mix(in oklab, var(--frappe-accent-coral) 22%, transparent), transparent 50%), linear-gradient(135deg, color-mix(in oklab, var(--frappe-surface) 88%, #0f766e) 0%, var(--frappe-surface) 48%, color-mix(in oklab, var(--frappe-surface) 92%, #38bdf8) 100%)",
+              "radial-gradient(ellipse 70% 120% at 0% 0%, color-mix(in oklab, var(--frappe-primary) 10%, transparent), transparent 55%), radial-gradient(ellipse 60% 100% at 100% 0%, color-mix(in oklab, var(--frappe-primary) 6%, transparent), transparent 50%), linear-gradient(135deg, color-mix(in oklab, var(--frappe-surface) 88%, #4f46e5) 0%, var(--frappe-surface) 48%, color-mix(in oklab, var(--frappe-surface) 92%, #38bdf8) 100%)",
           }}
         />
-        <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-teal-400/10 blur-3xl dark:bg-teal-300/10" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 size-48 rounded-full bg-rose-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-primary/10 blur-3xl dark:bg-primary/10" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 size-48 rounded-full bg-primary/5 blur-3xl" />
 
         <div className="relative flex flex-col gap-5 p-4 sm:gap-6 sm:p-5 lg:flex-row lg:items-end lg:justify-between lg:p-7">
           <div className="min-w-0 max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/50 px-3 py-1 text-xs font-medium text-[var(--frappe-text)] shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
-              <SparklesIcon className="size-3.5 text-teal-600 dark:text-teal-300" />
+              <SparklesIcon className="size-3.5 text-primary" />
               {dateLabel}
             </div>
             <h2 className="font-heading text-xl font-semibold tracking-tight text-[var(--frappe-text)] sm:text-2xl lg:text-3xl">
               {greeting}, {firstName}
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--frappe-text-muted)] sm:text-[15px]">
-              Stock, sales, and cash at a glance. Use the period filter to refine
-              P&amp;L and cash movement.
+              Stock, sales, and cash at a glance. Use the period filter to
+              refine P&amp;L and cash movement.
             </p>
             <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-              <Button asChild className="h-9 flex-1 rounded-xl bg-teal-700 hover:bg-teal-600 sm:flex-none">
-                <Link href="/sales/new">
-                  <PlusIcon className="size-4" />
-                  New sale
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-9 flex-1 rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:flex-none">
-                <Link href="/purchases/new">
-                  <ShoppingCartIcon className="size-4" />
-                  Purchase
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-9 w-full rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:w-auto">
+              {hasPermission(user, "sales.write") && (
+                <Button
+                  asChild
+                  className="h-9 flex-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-none"
+                >
+                  <Link href="/sales/new">
+                    <PlusIcon className="size-4" />
+                    New sale
+                  </Link>
+                </Button>
+              )}
+              {hasPermission(user, "purchase.write") && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-9 flex-1 rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:flex-none"
+                >
+                  <Link href="/purchases/new">
+                    <ShoppingCartIcon className="size-4" />
+                    Purchase
+                  </Link>
+                </Button>
+              )}
+              <Button
+                asChild
+                variant="outline"
+                className="h-9 w-full rounded-xl bg-white/60 backdrop-blur dark:bg-white/5 sm:w-auto"
+              >
                 <Link href="/inventory">
                   <PackageIcon className="size-4" />
                   Inventory
@@ -270,7 +303,7 @@ export function DashboardOverview() {
           label="Daily sales"
           value={formatMoney(data.dailySales)}
           icon={ArrowUpIcon}
-          tone="coral"
+          tone="violet"
           trend={{ label: "Today", positive: true }}
           hint="Gross sales posted today"
         />
@@ -287,7 +320,7 @@ export function DashboardOverview() {
           icon={TrendingUpIcon}
           tone={netPositive ? "teal" : "coral"}
           trend={{
-            label: netPositive ? "In the black" : "In the red",
+            label: netPositive ? "Net positive" : "Net loss",
             positive: netPositive,
           }}
           hint={`Gross ${formatMoney(pnl.grossProfit)}`}
@@ -307,24 +340,44 @@ export function DashboardOverview() {
               </p>
             </div>
             <Badge variant="outline" className="rounded-full">
-              Liquidity {formatMoney(fin.totalLiquidity ?? fin.totalBankBalance)}
+              Liquidity{" "}
+              {formatMoney(fin.totalLiquidity ?? fin.totalBankBalance)}
             </Badge>
           </div>
           {flowSeries.length > 0 ? (
             <div className="h-[280px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={{ width: 320, height: 280 }}
+              >
                 <AreaChart data={flowSeries}>
                   <defs>
                     <linearGradient id="inflowFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0f766e" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
+                      <stop
+                        offset="0%"
+                        stopColor="#4f46e5"
+                        stopOpacity={0.35}
+                      />
+                      <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="outflowFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f07167" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#f07167" stopOpacity={0} />
+                    <linearGradient
+                      id="outflowFill"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--frappe-border)" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--frappe-border)"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="date"
                     tick={{ fill: "var(--frappe-text-muted)", fontSize: 11 }}
@@ -341,14 +394,14 @@ export function DashboardOverview() {
                   <Area
                     type="monotone"
                     dataKey="Inflow"
-                    stroke="#0f766e"
+                    stroke="#4f46e5"
                     fill="url(#inflowFill)"
                     strokeWidth={2}
                   />
                   <Area
                     type="monotone"
                     dataKey="Outflow"
-                    stroke="#f07167"
+                    stroke="#f59e0b"
                     fill="url(#outflowFill)"
                     strokeWidth={2}
                   />
@@ -362,8 +415,8 @@ export function DashboardOverview() {
                 No cash-flow series yet
               </p>
               <p className="mt-1 max-w-sm text-xs text-[var(--frappe-text-muted)]">
-                Post sales, purchases, or expenses — or grant reports access — to
-                populate this chart.
+                Post sales, purchases, or expenses — or grant reports access —
+                to populate this chart.
               </p>
             </div>
           )}
@@ -382,7 +435,12 @@ export function DashboardOverview() {
           {locationPie.length > 0 ? (
             <>
               <div className="mx-auto h-[180px] w-full max-w-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={0}
+                  initialDimension={{ width: 320, height: 180 }}
+                >
                   <PieChart>
                     <Pie
                       data={locationPie}
@@ -414,7 +472,8 @@ export function DashboardOverview() {
                       <span
                         className="size-2.5 shrink-0 rounded-full"
                         style={{
-                          background: LOCATION_COLORS[i % LOCATION_COLORS.length],
+                          background:
+                            LOCATION_COLORS[i % LOCATION_COLORS.length],
                         }}
                       />
                       <span className="truncate">{row.name}</span>
@@ -447,9 +506,18 @@ export function DashboardOverview() {
             </div>
           </div>
           <div className="h-[240px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              initialDimension={{ width: 320, height: 240 }}
+            >
               <BarChart data={pnlBars} barCategoryGap="28%">
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--frappe-border)" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--frappe-border)"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="name"
                   tick={{ fill: "var(--frappe-text-muted)", fontSize: 11 }}

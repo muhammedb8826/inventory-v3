@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
 import { AppShell } from "@/components/app-shell";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PageLoading } from "@/components/shared/page-loading";
@@ -82,20 +83,21 @@ export function MasterDataPage<
   const debouncedSearch = useDebouncedValue(search);
   const listParamsKey = JSON.stringify(listParams ?? {});
 
-  const { rows, meta, setPage, setLimit, loading, reload } = usePaginatedList<T>(
-    (page, limit) =>
-      canRead
-        ? buildListPath(endpoint, {
-            params: {
-              ...listParams,
-              search: debouncedSearch || undefined,
-            },
-            page,
-            limit,
-          })
-        : null,
-    [canRead, endpoint, debouncedSearch, listParamsKey]
-  );
+  const { rows, meta, setPage, setLimit, loading, reload } =
+    usePaginatedList<T>(
+      (page, limit) =>
+        canRead
+          ? buildListPath(endpoint, {
+              params: {
+                ...listParams,
+                search: debouncedSearch || undefined,
+              },
+              page,
+              limit,
+            })
+          : null,
+      [canRead, endpoint, debouncedSearch, listParamsKey],
+    );
 
   if (authLoading) {
     return (
@@ -115,13 +117,24 @@ export function MasterDataPage<
 
   const tableColumns = [
     ...columns,
+    ...fields
+      .filter((field) => !columns.some((column) => column.key === field.name))
+      .map((field) => ({
+        key: field.name,
+        header: field.label,
+        defaultVisible: false,
+        cell: (row: T) =>
+          String(
+            (row as unknown as Record<string, unknown>)[field.name] ?? "\u2014",
+          ),
+      })),
     {
       key: "actions",
       header: "",
       className: "w-20 text-right",
       cell: (row: T) => (
         <PermissionGate permission={writePermission}>
-          <EditDialog
+          <MasterRowActions
             title={title}
             endpoint={endpoint}
             fields={fields}
@@ -138,10 +151,7 @@ export function MasterDataPage<
     <AppShell
       title={title}
       subtitle={`Manage ${title.toLowerCase()}`}
-      breadcrumbs={[
-        { label: "Stock", href: "/dashboard" },
-        { label: title },
-      ]}
+      breadcrumbs={[{ label: "Stock", href: "/dashboard" }, { label: title }]}
       actions={
         <PermissionGate permission={writePermission}>
           <CreateDialog
@@ -271,7 +281,7 @@ function buildBody(
   fields: MasterField[],
   values: Record<string, string | boolean>,
   supportsActive: boolean,
-  isEdit: boolean
+  isEdit: boolean,
 ) {
   const body: Record<string, unknown> = {};
   for (const f of fields) {
@@ -286,7 +296,7 @@ function buildBody(
 
 function rowToValues<T extends { id: string; isActive?: boolean }>(
   row: T,
-  fields: MasterField[]
+  fields: MasterField[],
 ) {
   const values: Record<string, string | boolean> = {};
   for (const f of fields) {
@@ -378,13 +388,18 @@ function CreateDialog({
   );
 }
 
-function EditDialog<T extends { id: string; name: string; isActive?: boolean }>({
+function EditDialog<
+  T extends { id: string; name: string; isActive?: boolean },
+>({
   title,
   endpoint,
   fields,
   row,
   supportsActive,
   onSuccess,
+  defaultOpen = false,
+  hideTrigger = false,
+  onOpenChange,
 }: {
   title: string;
   endpoint: string;
@@ -392,10 +407,13 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
   row: T;
   supportsActive?: boolean;
   onSuccess: () => void;
+  defaultOpen?: boolean;
+  hideTrigger?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [values, setValues] = useState<Record<string, string | boolean>>(() =>
-    rowToValues(row, fields)
+    rowToValues(row, fields),
   );
   const [saving, setSaving] = useState(false);
 
@@ -409,6 +427,7 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
       });
       toast.success("Updated");
       setOpen(false);
+      onOpenChange?.(false);
       onSuccess();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -422,15 +441,18 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        onOpenChange?.(next);
         if (next) setValues(rowToValues(row, fields));
       }}
     >
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="size-8">
-          <PencilIcon className="size-4" />
-          <span className="sr-only">Edit</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className="size-8">
+            <PencilIcon className="size-4" />
+            <span className="sr-only">Edit</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
           <DialogTitle>Edit {row.name}</DialogTitle>
@@ -469,5 +491,35 @@ function EditDialog<T extends { id: string; name: string; isActive?: boolean }>(
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MasterRowActions<
+  T extends { id: string; name: string; isActive?: boolean },
+>(props: {
+  title: string;
+  endpoint: string;
+  fields: MasterField[];
+  row: T;
+  supportsActive?: boolean;
+  onSuccess: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <RowActionsMenu
+        label={props.row.name}
+        actions={[
+          {
+            label: "Edit details",
+            icon: PencilIcon,
+            onSelect: () => setOpen(true),
+          },
+        ]}
+      />
+      {open && (
+        <EditDialog {...props} defaultOpen hideTrigger onOpenChange={setOpen} />
+      )}
+    </>
   );
 }

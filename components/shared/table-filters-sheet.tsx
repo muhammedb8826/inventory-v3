@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 /** Count non-empty / true filter values for the badge. */
 export function countActiveFilters(
-  values: Array<string | boolean | null | undefined>
+  values: Array<string | boolean | null | undefined>,
 ) {
   return values.filter((v) => {
     if (typeof v === "boolean") return v;
@@ -39,10 +39,7 @@ export function FilterField({
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
-      <Label
-        htmlFor={htmlFor}
-        className="text-sm font-medium text-foreground"
-      >
+      <Label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
         {label}
       </Label>
       {children}
@@ -82,8 +79,8 @@ export function TableFiltersSheet({
             className={cn(
               "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
               activeCount > 0
-                ? "bg-teal-600 text-white"
-                : "bg-muted text-muted-foreground"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             {activeCount}
@@ -133,7 +130,7 @@ export function TableFiltersSheet({
           </Button>
           <Button
             type="button"
-            className="h-10 flex-1 rounded-xl bg-teal-700 hover:bg-teal-600"
+            className="h-10 flex-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => setOpen(false)}
           >
             Apply

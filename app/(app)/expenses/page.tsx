@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { ConfirmRecordAction } from "@/components/shared/confirm-record-action";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -145,9 +147,7 @@ export default function ExpensesPage() {
               <FilterField label="Category">
                 <Select
                   value={categoryId || "__all__"}
-                  onValueChange={(v) =>
-                    setCategoryId(v === "__all__" ? "" : v)
-                  }
+                  onValueChange={(v) => setCategoryId(v === "__all__" ? "" : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All categories" />
@@ -237,33 +237,32 @@ function DeleteExpenseButton({
   id: string;
   onSuccess: () => void;
 }) {
-  const [deleting, setDeleting] = useState(false);
-
-  async function handleDelete() {
-    if (!confirm("Delete this expense? Bank balance may be adjusted.")) return;
-    setDeleting(true);
-    try {
-      await api(`/expenses/${id}`, { method: "DELETE" });
-      toast.success("Expense deleted");
-      onSuccess();
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setDeleting(false);
-    }
-  }
-
+  const [open, setOpen] = useState(false);
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="size-8 text-destructive"
-      disabled={deleting}
-      onClick={handleDelete}
-    >
-      <Trash2Icon className="size-4" />
-      <span className="sr-only">Delete</span>
-    </Button>
+    <>
+      <RowActionsMenu
+        label={`expense ${id.slice(0, 8)}`}
+        actions={[
+          {
+            label: "Delete expense",
+            icon: Trash2Icon,
+            destructive: true,
+            onSelect: () => setOpen(true),
+          },
+        ]}
+      />
+      <ConfirmRecordAction
+        open={open}
+        onOpenChange={setOpen}
+        title="Delete expense?"
+        description="The associated bank balance will be adjusted. Review this expense before continuing."
+        label="Delete expense"
+        onConfirm={async () => {
+          await api(`/expenses/${id}`, { method: "DELETE" });
+          toast.success("Expense deleted");
+          onSuccess();
+        }}
+      />
+    </>
   );
 }
