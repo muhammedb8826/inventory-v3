@@ -117,7 +117,7 @@ export default function ProductionOrdersPage() {
             >
               <FilterField label="Location">
                 <Select value={locationId} onValueChange={setLocationId}>
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,7 +137,7 @@ export default function ProductionOrdersPage() {
                     setStatus(v === ALL ? "" : (v as ProductionOrderStatus))
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>

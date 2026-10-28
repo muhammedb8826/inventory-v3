@@ -252,7 +252,7 @@ export default function BanksPage() {
                         )
                       }
                     >
-                      <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
@@ -356,7 +356,7 @@ export default function BanksPage() {
                 >
                   <FilterField label="Account">
                     <Select value={effectiveId} onValueChange={setAccountId}>
-                      <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Account" />
                       </SelectTrigger>
                       <SelectContent>
@@ -388,7 +388,7 @@ export default function BanksPage() {
                         )
                       }
                     >
-                      <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
@@ -412,7 +412,7 @@ export default function BanksPage() {
                         )
                       }
                     >
-                      <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>

@@ -63,7 +63,7 @@ export default function LocationsPage() {
         <>
           <FilterField label="Type">
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-10 w-full rounded-xl">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

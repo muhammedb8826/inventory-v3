@@ -94,7 +94,7 @@ export default function BomsPage() {
                     setIsActive(v as "all" | "true" | "false")
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

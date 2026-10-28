@@ -252,7 +252,7 @@ export default function SalesPage() {
                       setCustomerId(v === "__all__" ? "" : v)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="All customers" />
                     </SelectTrigger>
                     <SelectContent>
@@ -272,7 +272,7 @@ export default function SalesPage() {
                       setLocationId(v === "__all__" ? "" : v)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="All locations" />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,7 +294,7 @@ export default function SalesPage() {
                       )
                     }
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="All payments" />
                     </SelectTrigger>
                     <SelectContent>
@@ -313,7 +313,7 @@ export default function SalesPage() {
                         setSoldByUserId(v === "__all__" ? "" : v)
                       }
                     >
-                      <SelectTrigger className="h-10 w-full rounded-xl">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="All reps" />
                       </SelectTrigger>
                       <SelectContent>

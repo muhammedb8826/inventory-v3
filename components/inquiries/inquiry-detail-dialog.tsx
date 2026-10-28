@@ -329,7 +329,7 @@ export function InquiryDetailDialog({
                   <Button
                     type="button"
                     variant="destructive"
-                    className="mr-auto"
+                    className="sm:mr-auto"
                     disabled={cancelling || acting}
                     onClick={() => void handleCancel()}
                   >
@@ -408,14 +408,14 @@ export function InquiryDetailDialog({
 
       <Dialog open={produceOpen} onOpenChange={setProduceOpen}>
         <DialogContent className="gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
-          <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
+          <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-4 sm:pt-5">
             <DialogTitle>Start production</DialogTitle>
             <p className="text-sm text-[var(--frappe-text-muted)]">
               Creates a draft production order from this inquiry&apos;s item and
               its default BOM.
             </p>
           </DialogHeader>
-          <div className="app-canvas grid gap-4 px-6 py-5">
+          <div className="app-canvas grid gap-4 px-4 py-4 sm:px-6 sm:py-5">
             <div className="grid gap-2">
               <Label htmlFor="mto-produce-location">Issue / FG location</Label>
               <Select

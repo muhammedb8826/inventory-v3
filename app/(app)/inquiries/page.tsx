@@ -240,7 +240,7 @@ export default function InquiriesPage() {
                     setStatus(v === "__all__" ? "" : (v as InquiryStatus))
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,7 +260,7 @@ export default function InquiriesPage() {
                     setSource(v === "__all__" ? "" : (v as InquirySource))
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Source" />
                   </SelectTrigger>
                   <SelectContent>
@@ -277,7 +277,7 @@ export default function InquiriesPage() {
                     setPriority(v === "__all__" ? "" : (v as InquiryPriority))
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -299,7 +299,7 @@ export default function InquiriesPage() {
                     )
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Assignment" />
                   </SelectTrigger>
                   <SelectContent>
@@ -317,7 +317,7 @@ export default function InquiriesPage() {
                   value={customerId || "__all__"}
                   onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All customers" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,7 +337,7 @@ export default function InquiriesPage() {
                     setAssignedToUserId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Anyone assigned" />
                   </SelectTrigger>
                   <SelectContent>

@@ -74,8 +74,7 @@ export function TableFiltersSheet({
         <Button
           type="button"
           variant="outline"
-          size="sm"
-          className="relative h-9 gap-2 rounded-xl border-border/80 bg-background px-3 text-sm font-medium shadow-none hover:bg-muted/60"
+          className="relative h-10 gap-2 px-3.5 text-sm font-medium shadow-none"
         >
           <ListFilterIcon className="size-4 opacity-70" />
           <span className="hidden sm:inline">{triggerLabel}</span>

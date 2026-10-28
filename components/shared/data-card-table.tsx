@@ -71,7 +71,7 @@ export function DataCardTable<T extends { id: string }>({
         hideable: c.hideable,
         defaultVisible: c.defaultVisible,
       })),
-    [columns]
+    [columns],
   );
 
   const visibility = useColumnVisibility(storageKey ?? "__none__", meta);
@@ -81,7 +81,7 @@ export function DataCardTable<T extends { id: string }>({
 
   const mobileColumns = useMemo(() => {
     const ranked = [...visibleColumns].sort(
-      (a, b) => (a.mobilePriority ?? 50) - (b.mobilePriority ?? 50)
+      (a, b) => (a.mobilePriority ?? 50) - (b.mobilePriority ?? 50),
     );
     return ranked.slice(0, Math.min(4, ranked.length));
   }, [visibleColumns]);
@@ -100,19 +100,14 @@ export function DataCardTable<T extends { id: string }>({
   const hasToolbar = Boolean(filters || toolbar || columnMenu);
 
   return (
-    <div
-      className={cn(
-        "app-surface overflow-hidden",
-        className
-      )}
-    >
+    <div className={cn("app-surface overflow-hidden", className)}>
       {hasToolbar ? (
-        <div className="flex flex-col gap-3 border-b border-border/60 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-3 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-3 py-3 sm:px-5 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 w-full flex-1 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
             {filters}
           </div>
           {(toolbar || columnMenu) && (
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="flex w-full shrink-0 flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
               {toolbar}
               {columnMenu}
             </div>
@@ -125,16 +120,17 @@ export function DataCardTable<T extends { id: string }>({
           <PageLoading />
         </div>
       ) : list.length === 0 ? (
-        <div className="p-8 sm:p-10">
+        <div className="p-8 sm:p-12">
           <EmptyState title={emptyTitle} description={emptyDescription} />
         </div>
       ) : (
         <>
-          <div className="space-y-2.5 p-3 md:hidden">
+          {/* Phone + portrait tablet: card list */}
+          <div className="space-y-2.5 p-3 lg:hidden">
             {list.map((row) => (
               <article
                 key={row.id}
-                className="rounded-xl border border-border/70 bg-muted/20 p-4"
+                className="rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-surface)] p-4"
               >
                 <dl className="space-y-2.5">
                   {mobileColumns.map((col) => (
@@ -142,10 +138,10 @@ export function DataCardTable<T extends { id: string }>({
                       key={col.key}
                       className="flex items-start justify-between gap-3"
                     >
-                      <dt className="shrink-0 text-xs font-medium text-muted-foreground">
+                      <dt className="shrink-0 max-w-[40%] text-xs font-medium text-[var(--frappe-text-muted)]">
                         {col.header || col.key}
                       </dt>
-                      <dd className="min-w-0 text-right text-sm text-foreground">
+                      <dd className="min-w-0 flex-1 break-words text-right text-sm text-[var(--frappe-text)]">
                         {col.cell(row)}
                       </dd>
                     </div>
@@ -155,19 +151,20 @@ export function DataCardTable<T extends { id: string }>({
             ))}
           </div>
 
-          <div className="hidden md:block">
-            <Table className="min-w-full">
+          {/* Landscape tablet + desktop: scrollable table */}
+          <div className="hidden overflow-x-auto lg:block">
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow className="border-0 hover:bg-transparent">
                   {visibleColumns.map((col, index) => (
                     <TableHead
                       key={col.key}
                       className={cn(
-                        "h-11 border-b border-border/60 bg-muted/40 px-4 text-[13px] font-medium text-muted-foreground",
+                        "h-12 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 text-[13px] font-medium text-[var(--frappe-text-muted)]",
                         index === 0 && "pl-5",
                         index === visibleColumns.length - 1 && "pr-5",
                         isRightAligned(col.className) && "text-right",
-                        col.className
+                        col.className,
                       )}
                     >
                       {col.header}
@@ -179,17 +176,17 @@ export function DataCardTable<T extends { id: string }>({
                 {list.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="border-b border-border/50 transition-colors last:border-b-0 hover:bg-muted/25"
+                    className="border-b border-[var(--frappe-border)]/70 transition-colors last:border-b-0 hover:bg-[var(--frappe-section-head)]/70"
                   >
                     {visibleColumns.map((col, index) => (
                       <TableCell
                         key={col.key}
                         className={cn(
-                          "border-0 px-4 py-4 text-[13px] text-foreground",
-                          index === 0 && "pl-5",
+                          "border-0 px-4 py-4 text-[13.5px] text-[var(--frappe-text)]",
+                          index === 0 && "pl-5 font-medium",
                           index === visibleColumns.length - 1 && "pr-5",
                           isRightAligned(col.className) && "text-right",
-                          col.className
+                          col.className,
                         )}
                       >
                         {col.cell(row)}

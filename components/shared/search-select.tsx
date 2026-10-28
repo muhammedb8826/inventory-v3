@@ -114,7 +114,7 @@ export function SearchSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[100] w-[var(--radix-popover-trigger-width)] min-w-[min(100vw-2rem,280px)] overflow-hidden p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-1.5rem)] min-w-[min(100vw-1.5rem,280px)] overflow-hidden p-0"
         align="start"
         onOpenAutoFocus={(event) => {
           event.preventDefault();

@@ -423,7 +423,7 @@ export function SaleForm({
   const cancelHref = isEdit && sale ? `/sales/${sale.id}` : "/sales";
 
   return (
-    <PageForm onSubmit={handleSubmit} maxWidth="max-w-4xl">
+    <PageForm onSubmit={handleSubmit}>
       {notesOnly ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Customer credit has payments — only notes can be changed.

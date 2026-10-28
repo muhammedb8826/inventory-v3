@@ -320,7 +320,7 @@ export default function CreditsPage() {
             setStatus(v === "__all__" ? "" : (v as CreditStatus))
           }
         >
-          <SelectTrigger className="h-10 w-full rounded-xl">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -338,7 +338,7 @@ export default function CreditsPage() {
             setSource(v === "__all__" ? "" : (v as CreditSource))
           }
         >
-          <SelectTrigger className="h-10 w-full rounded-xl">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Source" />
           </SelectTrigger>
           <SelectContent>

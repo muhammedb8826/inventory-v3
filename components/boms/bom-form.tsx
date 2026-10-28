@@ -227,7 +227,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const cancelHref = isEdit && bom ? `/boms/${bom.id}` : "/boms";
 
   return (
-    <PageForm onSubmit={handleSubmit} maxWidth="max-w-4xl">
+    <PageForm onSubmit={handleSubmit}>
       <PageFormCard>
         <PageFormSection
           title="BOM"

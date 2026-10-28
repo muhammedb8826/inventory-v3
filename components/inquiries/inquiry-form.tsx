@@ -60,7 +60,7 @@ export function InquiryForm() {
   }
 
   return (
-    <PageForm onSubmit={handleSubmit} maxWidth="max-w-5xl">
+    <PageForm onSubmit={handleSubmit}>
       <InquiryFormFields
         mode="create"
         idPrefix="inquiry-new"

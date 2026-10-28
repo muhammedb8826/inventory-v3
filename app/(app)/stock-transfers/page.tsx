@@ -125,7 +125,7 @@ export default function StockTransfersPage() {
                     setStatus(v === "__all__" ? "" : (v as TransferStatus))
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -144,7 +144,7 @@ export default function StockTransfersPage() {
                     setFromLocationId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="From location" />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,7 +164,7 @@ export default function StockTransfersPage() {
                     setToLocationId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="To location" />
                   </SelectTrigger>
                   <SelectContent>

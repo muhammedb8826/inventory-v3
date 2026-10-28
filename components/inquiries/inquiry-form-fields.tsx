@@ -193,10 +193,10 @@ export function InquiryFormFields({
             {values.lines.map((line, index) => (
               <div
                 key={index}
-                className="grid grid-cols-1 gap-3 px-4 py-3.5 sm:grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] sm:items-start"
+                className="grid grid-cols-2 gap-3 px-3 py-3.5 sm:grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] sm:items-start sm:px-4"
               >
-                <div className="min-w-0 space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground sm:hidden">
+                <div className="col-span-2 min-w-0 space-y-1.5 sm:col-span-1">
+                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
                     Item
                   </span>
                   <ItemSearchSelect
@@ -214,7 +214,7 @@ export function InquiryFormFields({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground sm:hidden">
+                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
                     Qty
                   </span>
                   <Input
@@ -229,7 +229,7 @@ export function InquiryFormFields({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground sm:hidden">
+                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
                     Notes
                   </span>
                   <Input
@@ -241,7 +241,7 @@ export function InquiryFormFields({
                     className="h-10"
                   />
                 </div>
-                <div className="flex sm:justify-end sm:pt-0.5">
+                <div className="col-span-2 flex justify-end sm:col-span-1 sm:pt-0.5">
                   <Button
                     type="button"
                     size="icon"

@@ -29,12 +29,12 @@ export function FrappePageHead({
         className
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
+      <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:px-4 sm:py-5 lg:px-6">
         <div className="min-w-0">
           {breadcrumbs && breadcrumbs.length > 0 ? (
             <FrappeBreadcrumbs items={breadcrumbs} className="mb-1.5" />
           ) : null}
-          <h1 className="font-heading truncate text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:truncate sm:text-2xl">
             {title}
           </h1>
           {subtitle ? (
@@ -42,7 +42,9 @@ export function FrappePageHead({
           ) : null}
         </div>
         {actions ? (
-          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end [&_a]:min-w-0 [&_button]:min-w-0">
+            {actions}
+          </div>
         ) : null}
       </div>
     </div>

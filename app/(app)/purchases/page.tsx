@@ -194,7 +194,7 @@ export default function PurchasesPage() {
                     setSupplierId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All suppliers" />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,7 +214,7 @@ export default function PurchasesPage() {
                     setLocationId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All locations" />
                   </SelectTrigger>
                   <SelectContent>
@@ -236,7 +236,7 @@ export default function PurchasesPage() {
                     )
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All payments" />
                   </SelectTrigger>
                   <SelectContent>

@@ -336,7 +336,7 @@ export default function InventoryPage() {
                     value={locationFilter}
                     onValueChange={setLocationFilter}
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="All locations" />
                     </SelectTrigger>
                     <SelectContent>
@@ -358,7 +358,7 @@ export default function InventoryPage() {
                       setViewMode(v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

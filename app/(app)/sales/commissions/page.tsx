@@ -181,7 +181,7 @@ export default function SalesCommissionsPage() {
                       setSoldByUserId(v === "__all__" ? "" : v)
                     }
                   >
-                    <SelectTrigger className="h-10 w-full rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="All reps" />
                     </SelectTrigger>
                     <SelectContent>

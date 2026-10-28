@@ -149,7 +149,7 @@ export default function ExpensesPage() {
                     setCategoryId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,7 +169,7 @@ export default function ExpensesPage() {
                     setBankAccountId(v === "__all__" ? "" : v)
                   }
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="All accounts" />
                   </SelectTrigger>
                   <SelectContent>

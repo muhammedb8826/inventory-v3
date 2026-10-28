@@ -105,7 +105,7 @@ export function InventoryAdjustmentsPanel() {
         >
           <FilterField label="Location">
             <Select value={locationId} onValueChange={setLocationId}>
-              <SelectTrigger className="h-10 w-full rounded-xl">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="All locations" />
               </SelectTrigger>
               <SelectContent>
@@ -125,7 +125,7 @@ export function InventoryAdjustmentsPanel() {
                 setDirection(v === ALL ? "" : (v as StockAdjustmentDirection))
               }
             >
-              <SelectTrigger className="h-10 w-full rounded-xl">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
@@ -142,7 +142,7 @@ export function InventoryAdjustmentsPanel() {
                 setReason(v === ALL ? "" : (v as StockAdjustmentReason))
               }
             >
-              <SelectTrigger className="h-10 w-full rounded-xl">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="All reasons" />
               </SelectTrigger>
               <SelectContent>

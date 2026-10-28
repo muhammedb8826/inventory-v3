@@ -120,7 +120,7 @@ export function StockTransferForm() {
       : `${itemOptions.length} item(s) at source`;
 
   return (
-    <PageForm onSubmit={handleSubmit} maxWidth="max-w-3xl">
+    <PageForm onSubmit={handleSubmit}>
       <PageFormCard>
         <PageFormSection
           title="Route"

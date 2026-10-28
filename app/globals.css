@@ -194,29 +194,27 @@
   background: transparent;
 }
 
-/* Modern list table */
+/* Modern list table (BluNest-style — no Strapi/uppercase denseness) */
 .frappe-list-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
 }
 .frappe-list-table thead tr {
-  background: var(--frappe-section-head);
+  background: var(--frappe-surface);
   border-bottom: 1px solid var(--frappe-border);
 }
 .frappe-list-table th {
-  padding: 12px 14px;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  padding: 14px 16px;
+  font-weight: 500;
+  font-size: 13px;
   color: var(--frappe-text-muted);
   white-space: nowrap;
   vertical-align: middle;
 }
 .frappe-list-table td {
-  padding: 14px;
-  border-bottom: 1px solid color-mix(in oklab, var(--frappe-border) 80%, transparent);
+  padding: 16px;
+  border-bottom: 1px solid color-mix(in oklab, var(--frappe-border) 75%, transparent);
   color: var(--frappe-text);
   vertical-align: middle;
 }
@@ -225,7 +223,7 @@
   transition: background 0.15s ease;
 }
 .frappe-list-table tbody tr:hover {
-  background: color-mix(in oklab, var(--frappe-primary) 4%, var(--frappe-surface));
+  background: var(--frappe-section-head);
 }
 .frappe-list-table tbody tr:last-child td {
   border-bottom: none;
@@ -262,23 +260,47 @@
 }
 
 .app-modal-header {
-  padding: 1.25rem 1.5rem 1rem;
+  padding: 1rem 1rem 0.875rem;
 }
 
 .app-modal-body {
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1rem;
   background: var(--frappe-desk);
 }
 
 .app-modal-footer {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-end;
   gap: 0.625rem;
-  /* Extra inset so actions clear the 12px radius */
-  padding: 1rem 1.5rem 1.5rem !important;
+  /* Extra inset so actions clear the radius + safe area */
+  padding: 1rem !important;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
   margin: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .app-modal-header {
+    padding: 1.25rem 1.5rem 1rem;
+  }
+  .app-modal-body {
+    padding: 1rem 1.5rem;
+  }
+  .app-modal-footer {
+    align-items: center;
+    padding: 1rem 1.5rem 1.5rem !important;
+  }
+}
+
+/* Mobile: stack modal actions full-width */
+@media (max-width: 639px) {
+  .app-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .app-modal-footer > * {
+    width: 100%;
+  }
 }
 
 .app-control {
@@ -363,4 +385,11 @@
   .frappe-page-body-pad {
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
   }
+}
+
+/* Prevent horizontal page scroll from wide tables/toolbars */
+.frappe-page,
+.frappe-page-body-pad {
+  max-width: 100%;
+  overflow-x: clip;
 }

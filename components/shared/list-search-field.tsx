@@ -26,8 +26,8 @@ export function ListSearchField({
   compact?: boolean;
 }) {
   const input = (
-    <div className="relative">
-      <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="relative w-full sm:max-w-[280px] sm:min-w-[200px]">
+      <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--frappe-text-muted)]" />
       <Input
         id={id}
         type="search"
@@ -35,18 +35,25 @@ export function ListSearchField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-9 w-full min-w-[160px] rounded-xl border-border/80 bg-background pl-9 shadow-none sm:w-[220px]"
+        className="h-10 w-full pl-9 shadow-none"
       />
     </div>
   );
 
   if (compact) {
-    return <div className={cn("min-w-0", className)}>{input}</div>;
+    return (
+      <div className={cn("min-w-0 w-full sm:w-auto sm:flex-1 md:flex-none", className)}>
+        {input}
+      </div>
+    );
   }
 
   return (
     <div className={cn("grid gap-2", className)}>
-      <Label htmlFor={id} className="text-sm text-muted-foreground">
+      <Label
+        htmlFor={id}
+        className="text-sm text-[var(--frappe-text-muted)]"
+      >
         {label}
       </Label>
       {input}

@@ -174,7 +174,7 @@ export default function NotificationsPage() {
                   setReadFilter(v === "__all__" ? "" : (v as ReadFilter))
                 }
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,7 +191,7 @@ export default function NotificationsPage() {
                   setModuleFilter(v === "__all__" ? "" : v)
                 }
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Module" />
                 </SelectTrigger>
                 <SelectContent>

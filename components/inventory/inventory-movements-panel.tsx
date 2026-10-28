@@ -174,7 +174,7 @@ export function InventoryMovementsPanel({
                 onValueChange={setLocationId}
                 disabled={Boolean(lockedLocationId)}
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All locations" />
                 </SelectTrigger>
                 <SelectContent>
@@ -194,7 +194,7 @@ export function InventoryMovementsPanel({
                   setType(v === ALL ? "" : (v as StockMovementType))
                 }
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>

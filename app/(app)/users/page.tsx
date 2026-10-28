@@ -147,7 +147,7 @@ function UsersPageContent() {
                 value={roleId || "__all__"}
                 onValueChange={(v) => setRoleId(v === "__all__" ? "" : v)}
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All roles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,7 +169,7 @@ function UsersPageContent() {
                   )
                 }
               >
-                <SelectTrigger className="h-10 w-full rounded-xl">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>

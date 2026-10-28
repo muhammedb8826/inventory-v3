@@ -179,7 +179,7 @@ export default function BrandingSettingsPage() {
         {loading ? (
           <PageLoading />
         ) : (
-          <form onSubmit={handleSave} className="mx-auto max-w-3xl space-y-4">
+          <form onSubmit={handleSave} className="mx-auto max-w-5xl space-y-4">
             <PageFormCard>
               <PageFormSection
                 title="App name"
