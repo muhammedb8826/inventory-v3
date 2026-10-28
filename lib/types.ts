@@ -748,10 +748,44 @@ export interface Bom {
   version?: string | null;
   notes?: string | null;
   isActive?: boolean;
+  isDefault?: boolean;
+  yieldPercent?: string | number | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  revisedFromId?: string | null;
   finishedItem?: Item;
   lines?: BomLine[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface BomExplodeResult {
+  bomId: string;
+  finishedItemId: string;
+  quantity: number;
+  yieldPercent: number;
+  lines: {
+    componentItemId: string;
+    quantity: number;
+    depth: number;
+    componentItem?: Item;
+  }[];
+}
+
+export interface BomCostRollup {
+  bomId: string;
+  quantity: number;
+  yieldPercent: number;
+  expectedFinishedQty: number;
+  materialCost: number;
+  unitFinishedCost: number;
+  lines: {
+    componentItemId: string;
+    quantity: number;
+    unitCost: number;
+    extendedCost: number;
+    componentItem?: Item;
+  }[];
 }
 
 export interface ProductionOrderLine {
@@ -759,21 +793,27 @@ export interface ProductionOrderLine {
   componentItemId: string;
   quantityRequired?: string;
   quantityIssued?: string;
+  issuedValue?: string;
   scrapPercent?: string | null;
   componentItem?: Item;
 }
 
 export interface ProductionOrder {
   id: string;
+  orderNumber?: string | null;
   bomId: string;
   locationId: string;
+  finishedLocationId?: string | null;
   finishedItemId?: string;
   quantityPlanned: string;
   quantityCompleted?: string;
+  quantityScrapped?: string;
+  materialsReserved?: boolean;
   status: ProductionOrderStatus;
   notes?: string | null;
   bom?: Bom;
   location?: Location;
+  finishedLocation?: Location | null;
   finishedItem?: Item;
   lines?: ProductionOrderLine[];
   createdAt?: string;

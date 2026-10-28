@@ -33,6 +33,7 @@ export function ProductionOrderForm() {
   const router = useRouter();
   const [bomId, setBomId] = useState("");
   const [locationId, setLocationId] = useState("");
+  const [finishedLocationId, setFinishedLocationId] = useState("");
   const [quantityPlanned, setQuantityPlanned] = useState("1");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,7 +66,9 @@ export function ProductionOrderForm() {
         body: {
           bomId,
           locationId,
+          finishedLocationId: finishedLocationId || locationId,
           quantityPlanned: qty,
+          explodeBom: true,
           notes: notes.trim() || undefined,
         },
       });
@@ -91,7 +94,7 @@ export function ProductionOrderForm() {
       <PageFormCard>
         <PageFormSection
           title="Production order"
-          description="BOM lines are snapshotted when the order is created."
+          description="Multi-level BOM is exploded to leaf components. Release reserves materials."
         >
           <FormGrid>
             <FormField label="BOM" required className="sm:col-span-2">
@@ -108,29 +111,53 @@ export function ProductionOrderForm() {
                     (boms ?? []).map((bom) => (
                       <SelectItem key={bom.id} value={bom.id}>
                         {bom.finishedItem?.description
-                          ? `${bom.name} — ${bom.finishedItem.description}`
+                          ? `${bom.name}${bom.isDefault ? " ★" : ""} — ${bom.finishedItem.description}`
                           : bom.name}
+                        {bom.version ? ` (v${bom.version})` : ""}
                       </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label="Location" required>
+            <FormField label="Component location" required>
               <Select
                 value={locationId || undefined}
-                onValueChange={setLocationId}
+                onValueChange={(v) => {
+                  setLocationId(v);
+                  if (!finishedLocationId) setFinishedLocationId(v);
+                }}
               >
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Select location" />
+                  <SelectValue placeholder="Issue from…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(locations ?? []).map((loc) => (
-                    <SelectItem key={loc.id} value={loc.id}>
-                      {loc.name}
-                      {loc.type ? ` · ${loc.type}` : ""}
-                    </SelectItem>
-                  ))}
+                  {(locations ?? [])
+                    .filter((l) => l.type !== "BIN")
+                    .map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label="FG receipt location">
+              <Select
+                value={finishedLocationId || locationId || undefined}
+                onValueChange={setFinishedLocationId}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Receive FG to…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(locations ?? [])
+                    .filter((l) => l.type !== "BIN")
+                    .map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </FormField>

@@ -58,6 +58,16 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const [version, setVersion] = useState(bom?.version ?? "1.0");
   const [notes, setNotes] = useState(bom?.notes ?? "");
   const [isActive, setIsActive] = useState(bom?.isActive !== false);
+  const [isDefault, setIsDefault] = useState(bom?.isDefault === true);
+  const [yieldPercent, setYieldPercent] = useState(
+    bom?.yieldPercent != null ? String(bom.yieldPercent) : "100",
+  );
+  const [effectiveFrom, setEffectiveFrom] = useState(
+    bom?.effectiveFrom?.slice(0, 10) ?? "",
+  );
+  const [effectiveTo, setEffectiveTo] = useState(
+    bom?.effectiveTo?.slice(0, 10) ?? "",
+  );
   const [lines, setLines] = useState<BomLineRow[]>(() =>
     bom
       ? linesFromBom(bom)
@@ -155,11 +165,17 @@ export function BomForm({ bom }: { bom?: Bom }) {
 
     setSaving(true);
     try {
+      const yieldVal = parseFloat(yieldPercent);
       const body: Record<string, unknown> = {
         finishedItemId,
         name: name.trim(),
         version: version.trim() || undefined,
         notes: notes.trim() || undefined,
+        isDefault,
+        yieldPercent:
+          Number.isFinite(yieldVal) && yieldVal > 0 ? yieldVal : 100,
+        effectiveFrom: effectiveFrom || undefined,
+        effectiveTo: effectiveTo || undefined,
         lines: parsedLines,
       };
       if (isEdit) body.isActive = isActive;
@@ -225,6 +241,40 @@ export function BomForm({ bom }: { bom?: Bom }) {
                 placeholder="1.0"
               />
             </FormField>
+            <FormField label="Yield %">
+              <Input
+                className="h-10"
+                type="number"
+                step="any"
+                min="0.01"
+                value={yieldPercent}
+                onChange={(e) => setYieldPercent(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Effective from">
+              <Input
+                className="h-10"
+                type="date"
+                value={effectiveFrom}
+                onChange={(e) => setEffectiveFrom(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Effective to">
+              <Input
+                className="h-10"
+                type="date"
+                value={effectiveTo}
+                onChange={(e) => setEffectiveTo(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Default BOM">
+              <div className="flex h-10 items-center gap-2">
+                <Switch checked={isDefault} onCheckedChange={setIsDefault} />
+                <Label className="text-sm font-normal">
+                  Use for multi-level explode
+                </Label>
+              </div>
+            </FormField>
             {isEdit ? (
               <FormField label="Status">
                 <div className="flex h-10 items-center gap-2">
@@ -234,9 +284,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
                   </Label>
                 </div>
               </FormField>
-            ) : (
-              <div className="hidden sm:block" />
-            )}
+            ) : null}
             <FormField label="Notes" className="sm:col-span-2">
               <Input
                 className="h-10"

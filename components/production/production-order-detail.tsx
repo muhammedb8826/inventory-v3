@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/shared/page-form";
 import { PermissionGate } from "@/components/permission-gate";
 import { api } from "@/lib/api";
-import { errorMessage, formatDate, formatQty } from "@/lib/format";
+import { errorMessage, formatDate, formatMoney, formatQty } from "@/lib/format";
 import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import { productionStatusLabel } from "@/lib/production";
@@ -52,18 +52,28 @@ export function ProductionOrderDetail({
 }) {
   const [busy, setBusy] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [completeQty, setCompleteQty] = useState(
-    order.quantityPlanned ?? "1"
+  const [unbuildOpen, setUnbuildOpen] = useState(false);
+  const [scrapOpen, setScrapOpen] = useState(false);
+  const remaining = useMemo(() => {
+    const planned = parseFloat(order.quantityPlanned);
+    const done = parseFloat(order.quantityCompleted ?? "0");
+    return Math.max(0, planned - done);
+  }, [order.quantityPlanned, order.quantityCompleted]);
+  const [completeQty, setCompleteQty] = useState(String(remaining || 1));
+  const [unbuildQty, setUnbuildQty] = useState(
+    order.quantityCompleted ?? "1",
   );
+  const [scrapQty, setScrapQty] = useState("1");
   const [autoIssue, setAutoIssue] = useState(true);
 
   const lines = order.lines ?? [];
   const status = order.status;
+  const completed = parseFloat(order.quantityCompleted ?? "0");
 
   async function runAction(
     path: string,
     body?: Record<string, unknown>,
-    successMessage?: string
+    successMessage?: string,
   ) {
     setBusy(true);
     try {
@@ -105,6 +115,54 @@ export function ProductionOrderDetail({
     }
   }
 
+  async function handleUnbuild(e: React.FormEvent) {
+    e.preventDefault();
+    const quantity = parseFloat(unbuildQty);
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      toast.error("Enter a positive quantity");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api(`/production-orders/${order.id}/unbuild`, {
+        method: "POST",
+        body: { quantity },
+      });
+      toast.success("Unbuilt — FG removed, materials returned");
+      requestNotificationsRefresh();
+      setUnbuildOpen(false);
+      onUpdated();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleScrap(e: React.FormEvent) {
+    e.preventDefault();
+    const quantity = parseFloat(scrapQty);
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      toast.error("Enter a positive quantity");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api(`/production-orders/${order.id}/scrap`, {
+        method: "POST",
+        body: { quantity },
+      });
+      toast.success("Scrap recorded");
+      requestNotificationsRefresh();
+      setScrapOpen(false);
+      onUpdated();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -124,6 +182,9 @@ export function ProductionOrderDetail({
         <Badge variant="outline" className="ml-auto">
           {productionStatusLabel(status)}
         </Badge>
+        {order.materialsReserved ? (
+          <Badge variant="secondary">Reserved</Badge>
+        ) : null}
         <PermissionGate permission="production.write">
           {status === "DRAFT" ? (
             <Button
@@ -133,11 +194,11 @@ export function ProductionOrderDetail({
                 runAction(
                   `/production-orders/${order.id}/release`,
                   undefined,
-                  "Order released"
+                  "Order released — materials reserved",
                 )
               }
             >
-              Release
+              Release &amp; reserve
             </Button>
           ) : null}
           {status === "RELEASED" || status === "IN_PROGRESS" ? (
@@ -150,21 +211,47 @@ export function ProductionOrderDetail({
                   runAction(
                     `/production-orders/${order.id}/issue`,
                     {},
-                    "Materials issued"
+                    "Materials issued",
                   )
                 }
               >
-                Issue materials
+                Issue remaining
               </Button>
               <Button
                 size="sm"
-                disabled={busy}
+                disabled={busy || remaining <= 0}
                 onClick={() => {
-                  setCompleteQty(order.quantityPlanned ?? "1");
+                  setCompleteQty(String(remaining || 1));
                   setCompleteOpen(true);
                 }}
               >
                 Complete
+              </Button>
+            </>
+          ) : null}
+          {completed > 0 ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => {
+                  setUnbuildQty(String(completed));
+                  setUnbuildOpen(true);
+                }}
+              >
+                Unbuild
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => {
+                  setScrapQty("1");
+                  setScrapOpen(true);
+                }}
+              >
+                Scrap FG
               </Button>
             </>
           ) : null}
@@ -177,7 +264,7 @@ export function ProductionOrderDetail({
                 runAction(
                   `/production-orders/${order.id}/cancel`,
                   undefined,
-                  "Order cancelled"
+                  "Order cancelled",
                 )
               }
             >
@@ -189,7 +276,7 @@ export function ProductionOrderDetail({
 
       <PageFormCard>
         <PageFormSection
-          title="Order"
+          title={order.orderNumber ?? "Order"}
           description={
             order.createdAt
               ? `Created ${formatDate(order.createdAt)}`
@@ -221,17 +308,31 @@ export function ProductionOrderDetail({
               }
             />
             <DetailField
-              label="Location"
+              label="Component location"
               value={order.location?.name ?? "—"}
+            />
+            <DetailField
+              label="FG receipt location"
+              value={
+                order.finishedLocation?.name ??
+                order.location?.name ??
+                "—"
+              }
             />
             <DetailField
               label="Planned qty"
               value={formatQty(order.quantityPlanned)}
             />
             <DetailField
-              label="Completed qty"
-              value={formatQty(order.quantityCompleted ?? "0")}
+              label="Completed / remaining"
+              value={`${formatQty(order.quantityCompleted ?? "0")} / ${formatQty(remaining)}`}
             />
+            {parseFloat(order.quantityScrapped ?? "0") > 0 ? (
+              <DetailField
+                label="Scrapped"
+                value={formatQty(order.quantityScrapped ?? "0")}
+              />
+            ) : null}
             <DetailField
               label="Document ID"
               value={
@@ -248,7 +349,7 @@ export function ProductionOrderDetail({
 
         <PageFormSection
           title="Materials"
-          description={`${lines.length} component line${lines.length === 1 ? "" : "s"}`}
+          description={`${lines.length} leaf component line${lines.length === 1 ? "" : "s"} (multi-level exploded)`}
         >
           {lines.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -268,7 +369,7 @@ export function ProductionOrderDetail({
                       Issued
                     </th>
                     <th className="px-4 py-2.5 text-right tabular-nums">
-                      Scrap %
+                      Issued value
                     </th>
                   </tr>
                 </thead>
@@ -289,9 +390,7 @@ export function ProductionOrderDetail({
                         {formatQty(line.quantityIssued ?? "0")}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {line.scrapPercent != null && line.scrapPercent !== ""
-                          ? `${line.scrapPercent}%`
-                          : "—"}
+                        {formatMoney(line.issuedValue ?? "0")}
                       </td>
                     </tr>
                   ))}
@@ -310,7 +409,7 @@ export function ProductionOrderDetail({
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Finished quantity</Label>
+                <Label>Finished quantity (remaining {formatQty(remaining)})</Label>
                 <Input
                   type="number"
                   step="any"
@@ -334,6 +433,68 @@ export function ProductionOrderDetail({
             <DialogFooter>
               <Button type="submit" disabled={busy}>
                 Complete
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={unbuildOpen} onOpenChange={setUnbuildOpen}>
+        <DialogContent>
+          <form onSubmit={handleUnbuild}>
+            <DialogHeader>
+              <DialogTitle>Unbuild finished goods</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Removes FG from stock and returns proportional materials.
+              </p>
+              <div className="grid gap-2">
+                <Label>Quantity to unbuild</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={unbuildQty}
+                  onChange={(e) => setUnbuildQty(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={busy}>
+                Unbuild
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={scrapOpen} onOpenChange={setScrapOpen}>
+        <DialogContent>
+          <form onSubmit={handleScrap}>
+            <DialogHeader>
+              <DialogTitle>Scrap finished goods</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Writes off FG without returning materials.
+              </p>
+              <div className="grid gap-2">
+                <Label>Quantity to scrap</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={scrapQty}
+                  onChange={(e) => setScrapQty(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={busy} variant="destructive">
+                Scrap
               </Button>
             </DialogFooter>
           </form>

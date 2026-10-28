@@ -14,7 +14,7 @@ export default function BomDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
 
-  const { data: bom, loading, error } = useFetch(
+  const { data: bom, loading, error, reload } = useFetch(
     () =>
       id
         ? api<Bom>(`/boms/${id}`)
@@ -46,7 +46,7 @@ export default function BomDetailPage() {
             </FrappeButtonLink>
           </div>
         ) : (
-          <BomDetail bom={bom} />
+          <BomDetail bom={bom} onUpdated={reload} />
         )}
       </PermissionGate>
     </AppShell>
