@@ -10,7 +10,7 @@ Sessions now use the Next.js /api/backend proxy and HttpOnly cookies. API_URL is
 
 Run npm run typecheck, npm run lint, npm run build, and npm run test:e2e. Browser tests use a deterministic local upstream, not live business data. An installed Chrome can be selected with PLAYWRIGHT_CHANNEL=chrome. Build assets include local fonts and licenses so the build no longer fetches fonts from Google.
 
-Plain FTP deployment is retired. See the API repository docs/PRODUCTION_READINESS.md for SSH production-environment configuration, backup/restore, alerting, migration rollout and staging acceptance requirements. No hosting configuration or production deployment is performed by these source changes.
+cPanel FTP/FTPS deployment is available after quality checks; see [cPanel deployment](CPANEL_DEPLOYMENT.md). SSH release remains an alternative. See the API repository docs/PRODUCTION_READINESS.md for SSH production-environment configuration, backup/restore, alerting, migration rollout and staging acceptance requirements. No hosting configuration or production deployment is performed by these source changes.
 
 ## API contract generation
 
