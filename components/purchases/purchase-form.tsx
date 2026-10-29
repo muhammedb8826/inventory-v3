@@ -254,8 +254,8 @@ export function PurchaseForm({
         const match = stock.find(
           (s) => productItemId(s) === row.itemId || s.itemId === row.itemId,
         );
-        const price = match?.purchasePrice ?? match?.item?.purchasePrice;
-        if (!price) return row;
+        const price = match?.purchasePrice;
+        if (!match || !price) return row;
         changed = true;
         return {
           ...row,
