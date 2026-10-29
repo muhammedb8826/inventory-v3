@@ -30,9 +30,30 @@ export function notificationHref(
       return "/inventory";
     case "inquiry":
       return `/inquiries?id=${encodeURIComponent(entityId)}`;
+    case "production_order":
+      return `/production-orders/${entityId}`;
     default:
       return null;
   }
+}
+
+/** Deep-link for shortage → prefilled purchase when notification carries the event. */
+export function shortagePurchaseHref(
+  metadata?: Record<string, unknown> | null,
+  entityType?: string | null,
+  entityId?: string | null,
+): string | null {
+  if (metadata?.event !== "material_shortage") return null;
+  if (typeof metadata.purchaseHref === "string" && metadata.purchaseHref) {
+    return metadata.purchaseHref;
+  }
+  if (
+    entityType?.toLowerCase().replace(/-/g, "_") === "production_order" &&
+    entityId
+  ) {
+    return `/purchases/new?productionOrderId=${encodeURIComponent(entityId)}`;
+  }
+  return null;
 }
 
 export const NOTIFICATION_MODULES = [

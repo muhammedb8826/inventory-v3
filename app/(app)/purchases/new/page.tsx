@@ -1,8 +1,30 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PurchaseForm } from "@/components/purchases/purchase-form";
 import { PermissionGate } from "@/components/permission-gate";
+import { PageLoading } from "@/components/shared/page-loading";
+
+function NewPurchaseBody() {
+  const searchParams = useSearchParams();
+  const productionOrderId =
+    searchParams.get("productionOrderId")?.trim() || undefined;
+
+  return (
+    <PermissionGate
+      permission="purchase.write"
+      fallback={
+        <p className="text-sm text-[var(--frappe-text-muted)]">
+          You do not have permission to create purchases.
+        </p>
+      }
+    >
+      <PurchaseForm productionOrderId={productionOrderId} />
+    </PermissionGate>
+  );
+}
 
 export default function NewPurchasePage() {
   return (
@@ -16,16 +38,9 @@ export default function NewPurchasePage() {
         { label: "New Purchase" },
       ]}
     >
-      <PermissionGate
-        permission="purchase.write"
-        fallback={
-          <p className="text-sm text-[var(--frappe-text-muted)]">
-            You do not have permission to create purchases.
-          </p>
-        }
-      >
-        <PurchaseForm />
-      </PermissionGate>
+      <Suspense fallback={<PageLoading />}>
+        <NewPurchaseBody />
+      </Suspense>
     </AppShell>
   );
 }

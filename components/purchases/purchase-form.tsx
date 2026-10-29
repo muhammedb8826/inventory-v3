@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickSupplierDialog } from "@/components/suppliers/quick-supplier-dialog";
@@ -48,7 +48,9 @@ import type {
   BankAccount,
   Item,
   Location,
+  MaterialRequirements,
   PaymentMethod,
+  ProductionOrder,
   Purchase,
   StockRecord,
   Supplier,
@@ -84,7 +86,14 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
     : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }];
 }
 
-export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
+export function PurchaseForm({
+  purchase,
+  productionOrderId,
+}: {
+  purchase?: Purchase;
+  /** Prefill short BOM lines from a production work order (shortage → buy). */
+  productionOrderId?: string;
+}) {
   const router = useRouter();
   const isEdit = !!purchase?.id;
   const notesOnly = isEdit && creditHasPayments(purchase?.supplierCredit);
@@ -107,6 +116,66 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
       : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }]
   );
   const [saving, setSaving] = useState(false);
+  const [mtoPrefillDone, setMtoPrefillDone] = useState(false);
+
+  const { data: mtoOrder, loading: mtoOrderLoading } = useFetch(
+    () =>
+      !isEdit && productionOrderId
+        ? api<ProductionOrder>(`/production-orders/${productionOrderId}`)
+        : Promise.resolve(null),
+    [productionOrderId, isEdit],
+  );
+  const { data: mtoRequirements, loading: mtoReqLoading } = useFetch(
+    () =>
+      !isEdit && productionOrderId
+        ? api<MaterialRequirements>(
+            `/production-orders/${productionOrderId}/material-requirements`,
+          )
+        : Promise.resolve(null),
+    [productionOrderId, isEdit],
+  );
+
+  useEffect(() => {
+    if (isEdit || !productionOrderId || mtoPrefillDone) return;
+    if (!mtoOrder || !mtoRequirements) return;
+
+    const shortLines = mtoRequirements.lines.filter(
+      (l) => parseFloat(l.shortage) > 0,
+    );
+    const label = mtoOrder.orderNumber
+      ? `PO ${mtoOrder.orderNumber}`
+      : `production ${mtoOrder.id.slice(0, 8)}`;
+
+    setLocationId(mtoOrder.locationId);
+    setNotes((prev) =>
+      prev.trim()
+        ? prev
+        : `Material shortage for ${label} — buy to cover BOM before release`,
+    );
+    if (shortLines.length) {
+      setLines(
+        shortLines.map((l) => ({
+          itemId: l.componentItemId,
+          quantity: l.shortage,
+          unitPrice: "",
+          lotNumber: "",
+          expiryDate: "",
+          item: {
+            id: l.componentItemId,
+            sku: l.sku ?? undefined,
+            description: l.description ?? undefined,
+          } as Item,
+        })),
+      );
+    }
+    setMtoPrefillDone(true);
+  }, [
+    isEdit,
+    productionOrderId,
+    mtoOrder,
+    mtoRequirements,
+    mtoPrefillDone,
+  ]);
 
   const {
     data: suppliers,
@@ -170,7 +239,33 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
   const dataLoading =
     (suppliers === null && suppliersLoading) ||
     (locations === null && locationsLoading) ||
-    (banks === null && banksLoading);
+    (banks === null && banksLoading) ||
+    Boolean(productionOrderId && !isEdit && (mtoOrderLoading || mtoReqLoading));
+
+  // Fill unit prices from stock at the receive location once inventory loads.
+  useEffect(() => {
+    if (isEdit || !mtoPrefillDone || !stock?.length) return;
+    setLines((prev) => {
+      let changed = false;
+      const next = prev.map((row) => {
+        if (!row.itemId || (row.unitPrice && parseFloat(row.unitPrice) > 0)) {
+          return row;
+        }
+        const match = stock.find(
+          (s) => productItemId(s) === row.itemId || s.itemId === row.itemId,
+        );
+        const price = match?.purchasePrice ?? match?.item?.purchasePrice;
+        if (!price) return row;
+        changed = true;
+        return {
+          ...row,
+          unitPrice: String(price),
+          item: row.item ?? resolveItem(row.itemId, match.item),
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [stock, isEdit, mtoPrefillDone]);
 
   function onSupplierCreated(supplier: Supplier) {
     setSuppliers((prev) => [...(prev ?? []), supplier]);
@@ -295,6 +390,19 @@ export function PurchaseForm({ purchase }: { purchase?: Purchase }) {
 
   return (
     <PageForm onSubmit={handleSubmit}>
+      {productionOrderId && !isEdit ? (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+          Prefilling short materials from{" "}
+          <Link
+            href={`/production-orders/${productionOrderId}`}
+            className="font-medium underline underline-offset-2"
+          >
+            production order
+          </Link>
+          . Pick a supplier and confirm prices, then receive into the issue
+          location so planners can release.
+        </div>
+      ) : null}
       {notesOnly ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Supplier credit has payments — only notes can be changed.

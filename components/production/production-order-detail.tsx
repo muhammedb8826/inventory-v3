@@ -247,6 +247,17 @@ export function ProductionOrderDetail({
             <Link href={`/sales/${order.saleId}`}>View sale</Link>
           </Button>
         ) : null}
+        {status === "DRAFT" && requirements?.hasShortages ? (
+          <PermissionGate permission="purchase.write">
+            <Button size="sm" variant="outline" asChild>
+              <Link
+                href={`/purchases/new?productionOrderId=${encodeURIComponent(order.id)}`}
+              >
+                Create purchase
+              </Link>
+            </Button>
+          </PermissionGate>
+        ) : null}
         <PermissionGate permission="production.write">
           {status === "DRAFT" ? (
             <Button
@@ -384,20 +395,35 @@ export function ProductionOrderDetail({
 
       {requirements?.hasShortages && status === "DRAFT" ? (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
-          Material shortages vs available stock. Purchasing is notified when
-          release fails — create a purchase or transfer, then release again.
-          {requirements.lines.some((l) => parseFloat(l.shortage) > 0) ? (
-            <ul className="mt-2 list-inside list-disc text-xs">
-              {requirements.lines
-                .filter((l) => parseFloat(l.shortage) > 0)
-                .map((l) => (
-                  <li key={l.componentItemId}>
-                    {l.description ?? l.sku ?? l.componentItemId}: short{" "}
-                    {formatQty(l.shortage)}
-                  </li>
-                ))}
-            </ul>
-          ) : null}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p>
+                Material shortages vs available stock. Create a purchase for the
+                short qty, receive into the issue location, then release again.
+              </p>
+              {requirements.lines.some((l) => parseFloat(l.shortage) > 0) ? (
+                <ul className="mt-2 list-inside list-disc text-xs">
+                  {requirements.lines
+                    .filter((l) => parseFloat(l.shortage) > 0)
+                    .map((l) => (
+                      <li key={l.componentItemId}>
+                        {l.description ?? l.sku ?? l.componentItemId}: short{" "}
+                        {formatQty(l.shortage)}
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
+            </div>
+            <PermissionGate permission="purchase.write">
+              <Button size="sm" variant="outline" asChild>
+                <Link
+                  href={`/purchases/new?productionOrderId=${encodeURIComponent(order.id)}`}
+                >
+                  Create purchase
+                </Link>
+              </Button>
+            </PermissionGate>
+          </div>
         </div>
       ) : null}
 

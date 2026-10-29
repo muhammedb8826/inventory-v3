@@ -11,8 +11,13 @@ import {
 } from "@/components/shared/page-form";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import { dismissNotification, markNotificationRead } from "@/lib/notifications";
-import { notificationHref } from "@/lib/notification-routes";
+import {
+  notificationHref,
+  shortagePurchaseHref,
+} from "@/lib/notification-routes";
 import { errorMessage, formatDate, formatMoney } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
+import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
 import { ExternalLinkIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
@@ -53,11 +58,18 @@ export function NotificationDetail({
   onUpdated?: () => void;
 }) {
   const router = useRouter();
+  const { user } = useAuth();
   const { refreshUnreadCount } = useNotifications();
   const entityHref = notificationHref(
     notification.entityType,
     notification.entityId
   );
+  const purchaseHref = shortagePurchaseHref(
+    notification.metadata,
+    notification.entityType,
+    notification.entityId
+  );
+  const canPurchase = hasPermission(user, "purchase.write");
 
   async function handleMarkRead() {
     if (notification.isRead) return;
@@ -150,13 +162,18 @@ export function NotificationDetail({
                 Additional info
               </p>
               <FormGrid>
-                {metadataEntries.map(([key, value]) => (
-                  <DetailField
-                    key={key}
-                    label={key.replace(/_/g, " ")}
-                    value={formatMetadataValue(value)}
-                  />
-                ))}
+                {metadataEntries
+                  .filter(
+                    ([key]) =>
+                      key !== "purchaseHref" && key !== "shortagesDetailed",
+                  )
+                  .map(([key, value]) => (
+                    <DetailField
+                      key={key}
+                      label={key.replace(/_/g, " ")}
+                      value={formatMetadataValue(value)}
+                    />
+                  ))}
               </FormGrid>
             </div>
           ) : null}
@@ -173,11 +190,18 @@ export function NotificationDetail({
                 Mark as read
               </Button>
             ) : null}
+            {purchaseHref && canPurchase ? (
+              <Button type="button" size="sm" asChild>
+                <Link href={purchaseHref}>Create purchase</Link>
+              </Button>
+            ) : null}
             {entityHref ? (
               <Button type="button" size="sm" variant="outline" asChild>
                 <Link href={entityHref}>
                   <ExternalLinkIcon className="size-3.5" />
-                  View related record
+                  {notification.entityType === "production_order"
+                    ? "View production order"
+                    : "View related record"}
                 </Link>
               </Button>
             ) : null}
