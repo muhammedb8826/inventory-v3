@@ -69,6 +69,27 @@ export function bankAccountsForSelect(
   return active;
 }
 
+function normalizeAccountType(
+  account: BankAccount & { account_type?: string }
+): string {
+  const raw = account.accountType ?? account.account_type ?? "";
+  return String(raw).trim().toUpperCase();
+}
+
+/** Accounts matching the payment method (CASH till vs BANK ledger). CREDIT → []. */
+export function accountsForPaymentMethod(
+  method: PaymentMethod,
+  accounts: BankAccount[] | null | undefined,
+  selectedId = ""
+): BankAccount[] {
+  const type = bankAccountTypeForPayment(method);
+  if (!type) return [];
+  const typed = (accounts ?? []).filter(
+    (a) => normalizeAccountType(a) === type
+  );
+  return bankAccountsForSelect(typed, selectedId);
+}
+
 export function bankAccountSelectOptions(
   accounts: BankAccount[],
   selectedId?: string
@@ -85,8 +106,9 @@ export function resolveBankAccountId(
   selectedId: string
 ): string | undefined {
   if (method === "CREDIT") return undefined;
-  const list = bankAccountsForSelect(accounts ?? [], selectedId);
+  const list = accountsForPaymentMethod(method, accounts, selectedId);
   if (selectedId && list.some((a) => a.id === selectedId)) return selectedId;
+  if (list.length === 1) return list[0].id;
   if (method === "CASH" && list.length > 0) return list[0].id;
   return selectedId || undefined;
 }
@@ -95,13 +117,41 @@ export function showsPaymentAccountPicker(
   method: PaymentMethod,
   accounts: BankAccount[] | null | undefined
 ): boolean {
+  if (method === "CREDIT") return false;
+  const list = accountsForPaymentMethod(method, accounts);
   if (method === "BANK") return true;
-  if (method === "CASH") return (accounts?.length ?? 0) > 1;
-  return false;
+  // CASH: hide only when exactly one till (auto-selected).
+  return list.length !== 1;
 }
 
 export function paymentAccountFieldLabel(method: PaymentMethod): string {
   return method === "CASH" ? "Cash till" : "Bank account";
+}
+
+/** Drop empty UUID / bank fields so Nest @IsUUID() never sees "". */
+export function sanitizePaymentDocumentBody(
+  body: Record<string, unknown>
+): Record<string, unknown> {
+  const next = { ...body };
+  const method = next.paymentMethod;
+  if (method === "CREDIT") {
+    delete next.bankAccountId;
+  }
+  for (const key of [
+    "bankAccountId",
+    "customerId",
+    "supplierId",
+    "inquiryId",
+    "productionOrderId",
+    "soldByUserId",
+    "locationId",
+  ]) {
+    const value = next[key];
+    if (value === "" || value === null || value === undefined) {
+      delete next[key];
+    }
+  }
+  return next;
 }
 
 export function buildBankAccountBody(

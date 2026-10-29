@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { RowActionsMenu } from "@/components/shared/row-actions-menu";
+import { ConfirmRecordAction } from "@/components/shared/confirm-record-action";
 import { DataCardTable } from "@/components/shared/data-card-table";
 import { PermissionGate } from "@/components/permission-gate";
 import { BankAccountFormFields } from "@/components/banks/bank-account-form-fields";
@@ -73,7 +74,13 @@ import { useFetch } from "@/hooks/use-fetch";
 import { useClientPaginatedList } from "@/hooks/use-client-paginated-list";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { toast } from "sonner";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import {
+  BanIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  UserCheckIcon,
+} from "lucide-react";
 
 export default function BanksPage() {
   const [accountId, setAccountId] = useState<string>("");
@@ -169,10 +176,20 @@ export default function BanksPage() {
   return (
     <AppShell
       title="Bank"
+      subtitle="Cash tills and bank ledgers for sales, purchases, and expenses"
       actions={
         <PermissionGate permission="bank.write">
-          <div className="flex gap-2">
-            <AccountDialog onSuccess={refreshAll} />
+          <div className="flex flex-wrap gap-2">
+            <AccountDialog
+              onSuccess={refreshAll}
+              defaultAccountType="CASH"
+              triggerLabel="Cash till"
+            />
+            <AccountDialog
+              onSuccess={refreshAll}
+              defaultAccountType="BANK"
+              triggerLabel="Bank account"
+            />
             <AdjustmentDialog
               accounts={accounts ?? []}
               onSuccess={refreshAll}
@@ -246,8 +263,8 @@ export default function BanksPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__all__">All types</SelectItem>
-                        <SelectItem value="CASH">Cash</SelectItem>
-                        <SelectItem value="BANK">Bank</SelectItem>
+                        <SelectItem value="CASH">Cash till</SelectItem>
+                        <SelectItem value="BANK">Bank account</SelectItem>
                       </SelectContent>
                     </Select>
                   </FilterField>
@@ -266,7 +283,7 @@ export default function BanksPage() {
                   </div>
                 </TableFiltersSheet>
               }
-              emptyTitle="No bank accounts"
+              emptyTitle="No cash tills or bank accounts"
               pagination={{
                 meta: accountMeta,
                 onPageChange: setAccountPage,
@@ -278,7 +295,9 @@ export default function BanksPage() {
                   key: "type",
                   header: "Type",
                   cell: (r) => (
-                    <Badge variant="outline">{r.accountType ?? "BANK"}</Badge>
+                    <Badge variant="outline">
+                      {r.accountType === "CASH" ? "Cash till" : "Bank account"}
+                    </Badge>
                   ),
                 },
                 {
@@ -469,9 +488,19 @@ export default function BanksPage() {
   );
 }
 
-function AccountDialog({ onSuccess }: { onSuccess: () => void }) {
+function AccountDialog({
+  onSuccess,
+  defaultAccountType = "BANK",
+  triggerLabel = "Account",
+}: {
+  onSuccess: () => void;
+  defaultAccountType?: BankAccountType;
+  triggerLabel?: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState(emptyBankAccountForm());
+  const [values, setValues] = useState(() =>
+    emptyBankAccountForm(defaultAccountType),
+  );
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -486,9 +515,11 @@ function AccountDialog({ onSuccess }: { onSuccess: () => void }) {
         method: "POST",
         body: buildBankAccountBody(values, "create"),
       });
-      toast.success("Account created");
+      toast.success(
+        values.accountType === "CASH" ? "Cash till created" : "Bank account created",
+      );
       setOpen(false);
-      setValues(emptyBankAccountForm());
+      setValues(emptyBankAccountForm(defaultAccountType));
       onSuccess();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -502,19 +533,23 @@ function AccountDialog({ onSuccess }: { onSuccess: () => void }) {
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setValues(emptyBankAccountForm());
+        if (next) setValues(emptyBankAccountForm(defaultAccountType));
       }}
     >
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
           <PlusIcon />
-          Account
+          {triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New account</DialogTitle>
+            <DialogTitle>
+              {defaultAccountType === "CASH"
+                ? "New cash till"
+                : "New bank account"}
+            </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <BankAccountFormFields
@@ -735,28 +770,91 @@ function AccountRowActions({
   account: BankAccount;
   onSuccess: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [deactivate, setDeactivate] = useState(false);
+  const [activate, setActivate] = useState(false);
+  const [remove, setRemove] = useState(false);
+  const isCash = account.accountType === "CASH";
+  const label = isCash ? "cash till" : "bank account";
+
   return (
     <>
       <RowActionsMenu
         label={account.name}
         actions={[
           {
-            label: "Edit account",
+            label: "Edit",
             icon: PencilIcon,
-            onSelect: () => setOpen(true),
+            onSelect: () => setEdit(true),
+          },
+          account.isActive === false
+            ? {
+                label: "Activate",
+                icon: UserCheckIcon,
+                onSelect: () => setActivate(true),
+              }
+            : {
+                label: "Deactivate",
+                icon: BanIcon,
+                onSelect: () => setDeactivate(true),
+              },
+          {
+            label: "Delete",
+            icon: Trash2Icon,
+            destructive: true,
+            onSelect: () => setRemove(true),
           },
         ]}
       />
-      {open && (
+      {edit && (
         <EditAccountDialog
           account={account}
           onSuccess={onSuccess}
           defaultOpen
           hideTrigger
-          onOpenChange={setOpen}
+          onOpenChange={setEdit}
         />
       )}
+      <ConfirmRecordAction
+        open={activate}
+        onOpenChange={setActivate}
+        title={`Activate ${label}?`}
+        description={`${account.name} will appear again in payment pickers.`}
+        label="Activate"
+        onConfirm={async () => {
+          await api(`/banks/accounts/${account.id}/activate`, {
+            method: "POST",
+          });
+          toast.success("Account activated");
+          onSuccess();
+        }}
+      />
+      <ConfirmRecordAction
+        open={deactivate}
+        onOpenChange={setDeactivate}
+        title={`Deactivate ${label}?`}
+        description={`${account.name} stays in history but is hidden from new sales/purchases. The last active cash till cannot be deactivated.`}
+        label="Deactivate"
+        onConfirm={async () => {
+          await api(`/banks/accounts/${account.id}/deactivate`, {
+            method: "POST",
+          });
+          toast.success("Account deactivated");
+          onSuccess();
+        }}
+      />
+      <ConfirmRecordAction
+        open={remove}
+        onOpenChange={setRemove}
+        title={`Delete ${label} permanently?`}
+        description={`${account.name} can only be deleted with zero balance and no ledger history. Otherwise deactivate it.`}
+        label="Delete permanently"
+        onConfirm={async () => {
+          await api(`/banks/accounts/${account.id}`, { method: "DELETE" });
+          toast.success("Account deleted");
+          onSuccess();
+        }}
+      />
     </>
   );
 }

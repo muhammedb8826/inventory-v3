@@ -28,11 +28,12 @@ import { PlusIcon, Trash2Icon } from "lucide-react";
 import { apiList } from "@/lib/list-response";
 import { creditHasPayments, needsBankAccount } from "@/lib/document-utils";
 import {
+  accountsForPaymentMethod,
   bankAccountSelectOptions,
   bankAccountsUrl,
-  bankAccountTypeForPayment,
   paymentAccountFieldLabel,
   resolveBankAccountId,
+  sanitizePaymentDocumentBody,
   showsPaymentAccountPicker,
 } from "@/lib/bank-accounts";
 import {
@@ -186,18 +187,17 @@ export function SaleForm({
     reload: reloadLocations,
     setData: setLocations,
   } = useLocations();
-  const paymentAccountType = bankAccountTypeForPayment(paymentMethod);
   const {
     data: banks,
     loading: banksLoading,
     reload: reloadBanks,
     setData: setBanks,
-  } = useFetch(
-    () =>
-      paymentAccountType
-        ? apiList<BankAccount>(bankAccountsUrl(paymentAccountType))
-        : Promise.resolve([]),
-    [paymentAccountType]
+  } = useFetch(() => apiList<BankAccount>(bankAccountsUrl()), []);
+
+  const paymentAccounts = accountsForPaymentMethod(
+    paymentMethod,
+    banks,
+    bankAccountId
   );
 
   useAutoPaymentAccount(
@@ -312,11 +312,8 @@ export function SaleForm({
       body.productionOrderId = mtoProductionOrderId;
     }
     if (needsBankAccount(paymentMethod)) {
-      body.bankAccountId = resolveBankAccountId(
-        paymentMethod,
-        banks,
-        bankAccountId
-      );
+      const id = resolveBankAccountId(paymentMethod, banks, bankAccountId);
+      if (id) body.bankAccountId = id;
     }
     if (paymentMethod === "CREDIT" && creditDueDate) {
       body.creditDueDate = creditDueDate;
@@ -335,7 +332,7 @@ export function SaleForm({
         body.commissionBasis = commissionBasis;
       }
     }
-    return body;
+    return sanitizePaymentDocumentBody(body);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -489,31 +486,51 @@ export function SaleForm({
               />
             </FormField>
             {showsPaymentAccountPicker(paymentMethod, banks) ? (
-              <EntitySelectField
-                label={paymentAccountFieldLabel(paymentMethod)}
-                required={!notesOnly}
-                value={bankAccountId}
-                onValueChange={setBankAccountId}
-                options={bankAccountSelectOptions(banks ?? [], bankAccountId)}
-                listHref="/banks"
-                listLabel="All accounts"
-                emptyMessage={
-                  paymentMethod === "CASH"
-                    ? "Create a cash till (CASH account type) under Bank."
-                    : "Create a bank account (BANK account type) under Bank."
-                }
-                quickCreate={
-                  notesOnly ? undefined : (
-                    <QuickBankAccountDialog
-                      defaultAccountType={
-                        paymentMethod === "CASH" ? "CASH" : "BANK"
-                      }
-                      onCreated={onBankCreated}
-                    />
-                  )
-                }
-                disabled={notesOnly}
-              />
+              <div className="grid gap-2">
+                {!banksLoading && paymentAccounts.length === 0 ? (
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    {paymentMethod === "CASH"
+                      ? "“Cash” is the payment method. You still need a Cash till account (type CASH) — click + New account."
+                      : "“Bank” is the payment method. You still need a bank ledger account (type BANK) — click + New account."}
+                  </p>
+                ) : null}
+                <EntitySelectField
+                  label={paymentAccountFieldLabel(paymentMethod)}
+                  required={!notesOnly}
+                  value={bankAccountId}
+                  onValueChange={setBankAccountId}
+                  options={bankAccountSelectOptions(
+                    paymentAccounts,
+                    bankAccountId
+                  )}
+                  listHref="/banks"
+                  listLabel="All accounts"
+                  loading={banksLoading}
+                  hint={
+                    banksLoading
+                      ? "Loading accounts…"
+                      : paymentMethod === "CASH"
+                        ? "Which cash drawer receives this payment (not the same as choosing Cash above)."
+                        : "Which bank ledger receives this payment."
+                  }
+                  emptyMessage={
+                    paymentMethod === "CASH"
+                      ? "Create a cash till (CASH account type)."
+                      : "Create a bank account (BANK account type)."
+                  }
+                  quickCreate={
+                    notesOnly ? undefined : (
+                      <QuickBankAccountDialog
+                        defaultAccountType={
+                          paymentMethod === "CASH" ? "CASH" : "BANK"
+                        }
+                        onCreated={onBankCreated}
+                      />
+                    )
+                  }
+                  disabled={notesOnly}
+                />
+              </div>
             ) : paymentMethod === "CREDIT" ? (
               <FormField label="Credit due date">
                 <Input

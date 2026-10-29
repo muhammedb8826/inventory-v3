@@ -27,11 +27,12 @@ import { apiList } from "@/lib/list-response";
 import { fetchInventoryForLocation } from "@/lib/inventory-fetch";
 import { creditHasPayments, needsBankAccount } from "@/lib/document-utils";
 import {
+  accountsForPaymentMethod,
   bankAccountSelectOptions,
   bankAccountsUrl,
-  bankAccountTypeForPayment,
   paymentAccountFieldLabel,
   resolveBankAccountId,
+  sanitizePaymentDocumentBody,
   showsPaymentAccountPicker,
 } from "@/lib/bank-accounts";
 import {
@@ -189,18 +190,17 @@ export function PurchaseForm({
     reload: reloadLocations,
     setData: setLocations,
   } = useLocations();
-  const paymentAccountType = bankAccountTypeForPayment(paymentMethod);
   const {
     data: banks,
     loading: banksLoading,
     reload: reloadBanks,
     setData: setBanks,
-  } = useFetch(
-    () =>
-      paymentAccountType
-        ? apiList<BankAccount>(bankAccountsUrl(paymentAccountType))
-        : Promise.resolve([]),
-    [paymentAccountType]
+  } = useFetch(() => apiList<BankAccount>(bankAccountsUrl()), []);
+
+  const paymentAccounts = accountsForPaymentMethod(
+    paymentMethod,
+    banks,
+    bankAccountId
   );
 
   useAutoPaymentAccount(
@@ -312,20 +312,27 @@ export function PurchaseForm({
       lines: documentLines,
     };
     if (needsBankAccount(paymentMethod)) {
-      body.bankAccountId = resolveBankAccountId(
-        paymentMethod,
-        banks,
-        bankAccountId
-      );
+      const id = resolveBankAccountId(paymentMethod, banks, bankAccountId);
+      if (id) body.bankAccountId = id;
     }
     if (paymentMethod === "CREDIT" && creditDueDate) {
       body.creditDueDate = creditDueDate;
     }
-    return body;
+    return sanitizePaymentDocumentBody(body);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!notesOnly) {
+      if (!supplierId.trim()) {
+        toast.error("Select a supplier before saving the purchase");
+        return;
+      }
+      if (!locationId.trim()) {
+        toast.error("Select a receive location");
+        return;
+      }
+    }
     const resolvedBankId = resolveBankAccountId(
       paymentMethod,
       banks,
@@ -350,6 +357,10 @@ export function PurchaseForm({
         return;
       }
       body = buildBody(parsedLines.lines);
+      if (!body.supplierId) {
+        toast.error("Select a supplier before saving the purchase");
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -399,8 +410,9 @@ export function PurchaseForm({
           >
             production order
           </Link>
-          . Pick a supplier and confirm prices, then receive into the issue
-          location so planners can release.
+          . Choose a <strong>supplier</strong> and payment account, confirm
+          prices, then save — receive into the issue location so planners can
+          release.
         </div>
       ) : null}
       {notesOnly ? (
@@ -468,31 +480,51 @@ export function PurchaseForm({
               />
             </FormField>
             {showsPaymentAccountPicker(paymentMethod, banks) ? (
-              <EntitySelectField
-                label={paymentAccountFieldLabel(paymentMethod)}
-                required={!notesOnly}
-                value={bankAccountId}
-                onValueChange={setBankAccountId}
-                options={bankAccountSelectOptions(banks ?? [], bankAccountId)}
-                listHref="/banks"
-                listLabel="All accounts"
-                emptyMessage={
-                  paymentMethod === "CASH"
-                    ? "Create a cash till (CASH account type) under Bank."
-                    : "Create a bank account (BANK account type) under Bank."
-                }
-                quickCreate={
-                  notesOnly ? undefined : (
-                    <QuickBankAccountDialog
-                      defaultAccountType={
-                        paymentMethod === "CASH" ? "CASH" : "BANK"
-                      }
-                      onCreated={onBankCreated}
-                    />
-                  )
-                }
-                disabled={notesOnly}
-              />
+              <div className="grid gap-2">
+                {!banksLoading && paymentAccounts.length === 0 ? (
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    {paymentMethod === "CASH"
+                      ? "“Cash” is the payment method. You still need a Cash till (type CASH) — click + New account."
+                      : "“Bank” is the payment method. You still need a bank account (type BANK) — click + New account."}
+                  </p>
+                ) : null}
+                <EntitySelectField
+                  label={paymentAccountFieldLabel(paymentMethod)}
+                  required={!notesOnly}
+                  value={bankAccountId}
+                  onValueChange={setBankAccountId}
+                  options={bankAccountSelectOptions(
+                    paymentAccounts,
+                    bankAccountId
+                  )}
+                  listHref="/banks"
+                  listLabel="All accounts"
+                  loading={banksLoading}
+                  hint={
+                    banksLoading
+                      ? "Loading accounts…"
+                      : paymentMethod === "CASH"
+                        ? "Which cash drawer this purchase is paid from (separate from Payment method)."
+                        : "Which bank ledger this purchase is paid from."
+                  }
+                  emptyMessage={
+                    paymentMethod === "CASH"
+                      ? "Create a cash till (CASH account type)."
+                      : "Create a bank account (BANK account type)."
+                  }
+                  quickCreate={
+                    notesOnly ? undefined : (
+                      <QuickBankAccountDialog
+                        defaultAccountType={
+                          paymentMethod === "CASH" ? "CASH" : "BANK"
+                        }
+                        onCreated={onBankCreated}
+                      />
+                    )
+                  }
+                  disabled={notesOnly}
+                />
+              </div>
             ) : paymentMethod === "CREDIT" ? (
               <FormField label="Credit due date">
                 <Input

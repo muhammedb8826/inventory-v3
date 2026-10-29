@@ -53,6 +53,11 @@ export function recordBulkActions<T extends { id: string }>(key: string | undefi
     add('deactivate', 'Deactivate selected', 'users.write', '/users', 'POST', '/deactivate', {}, row => row.isActive !== false && row.id !== user?.id, true);
     add('delete', 'Delete selected', 'users.write', '/users', 'DELETE', '', undefined, row => row.id !== user?.id, true);
   }
+  if (key === 'banks-accounts') {
+    add('activate', 'Activate selected', 'bank.write', '/banks/accounts', 'POST', '/activate', {}, row => row.isActive === false);
+    add('deactivate', 'Deactivate selected', 'bank.write', '/banks/accounts', 'POST', '/deactivate', {}, row => row.isActive !== false, true);
+    add('delete', 'Delete selected', 'bank.write', '/banks/accounts', 'DELETE', '', undefined, undefined, true);
+  }
   const master = key?.match(/^master-(\/(?:customers|suppliers|locations))$/)?.[1];
   if (master) {
     add('activate', 'Activate selected', `${master.slice(1)}.write`, master, 'PATCH', '', { isActive: true }, row => row.isActive === false);

@@ -38,6 +38,7 @@ export function useFetch<T>(
     } catch (e) {
       const msg = errorMessage(e);
       setError(msg);
+      setData(null);
       // Industry: missing permission is a UI concern — don't spam toasts.
       if (toastOnError && !isForbiddenError(e)) {
         toast.error(msg);

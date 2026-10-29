@@ -40,7 +40,12 @@ export function BankAccountFormFields({
         />
       </FormField>
       {mode === "create" ? (
-        <FormField label="Account type" required htmlFor="bank-account-type">
+        <FormField
+          label="Account type"
+          required
+          htmlFor="bank-account-type"
+          hint="Cash till = physical cash for CASH payments. Bank account = bank ledger for BANK transfers."
+        >
           <Select
             value={values.accountType}
             onValueChange={(v) =>

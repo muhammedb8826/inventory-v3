@@ -2,10 +2,13 @@
 
 import { useEffect } from "react";
 import { needsBankAccount } from "@/lib/document-utils";
-import { resolveBankAccountId } from "@/lib/bank-accounts";
+import {
+  accountsForPaymentMethod,
+  resolveBankAccountId,
+} from "@/lib/bank-accounts";
 import type { BankAccount, PaymentMethod } from "@/lib/types";
 
-/** Auto-select cash till when only one CASH account applies. */
+/** Auto-select when exactly one matching CASH/BANK account exists. */
 export function useAutoPaymentAccount(
   paymentMethod: PaymentMethod,
   accounts: BankAccount[] | null | undefined,
@@ -14,17 +17,14 @@ export function useAutoPaymentAccount(
 ) {
   useEffect(() => {
     if (!needsBankAccount(paymentMethod) || !accounts?.length) return;
-    const resolved = resolveBankAccountId(
+    const matching = accountsForPaymentMethod(
       paymentMethod,
       accounts,
       bankAccountId
     );
-    if (
-      paymentMethod === "CASH" &&
-      resolved &&
-      bankAccountId !== resolved &&
-      accounts.length === 1
-    ) {
+    if (matching.length !== 1) return;
+    const resolved = matching[0].id;
+    if (bankAccountId !== resolved) {
       setBankAccountId(resolved);
     }
   }, [accounts, paymentMethod, bankAccountId, setBankAccountId]);
@@ -46,14 +46,18 @@ export function bankAccountValidationError(
 ): string | null {
   if (!needsBankAccount(method)) return null;
   if (resolvedId) return null;
+  const matching = accountsForPaymentMethod(method, accounts);
   if (method === "CASH") {
-    if ((accounts?.length ?? 0) === 0) {
-      return 'No cash till found. Create a CASH account under Bank.';
+    if (matching.length === 0) {
+      return "No cash till found. Create one with type CASH (New account on this form, or Bank settings).";
     }
     return "Select a cash till";
   }
-  if ((accounts?.length ?? 0) === 0) {
-    return "Create a BANK account under Bank settings.";
+  if (method === "BANK") {
+    if (matching.length === 0) {
+      return "No bank account found. Create one with type BANK (New account on this form, or Bank settings).";
+    }
+    return "Select a bank account for the transfer";
   }
-  return "Select a bank account for the transfer";
+  return null;
 }
