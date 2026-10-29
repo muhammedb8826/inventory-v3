@@ -45,7 +45,13 @@ import { useFetch } from "@/hooks/use-fetch";
 import { useLocations } from "@/hooks/use-locations";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { toast } from "sonner";
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  BanIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  UserCheckIcon,
+} from "lucide-react";
 import { AccessDenied } from "@/components/shared/access-denied";
 
 export default function UsersPage() {
@@ -452,8 +458,11 @@ function UserRowActions({
   onSuccess: () => void;
 }) {
   const { user: me } = useAuth();
+  const isSelf = user.id === me?.id;
   const [edit, setEdit] = useState(false);
   const [deactivate, setDeactivate] = useState(false);
+  const [activate, setActivate] = useState(false);
+  const [remove, setRemove] = useState(false);
   return (
     <>
       <RowActionsMenu
@@ -464,12 +473,25 @@ function UserRowActions({
             icon: PencilIcon,
             onSelect: () => setEdit(true),
           },
+          user.isActive === false
+            ? {
+                label: "Activate user",
+                icon: UserCheckIcon,
+                disabled: isSelf,
+                onSelect: () => setActivate(true),
+              }
+            : {
+                label: "Deactivate user",
+                icon: BanIcon,
+                disabled: isSelf,
+                onSelect: () => setDeactivate(true),
+              },
           {
-            label: "Deactivate user",
+            label: "Delete user",
             icon: Trash2Icon,
             destructive: true,
-            disabled: user.id === me?.id || user.isActive === false,
-            onSelect: () => setDeactivate(true),
+            disabled: isSelf,
+            onSelect: () => setRemove(true),
           },
         ]}
       />
@@ -484,14 +506,41 @@ function UserRowActions({
         />
       )}
       <ConfirmRecordAction
+        open={activate}
+        onOpenChange={setActivate}
+        title="Activate user?"
+        description={`${user.fullName} will be able to sign in again.`}
+        label="Activate"
+        onConfirm={async () => {
+          await api(`/users/${user.id}`, {
+            method: "PATCH",
+            body: { isActive: true },
+          });
+          toast.success("User activated");
+          onSuccess();
+        }}
+      />
+      <ConfirmRecordAction
         open={deactivate}
         onOpenChange={setDeactivate}
         title="Deactivate user?"
         description={`${user.fullName} will lose access. Their transaction history is preserved.`}
-        label="Deactivate user"
+        label="Deactivate"
+        onConfirm={async () => {
+          await api(`/users/${user.id}/deactivate`, { method: "POST" });
+          toast.success("User deactivated");
+          onSuccess();
+        }}
+      />
+      <ConfirmRecordAction
+        open={remove}
+        onOpenChange={setRemove}
+        title="Delete user permanently?"
+        description={`${user.fullName} will be removed. If they have sales or stock history, delete is blocked — deactivate instead.`}
+        label="Delete permanently"
         onConfirm={async () => {
           await api(`/users/${user.id}`, { method: "DELETE" });
-          toast.success("User deactivated");
+          toast.success("User deleted");
           onSuccess();
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,9 @@ import { errorMessage, formatDate, formatMoney, formatQty } from "@/lib/format";
 import { inventoryMovementsHref } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import { productionStatusLabel } from "@/lib/production";
-import type { ProductionOrder } from "@/lib/types";
+import type { MaterialRequirements, ProductionOrder } from "@/lib/types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 function DetailField({
   label,
@@ -43,6 +44,27 @@ function DetailField({
   );
 }
 
+const FLOW_STEPS = [
+  { key: "DRAFT", label: "Draft" },
+  { key: "RELEASED", label: "Released" },
+  { key: "ISSUE", label: "Issue" },
+  { key: "COMPLETE", label: "Complete" },
+  { key: "SALE", label: "Ready for sale" },
+] as const;
+
+function flowStepIndex(order: ProductionOrder): number {
+  const status = order.status;
+  const issued = (order.lines ?? []).some(
+    (l) => parseFloat(l.quantityIssued ?? "0") > 0,
+  );
+  if (order.saleId || status === "COMPLETED") return 4;
+  if (status === "IN_PROGRESS" || (status === "RELEASED" && issued)) return 3;
+  if (status === "RELEASED") return 2;
+  if (status === "DRAFT") return 0;
+  if (status === "CANCELLED") return -1;
+  return 0;
+}
+
 export function ProductionOrderDetail({
   order,
   onUpdated,
@@ -54,6 +76,9 @@ export function ProductionOrderDetail({
   const [completeOpen, setCompleteOpen] = useState(false);
   const [unbuildOpen, setUnbuildOpen] = useState(false);
   const [scrapOpen, setScrapOpen] = useState(false);
+  const [requirements, setRequirements] = useState<MaterialRequirements | null>(
+    null,
+  );
   const remaining = useMemo(() => {
     const planned = parseFloat(order.quantityPlanned);
     const done = parseFloat(order.quantityCompleted ?? "0");
@@ -69,6 +94,23 @@ export function ProductionOrderDetail({
   const lines = order.lines ?? [];
   const status = order.status;
   const completed = parseFloat(order.quantityCompleted ?? "0");
+  const stepIndex = flowStepIndex(order);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<MaterialRequirements>(
+      `/production-orders/${order.id}/material-requirements`,
+    )
+      .then((data) => {
+        if (!cancelled) setRequirements(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRequirements(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [order.id, order.status, order.materialsReserved, order.updatedAt]);
 
   async function runAction(
     path: string,
@@ -210,6 +252,11 @@ export function ProductionOrderDetail({
             <Button
               size="sm"
               disabled={busy}
+              title={
+                requirements?.hasShortages
+                  ? "Shortages detected — release will fail and notify purchasing"
+                  : undefined
+              }
               onClick={() =>
                 runAction(
                   `/production-orders/${order.id}/release`,
@@ -221,33 +268,37 @@ export function ProductionOrderDetail({
               Release &amp; reserve
             </Button>
           ) : null}
+        </PermissionGate>
+        <PermissionGate permissions={["production.issue", "production.write"]}>
           {status === "RELEASED" || status === "IN_PROGRESS" ? (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={() =>
-                  runAction(
-                    `/production-orders/${order.id}/issue`,
-                    {},
-                    "Materials issued",
-                  )
-                }
-              >
-                Issue remaining
-              </Button>
-              <Button
-                size="sm"
-                disabled={busy || remaining <= 0}
-                onClick={() => {
-                  setCompleteQty(String(remaining || 1));
-                  setCompleteOpen(true);
-                }}
-              >
-                Complete
-              </Button>
-            </>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() =>
+                runAction(
+                  `/production-orders/${order.id}/issue`,
+                  {},
+                  "Materials issued",
+                )
+              }
+            >
+              Issue remaining
+            </Button>
+          ) : null}
+        </PermissionGate>
+        <PermissionGate permission="production.write">
+          {status === "RELEASED" || status === "IN_PROGRESS" ? (
+            <Button
+              size="sm"
+              disabled={busy || remaining <= 0}
+              onClick={() => {
+                setCompleteQty(String(remaining || 1));
+                setCompleteOpen(true);
+              }}
+            >
+              Complete
+            </Button>
           ) : null}
           {completed > 0 ? (
             <>
@@ -293,6 +344,62 @@ export function ProductionOrderDetail({
           ) : null}
         </PermissionGate>
       </div>
+
+      {status !== "CANCELLED" ? (
+        <ol className="flex flex-wrap gap-2 rounded-xl border bg-[var(--frappe-surface)] px-3 py-3 text-xs sm:gap-3 sm:px-4">
+          {FLOW_STEPS.map((step, i) => {
+            const done = stepIndex > i;
+            const current = stepIndex === i;
+            return (
+              <li
+                key={step.key}
+                className={cn(
+                  "flex items-center gap-1.5 font-medium",
+                  done && "text-emerald-700 dark:text-emerald-400",
+                  current && "text-foreground",
+                  !done && !current && "text-muted-foreground",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]",
+                    done &&
+                      "border-emerald-600/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+                    current && "border-primary bg-primary/10 text-primary",
+                  )}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                {step.label}
+                {i < FLOW_STEPS.length - 1 ? (
+                  <span className="ml-1 hidden text-muted-foreground sm:inline">
+                    →
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+
+      {requirements?.hasShortages && status === "DRAFT" ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+          Material shortages vs available stock. Purchasing is notified when
+          release fails — create a purchase or transfer, then release again.
+          {requirements.lines.some((l) => parseFloat(l.shortage) > 0) ? (
+            <ul className="mt-2 list-inside list-disc text-xs">
+              {requirements.lines
+                .filter((l) => parseFloat(l.shortage) > 0)
+                .map((l) => (
+                  <li key={l.componentItemId}>
+                    {l.description ?? l.sku ?? l.componentItemId}: short{" "}
+                    {formatQty(l.shortage)}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
 
       <PageFormCard>
         <PageFormSection
@@ -394,10 +501,14 @@ export function ProductionOrderDetail({
         </PageFormSection>
 
         <PageFormSection
-          title="Materials"
-          description={`${lines.length} leaf component line${lines.length === 1 ? "" : "s"} (multi-level exploded)`}
+          title="Material requirements"
+          description={
+            requirements
+              ? `${requirements.lines.length} BOM component${requirements.lines.length === 1 ? "" : "s"} at ${requirements.locationName ?? "location"} — reserve on release, then warehouse issues`
+              : `${lines.length} leaf component line${lines.length === 1 ? "" : "s"}`
+          }
         >
-          {lines.length === 0 ? (
+          {(requirements?.lines.length ?? lines.length) === 0 ? (
             <p className="text-sm text-muted-foreground">
               No material lines on this order.
             </p>
@@ -415,31 +526,83 @@ export function ProductionOrderDetail({
                       Issued
                     </th>
                     <th className="px-4 py-2.5 text-right tabular-nums">
+                      Available
+                    </th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Shortage
+                    </th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
                       Issued value
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {lines.map((line, i) => (
-                    <tr key={line.id ?? `${line.componentItemId}-${i}`}>
-                      <td className="px-4 py-2.5">
-                        {line.componentItem?.description ??
-                          line.componentItemId}
-                      </td>
-                      <td className="px-4 py-2.5 text-muted-foreground">
-                        {line.componentItem?.sku ?? "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(line.quantityRequired ?? "0")}
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(line.quantityIssued ?? "0")}
-                      </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatMoney(line.issuedValue ?? "0")}
-                      </td>
-                    </tr>
-                  ))}
+                  {(requirements?.lines ?? []).length > 0
+                    ? requirements!.lines.map((line) => {
+                        const short = parseFloat(line.shortage) > 0;
+                        const orderLine = lines.find(
+                          (l) => l.componentItemId === line.componentItemId,
+                        );
+                        return (
+                          <tr
+                            key={line.componentItemId}
+                            className={short ? "bg-amber-500/5" : undefined}
+                          >
+                            <td className="px-4 py-2.5">
+                              {line.description ?? line.componentItemId}
+                            </td>
+                            <td className="px-4 py-2.5 text-muted-foreground">
+                              {line.sku ?? "—"}
+                            </td>
+                            <td className="px-4 py-2.5 text-right tabular-nums">
+                              {formatQty(line.quantityRequired)}
+                            </td>
+                            <td className="px-4 py-2.5 text-right tabular-nums">
+                              {formatQty(line.quantityIssued)}
+                            </td>
+                            <td className="px-4 py-2.5 text-right tabular-nums">
+                              {formatQty(line.available)}
+                            </td>
+                            <td
+                              className={cn(
+                                "px-4 py-2.5 text-right tabular-nums",
+                                short && "font-medium text-amber-700 dark:text-amber-400",
+                              )}
+                            >
+                              {formatQty(line.shortage)}
+                            </td>
+                            <td className="px-4 py-2.5 text-right tabular-nums">
+                              {formatMoney(orderLine?.issuedValue ?? "0")}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    : lines.map((line, i) => (
+                        <tr key={line.id ?? `${line.componentItemId}-${i}`}>
+                          <td className="px-4 py-2.5">
+                            {line.componentItem?.description ??
+                              line.componentItemId}
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground">
+                            {line.componentItem?.sku ?? "—"}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">
+                            {formatQty(line.quantityRequired ?? "0")}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">
+                            {formatQty(line.quantityIssued ?? "0")}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums">
+                            {formatMoney(line.issuedValue ?? "0")}
+                          </td>
+                        </tr>
+                      ))}
                 </tbody>
               </table>
             </div>

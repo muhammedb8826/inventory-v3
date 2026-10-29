@@ -817,6 +817,31 @@ export interface ProductionOrderLine {
   componentItem?: Item;
 }
 
+/** BOM material list vs stock (GET /production-orders/:id/material-requirements). */
+export interface MaterialRequirementLine {
+  componentItemId: string;
+  sku?: string | null;
+  description?: string | null;
+  quantityRequired: string;
+  quantityIssued: string;
+  quantityRemaining: string;
+  onHand: string;
+  available: string;
+  reservedForOrder: string;
+  shortage: string;
+}
+
+export interface MaterialRequirements {
+  productionOrderId: string;
+  orderNumber?: string | null;
+  locationId: string;
+  locationName?: string | null;
+  status: ProductionOrderStatus;
+  materialsReserved: boolean;
+  hasShortages: boolean;
+  lines: MaterialRequirementLine[];
+}
+
 export interface ProductionOrder extends RecordMetadata {
   id: string;
   orderNumber?: string | null;

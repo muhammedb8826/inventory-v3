@@ -102,12 +102,21 @@ export function InquiryDetailDialog({
       inquiry.assignmentStatus === "DECLINED" ||
       !inquiry.assignmentStatus);
 
+  const canConfirmQuote =
+    canWrite &&
+    inquiry != null &&
+    (inquiry.status === "NEW" || inquiry.status === "IN_PROGRESS") &&
+    inquiry.assignmentStatus !== "PENDING" &&
+    inquiry.assignmentStatus !== "DECLINED";
+
+  /**
+   * Firm demand only (QUOTED). After a PO is created the inquiry goes
+   * IN_PROGRESS — Confirm quote again to re-open Start for another job.
+   */
   const canStartProduction =
     canProduce &&
     inquiry != null &&
-    inquiry.status !== "CANCELLED" &&
-    inquiry.status !== "CLOSED" &&
-    inquiry.status !== "CONVERTED" &&
+    inquiry.status === "QUOTED" &&
     inquiry.assignmentStatus !== "PENDING" &&
     inquiry.assignmentStatus !== "DECLINED";
 
@@ -223,6 +232,24 @@ export function InquiryDetailDialog({
     }
   }
 
+  async function handleConfirmQuote() {
+    if (!inquiryId) return;
+    setActing(true);
+    try {
+      const updated = await api<Inquiry>(`/inquiries/${inquiryId}/confirm`, {
+        method: "POST",
+      });
+      setInquiry(updated);
+      setValues(inquiryToFormValues(updated));
+      toast.success("Quote confirmed — firm demand for production");
+      onChanged();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setActing(false);
+    }
+  }
+
   async function handleStartProduction() {
     if (!inquiryId || !produceLocationId) {
       toast.error("Select a location");
@@ -241,7 +268,7 @@ export function InquiryDetailDialog({
           },
         },
       );
-      toast.success("Production order created");
+      toast.success("Draft production order created");
       setProduceOpen(false);
       onOpenChange(false);
       onChanged();
@@ -336,6 +363,16 @@ export function InquiryDetailDialog({
                     {cancelling ? "Cancelling…" : "Cancel inquiry"}
                   </Button>
                 ) : null}
+                {canConfirmQuote ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={acting}
+                    onClick={() => void handleConfirmQuote()}
+                  >
+                    Confirm quote
+                  </Button>
+                ) : null}
                 {canStartProduction ? (
                   <Button
                     type="button"
@@ -411,8 +448,8 @@ export function InquiryDetailDialog({
           <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-4 sm:pt-5">
             <DialogTitle>Start production</DialogTitle>
             <p className="text-sm text-[var(--frappe-text-muted)]">
-              Creates a draft production order from this inquiry&apos;s item and
-              its default BOM.
+              Creates a draft work order from this firm demand and its default
+              BOM. Release later to reserve materials; warehouse issues next.
             </p>
           </DialogHeader>
           <div className="app-canvas grid gap-4 px-4 py-4 sm:px-6 sm:py-5">

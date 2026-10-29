@@ -1,13 +1,28 @@
 import { api } from '@/lib/api';
-import { hasPermission } from '@/lib/permissions';
+import { hasAnyPermission, hasPermission } from '@/lib/permissions';
 import type { User } from '@/lib/types';
 import type { BulkAction } from '@/components/shared/data-card-table';
 
 type Row = { id: string; status?: unknown; isActive?: unknown; isRead?: unknown };
 export function recordBulkActions<T extends { id: string }>(key: string | undefined, user: User | null): BulkAction<T>[] {
   const actions: BulkAction<T>[] = [];
-  function add(id: string, label: string, permission: string | null, endpoint: string, method: string, suffix = '', body?: unknown, eligible?: (row: Row) => boolean, destructive = false) {
-    if (permission && !hasPermission(user, permission)) return;
+  function add(
+    id: string,
+    label: string,
+    permission: string | string[] | null,
+    endpoint: string,
+    method: string,
+    suffix = '',
+    body?: unknown,
+    eligible?: (row: Row) => boolean,
+    destructive = false,
+  ) {
+    if (permission) {
+      const ok = Array.isArray(permission)
+        ? hasAnyPermission(user, permission)
+        : hasPermission(user, permission);
+      if (!ok) return;
+    }
     actions.push({ id, label, description: `${label} for the selected records.`, destructive, eligible,
       run: row => api(`${endpoint}/${encodeURIComponent(row.id)}${suffix}`, { method, body, idempotent: true }) });
   }
@@ -25,7 +40,8 @@ export function recordBulkActions<T extends { id: string }>(key: string | undefi
     add('cancel', 'Cancel selected', 'stock_transfer.write', '/stock-transfers', 'DELETE', '', undefined, row => row.status === 'PENDING', true);
   }
   if (key === 'production-orders-list') {
-    add('release', 'Release selected', 'production.write', '/production-orders', 'POST', '/release', {}, row => row.status === 'DRAFT');
+    add('release', 'Release & reserve', 'production.write', '/production-orders', 'POST', '/release', {}, row => row.status === 'DRAFT');
+    add('issue', 'Issue materials', ['production.issue', 'production.write'], '/production-orders', 'POST', '/issue', {}, row => ['RELEASED', 'IN_PROGRESS'].includes(String(row.status)));
     add('cancel', 'Cancel selected', 'production.write', '/production-orders', 'POST', '/cancel', {}, row => ['DRAFT', 'RELEASED'].includes(String(row.status)), true);
   }
   if (key === 'notifications-list') {
@@ -34,7 +50,8 @@ export function recordBulkActions<T extends { id: string }>(key: string | undefi
   }
   if (key === 'users-list') {
     add('activate', 'Activate selected', 'users.write', '/users', 'PATCH', '', { isActive: true }, row => row.isActive === false);
-    add('deactivate', 'Deactivate selected', 'users.write', '/users', 'PATCH', '', { isActive: false }, row => row.isActive !== false && row.id !== user?.id, true);
+    add('deactivate', 'Deactivate selected', 'users.write', '/users', 'POST', '/deactivate', {}, row => row.isActive !== false && row.id !== user?.id, true);
+    add('delete', 'Delete selected', 'users.write', '/users', 'DELETE', '', undefined, row => row.id !== user?.id, true);
   }
   const master = key?.match(/^master-(\/(?:customers|suppliers|locations))$/)?.[1];
   if (master) {
@@ -43,6 +60,16 @@ export function recordBulkActions<T extends { id: string }>(key: string | undefi
   }
   if (key === 'inquiries-list') {
     add('claim', 'Claim selected', 'inquiries.write', '/inquiries', 'POST', '/claim', {}, row => !['CLOSED', 'CANCELLED', 'CONVERTED'].includes(String(row.status)));
+    add(
+      'confirm',
+      'Confirm quote',
+      'inquiries.write',
+      '/inquiries',
+      'POST',
+      '/confirm',
+      {},
+      row => ['NEW', 'IN_PROGRESS'].includes(String(row.status)),
+    );
   }
   return actions;
 }
