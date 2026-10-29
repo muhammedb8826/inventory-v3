@@ -107,7 +107,9 @@ function NewSaleFromMto() {
               ? linesFromInquiry
               : undefined,
           notes: inquiry
-            ? `MTO from inquiry ${inquiry.contactName} — ${inquiry.subject}`
+            ? productionOrderId
+              ? `From inquiry ${inquiry.contactName} — ${inquiry.subject} (production)`
+              : `From inquiry ${inquiry.contactName} — ${inquiry.subject}`
             : order?.orderNumber
               ? `From production ${order.orderNumber}`
               : undefined,

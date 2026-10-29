@@ -109,24 +109,31 @@ export function InquiryDetailDialog({
     inquiry.assignmentStatus !== "PENDING" &&
     inquiry.assignmentStatus !== "DECLINED";
 
-  /**
-   * Firm demand only (QUOTED). After a PO is created the inquiry goes
-   * IN_PROGRESS — Confirm quote again to re-open Start for another job.
-   */
-  const canStartProduction =
-    canProduce &&
+  const firmDemand =
     inquiry != null &&
-    inquiry.status === "QUOTED" &&
     inquiry.assignmentStatus !== "PENDING" &&
-    inquiry.assignmentStatus !== "DECLINED";
-
-  const canCreateSale =
-    canSell &&
-    inquiry != null &&
+    inquiry.assignmentStatus !== "DECLINED" &&
     inquiry.status !== "CANCELLED" &&
     inquiry.status !== "CLOSED" &&
-    inquiry.status !== "CONVERTED" &&
-    Boolean(inquiry.readyForSaleAt);
+    inquiry.status !== "CONVERTED";
+
+  /**
+   * Firm demand (QUOTED): plan a work order.
+   * Re-confirm quote after a job moves the inquiry to IN_PROGRESS.
+   */
+  const canStartProduction =
+    canProduce && firmDemand && inquiry?.status === "QUOTED";
+
+  /**
+   * Sell from stock on firm demand, or after production marks ready for sale.
+   * Production is optional when FG is already available.
+   */
+  const canCreateSale =
+    canSell &&
+    firmDemand &&
+    (inquiry?.status === "QUOTED" ||
+      inquiry?.status === "IN_PROGRESS" ||
+      Boolean(inquiry?.readyForSaleAt));
 
   useEffect(() => {
     if (!open || !inquiryId) {
@@ -373,6 +380,18 @@ export function InquiryDetailDialog({
                     Confirm quote
                   </Button>
                 ) : null}
+                {canCreateSale && inquiryId ? (
+                  <Button type="button" variant="outline" asChild>
+                    <Link
+                      href={`/sales/new?inquiryId=${encodeURIComponent(inquiryId)}`}
+                      onClick={() => onOpenChange(false)}
+                    >
+                      {inquiry?.readyForSaleAt
+                        ? "Create sale"
+                        : "Sell from stock"}
+                    </Link>
+                  </Button>
+                ) : null}
                 {canStartProduction ? (
                   <Button
                     type="button"
@@ -384,16 +403,6 @@ export function InquiryDetailDialog({
                     }}
                   >
                     Start production
-                  </Button>
-                ) : null}
-                {canCreateSale && inquiryId ? (
-                  <Button type="button" variant="outline" asChild>
-                    <Link
-                      href={`/sales/new?inquiryId=${encodeURIComponent(inquiryId)}`}
-                      onClick={() => onOpenChange(false)}
-                    >
-                      Create sale
-                    </Link>
                   </Button>
                 ) : null}
                 {canClaim && inquiry?.assignmentStatus !== "PENDING" ? (
@@ -448,8 +457,9 @@ export function InquiryDetailDialog({
           <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-4 sm:pt-5">
             <DialogTitle>Start production</DialogTitle>
             <p className="text-sm text-[var(--frappe-text-muted)]">
-              Creates a draft work order from this firm demand and its default
-              BOM. Release later to reserve materials; warehouse issues next.
+              Use when stock is short or the item must be made. Creates a draft
+              work order from the default BOM. If finished goods are already on
+              hand, prefer Sell from stock instead.
             </p>
           </DialogHeader>
           <div className="app-canvas grid gap-4 px-4 py-4 sm:px-6 sm:py-5">
