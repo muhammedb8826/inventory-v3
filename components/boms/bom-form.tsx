@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ItemSearchSelect } from "@/components/shared/item-search-select";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -18,10 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
-import {
-  fetchAllInventory,
-  uniqueItemsFromStock,
-} from "@/lib/inventory-fetch";
+import { fetchAllInventory, uniqueItemsFromStock } from "@/lib/inventory-fetch";
 import { errorMessage } from "@/lib/format";
 import type { Bom } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
@@ -97,9 +95,7 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const itemOptions = (() => {
     const options = catalogItems.map((item) => ({
       itemId: item.id,
-      label: item.sku
-        ? `${item.description} (${item.sku})`
-        : item.description,
+      label: item.sku ? `${item.description} (${item.sku})` : item.description,
     }));
     const pushIfMissing = (itemId: string, label: string) => {
       if (!itemId || options.some((o) => o.itemId === itemId)) return;
@@ -227,7 +223,24 @@ export function BomForm({ bom }: { bom?: Bom }) {
   const cancelHref = isEdit && bom ? `/boms/${bom.id}` : "/boms";
 
   return (
-    <PageForm onSubmit={handleSubmit}>
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <FormSummary
+          rows={[
+            { label: "BOM name", value: name },
+            { label: "Version", value: version },
+            {
+              label: "Components",
+              value: lines.filter((l) => l.componentItemId).length,
+            },
+            { label: "Yield", value: `${yieldPercent || "100"}%` },
+            { label: "Default BOM", value: isDefault ? "Yes" : "No" },
+          ]}
+          note="Component quantities are expressed per finished unit. Check stock units before saving."
+        />
+      }
+    >
       <PageFormCard>
         <PageFormSection
           title="BOM"
@@ -320,8 +333,15 @@ export function BomForm({ bom }: { bom?: Bom }) {
           title="Components"
           description="Quantities are per 1 finished unit. Mark Phantom to pass through to the component’s BOM instead of issuing stock (industry non-stocked assembly)."
         >
-          <div className="overflow-hidden rounded-xl border">
-            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+          <div
+            className="form-line-editor overflow-hidden rounded-xl border"
+            style={
+              {
+                "--line-columns": "minmax(12rem,1fr) 7rem 7rem 6.5rem 2.5rem",
+              } as React.CSSProperties
+            }
+          >
+            <div className="form-line-head grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground ">
               <span>Component</span>
               <span>Qty / FG</span>
               <span>Scrap %</span>
@@ -332,50 +352,56 @@ export function BomForm({ bom }: { bom?: Bom }) {
               {lines.map((line, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] sm:items-center"
+                  className="form-line-row grid gap-3 px-4 py-3 sm:items-center"
                 >
-                  <ItemSearchSelect
-                    value={line.componentItemId}
-                    onValueChange={(componentItemId) => {
-                      const fromCatalog = catalogItems.find(
-                        (i) => i.id === componentItemId,
-                      );
-                      const fromBomLine = (bom?.lines ?? []).find(
-                        (l) => l.componentItemId === componentItemId,
-                      )?.componentItem;
-                      const inheritPhantom =
-                        fromCatalog?.isPhantom === true ||
-                        fromBomLine?.isPhantom === true;
-                      updateLine(index, {
-                        componentItemId,
-                        isPhantom: inheritPhantom,
-                      });
-                    }}
-                    options={itemOptions}
-                    placeholder="Select component…"
-                    searchPlaceholder="Search component…"
-                  />
-                  <Input
-                    type="number"
-                    step="any"
-                    min="0"
-                    className="h-10"
-                    value={line.quantity}
-                    onChange={(e) =>
-                      updateLine(index, { quantity: e.target.value })
-                    }
-                  />
-                  <Input
-                    type="number"
-                    step="any"
-                    min="0"
-                    className="h-10"
-                    value={line.scrapPercent}
-                    onChange={(e) =>
-                      updateLine(index, { scrapPercent: e.target.value })
-                    }
-                    placeholder="0"
-                  />
+                  <FormField label="Component" className="form-line-field">
+                    <ItemSearchSelect
+                      value={line.componentItemId}
+                      onValueChange={(componentItemId) => {
+                        const fromCatalog = catalogItems.find(
+                          (i) => i.id === componentItemId,
+                        );
+                        const fromBomLine = (bom?.lines ?? []).find(
+                          (l) => l.componentItemId === componentItemId,
+                        )?.componentItem;
+                        const inheritPhantom =
+                          fromCatalog?.isPhantom === true ||
+                          fromBomLine?.isPhantom === true;
+                        updateLine(index, {
+                          componentItemId,
+                          isPhantom: inheritPhantom,
+                        });
+                      }}
+                      options={itemOptions}
+                      placeholder="Select component…"
+                      searchPlaceholder="Search component…"
+                    />
+                  </FormField>
+                  <FormField label="Quantity" className="form-line-field">
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className="h-10"
+                      value={line.quantity}
+                      onChange={(e) =>
+                        updateLine(index, { quantity: e.target.value })
+                      }
+                    />
+                  </FormField>
+                  <FormField label="Scrap (%)" className="form-line-field">
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0"
+                      className="h-10"
+                      value={line.scrapPercent}
+                      onChange={(e) =>
+                        updateLine(index, { scrapPercent: e.target.value })
+                      }
+                      placeholder="0"
+                    />
+                  </FormField>
                   <div className="flex h-10 items-center gap-2">
                     <Switch
                       checked={line.isPhantom}

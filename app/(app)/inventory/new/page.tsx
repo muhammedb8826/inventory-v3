@@ -28,8 +28,8 @@ function NewInventoryBody() {
 export default function NewInventoryPage() {
   return (
     <AppShell
-      title="New stock item"
-      subtitle="Add an item to a location"
+      title="Add product"
+      subtitle="Create a product, choose its stock unit, and set opening inventory."
       variant="form"
       breadcrumbs={[
         { label: "Operations", href: "/dashboard" },

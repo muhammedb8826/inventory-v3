@@ -34,6 +34,14 @@ const user = {
       "inquiries.read",
       "roles.read",
       "settings.read",
+      "settings.write",
+      "bom.write",
+      "production.write",
+      "stock_transfer.write",
+      "expense.write",
+      "inquiries.write",
+      "suppliers.read",
+      "suppliers.write",
       "profit_loss.read",
       "notifications.read",
       "messages.read",
@@ -236,6 +244,34 @@ const server = createServer(async (req, res) => {
   else if (path.includes("unread-count")) result = { count: 0 };
   else if (path === "/health/live")
     result = { status: "ok", currency: { code: "ETB", symbol: "Br" } };
+  else if (path === "/users/assignees") result = [user];
+  else if (path === "/expenses/categories")
+    result = [{ id: "category-a", name: "Operations", isActive: true }];
+  else if (path === "/banks/accounts")
+    result = {
+      data: [
+        {
+          id: "account-a",
+          name: "Business account",
+          accountType: "BANK",
+          balance: "5000",
+          isActive: true,
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+    };
+  else if (path === "/suppliers")
+    result = {
+      data: [{ id: "supplier-a", name: "Acacia supplies", isActive: true }],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+    };
+  else if (path === "/settings/branding")
+    result = {
+      appName: "Stock",
+      headline: "Inventory workspace",
+      supportingText: "Manage your business",
+      heroImageUrl: null,
+    };
   else if (path === "/locations")
     result = {
       data: locations,
@@ -255,6 +291,26 @@ const server = createServer(async (req, res) => {
     const unit = units.find((u) => u.id === path.split("/").pop());
     Object.assign(unit ?? {}, JSON.parse(body));
     result = unit;
+  } else if (path === "/inventory" && req.method === "POST") {
+    const dto = JSON.parse(body);
+    if (dto.sku === "DUPLICATE") {
+      res.statusCode = 409;
+      result = { message: "SKU already in use by another item" };
+    } else {
+      result = {
+        ...inventory[0],
+        id: "new-product",
+        itemId: "new-item",
+        quantity: String(dto.quantity),
+        item: {
+          ...inventory[0].item,
+          id: "new-item",
+          description: dto.description,
+          sku: dto.sku,
+          unitId: dto.unitId,
+        },
+      };
+    }
   } else if (path === "/inventory")
     result = {
       data: inventory,
@@ -281,15 +337,19 @@ const server = createServer(async (req, res) => {
   res.end(JSON.stringify(result));
 });
 server.listen(4321, "127.0.0.1");
+const production = process.env.INVENTORY_E2E_MODE === "production";
 const child = spawn(
   process.execPath,
-  ["node_modules/next/dist/bin/next", "dev", "--webpack", "-p", "3123"],
+  production
+    ? ["node_modules/next/dist/bin/next", "start", "-p", "3123"]
+    : ["node_modules/next/dist/bin/next", "dev", "--webpack", "-p", "3123"],
   {
     stdio: "inherit",
     env: {
       ...process.env,
-      NODE_ENV: "development",
-      INVENTORY_E2E: "true",
+      NODE_ENV: production ? "production" : "development",
+      INVENTORY_E2E: production ? "false" : "true",
+      INVENTORY_BUILD_CHECK: production ? "true" : "false",
       API_URL: "http://127.0.0.1:4321/api/v1",
       NEXT_PUBLIC_API_URL: "http://127.0.0.1:4321/api/v1",
     },

@@ -8,7 +8,7 @@ export default function NewInquiryPage() {
   return (
     <AppShell
       title="New inquiry"
-      subtitle="Not Saved"
+      subtitle="Capture contact details and requirements for your team to follow up."
       variant="form"
       breadcrumbs={[
         { label: "CRM", href: "/dashboard" },

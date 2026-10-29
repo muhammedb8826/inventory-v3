@@ -8,6 +8,8 @@ import { PermissionGate } from "@/components/permission-gate";
 import {
   FormField,
   FormGrid,
+  PageForm,
+  PageFormActions,
   PageFormCard,
   PageFormSection,
 } from "@/components/shared/page-form";
@@ -179,7 +181,7 @@ export default function BrandingSettingsPage() {
         {loading ? (
           <PageLoading />
         ) : (
-          <form onSubmit={handleSave} className="mx-auto max-w-5xl space-y-4">
+          <PageForm onSubmit={handleSave}>
             <PageFormCard>
               <PageFormSection
                 title="App name"
@@ -273,7 +275,7 @@ export default function BrandingSettingsPage() {
               </PageFormSection>
             </PageFormCard>
 
-            <div className="flex justify-end gap-2">
+            <PageFormActions>
               <Button type="button" variant="outline" asChild>
                 <Link href="/" target="_blank" rel="noreferrer">
                   Preview site
@@ -284,8 +286,8 @@ export default function BrandingSettingsPage() {
                   {saving ? "Saving…" : "Save branding"}
                 </Button>
               ) : null}
-            </div>
-          </form>
+            </PageFormActions>
+          </PageForm>
         )}
       </PermissionGate>
     </AppShell>

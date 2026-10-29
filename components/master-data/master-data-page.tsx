@@ -349,12 +349,12 @@ function CreateDialog({
           New
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
           <DialogTitle>New {title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="app-canvas px-6 py-5">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
             <div className="app-surface overflow-hidden">
               <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
                 <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
@@ -453,12 +453,12 @@ function EditDialog<
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
           <DialogTitle>Edit {row.name}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="app-canvas px-6 py-5">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
             <div className="app-surface overflow-hidden">
               <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
                 <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">

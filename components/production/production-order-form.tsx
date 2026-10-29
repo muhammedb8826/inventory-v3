@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -93,7 +94,31 @@ export function ProductionOrderForm() {
   }
 
   return (
-    <PageForm onSubmit={handleSubmit}>
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <FormSummary
+          rows={[
+            {
+              label: "Bill of materials",
+              value: boms?.find((b) => b.id === bomId)?.name,
+            },
+            {
+              label: "Materials location",
+              value: locations?.find((l) => l.id === locationId)?.name,
+            },
+            {
+              label: "Receipt location",
+              value: locations?.find(
+                (l) => l.id === (finishedLocationId || locationId),
+              )?.name,
+            },
+            { label: "Planned quantity", value: quantityPlanned },
+          ]}
+          note="The selected bill of materials determines the material requirements for this order."
+        />
+      }
+    >
       <PageFormCard>
         <PageFormSection
           title="Production order"
@@ -190,9 +215,9 @@ export function ProductionOrderForm() {
                 </Label>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Off (industry default): issue stocked SEMIs; only{" "}
-                  <span className="font-medium">phantom</span> components
-                  pass through to their BOM. On: flatten every SEMI/FINISHED
-                  to leaf RAW (ignore phantom flags).
+                  <span className="font-medium">phantom</span> components pass
+                  through to their BOM. On: flatten every SEMI/FINISHED to leaf
+                  RAW (ignore phantom flags).
                 </p>
               </div>
               <Switch

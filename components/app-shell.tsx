@@ -33,6 +33,7 @@ export function AppShell({
       >
         {variant !== "plain" && (
           <PageHeader
+            maxWidth={variant === "form" ? "max-w-6xl" : "max-w-[1600px]"}
             title={title}
             subtitle={subtitle}
             breadcrumbs={breadcrumbs}

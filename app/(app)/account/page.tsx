@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Label } from "@/components/ui/label";
+import {
+  PageForm,
+  PageFormCard,
+  PageFormSection,
+  PageFormActions,
+  FormGrid,
+  FormField,
+} from "@/components/shared/page-form";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth";
 import { errorMessage } from "@/lib/format";
@@ -76,107 +76,110 @@ export default function AccountPage() {
         { label: "Stock", href: "/dashboard" },
         { label: "Account" },
       ]}
-      layout="frappe"
+      variant="form"
     >
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>
-              Your name and email. Role changes are managed by an administrator.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleProfileSubmit} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input
-                  id="fullName"
-                  placeholder="Your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <PageForm onSubmit={handleProfileSubmit}>
+          <PageFormCard>
+            <PageFormSection
+              title="Profile"
+              description="Your contact details. Role changes are managed by an administrator."
+            >
+              <FormGrid>
+                <FormField label="Full name" htmlFor="fullName" required>
+                  <Input
+                    id="fullName"
+                    placeholder="Your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </FormField>
+                <FormField label="Email" htmlFor="email" required>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </FormField>
+                {user?.role?.name ? (
+                  <p className="text-sm text-muted-foreground">
+                    Role: {user.role.name}
+                  </p>
+                ) : null}
+              </FormGrid>
+            </PageFormSection>
+          </PageFormCard>
+          <PageFormActions>
+            <Button type="submit" disabled={savingProfile}>
+              {savingProfile ? <Spinner className="size-4" /> : "Save profile"}
+            </Button>
+          </PageFormActions>
+        </PageForm>
+        <PageForm onSubmit={handlePasswordSubmit}>
+          <PageFormCard>
+            <PageFormSection
+              title="Password"
+              description="Changing your password signs you out everywhere, including this device."
+            >
+              <FormGrid>
+                <FormField
+                  label="Current password"
+                  htmlFor="currentPassword"
                   required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                >
+                  <PasswordInput
+                    id="currentPassword"
+                    autoComplete="current-password"
+                    placeholder="Enter current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
+                </FormField>
+                <FormField label="New password" htmlFor="newPassword" required>
+                  <PasswordInput
+                    id="newPassword"
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={8}
+                    required
+                  />
+                </FormField>
+                <FormField
+                  label="Confirm new password"
+                  htmlFor="confirmPassword"
                   required
-                />
-              </div>
-              {user?.role?.name ? (
-                <p className="text-sm text-muted-foreground">
-                  Role: {user.role.name}
-                </p>
-              ) : null}
-              <Button type="submit" disabled={savingProfile}>
-                {savingProfile ? <Spinner className="size-4" /> : "Save profile"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Password</CardTitle>
-            <CardDescription>
-              Changing your password signs you out everywhere. You will need to
-              sign in again on this device.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordSubmit} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="currentPassword">Current password</Label>
-                <PasswordInput
-                  id="currentPassword"
-                  autoComplete="current-password"
-                  placeholder="Enter current password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="newPassword">New password</Label>
-                <PasswordInput
-                  id="newPassword"
-                  autoComplete="new-password"
-                  placeholder="At least 8 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="confirmPassword">Confirm new password</Label>
-                <PasswordInput
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  placeholder="Re-enter new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </div>
-              <Button type="submit" variant="outline" disabled={savingPassword}>
-                {savingPassword ? (
-                  <Spinner className="size-4" />
-                ) : (
-                  "Change password"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                >
+                  <PasswordInput
+                    id="confirmPassword"
+                    autoComplete="new-password"
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={8}
+                    required
+                  />
+                </FormField>
+              </FormGrid>
+            </PageFormSection>
+          </PageFormCard>
+          <PageFormActions>
+            <Button type="submit" variant="outline" disabled={savingPassword}>
+              {savingPassword ? (
+                <Spinner className="size-4" />
+              ) : (
+                "Change password"
+              )}
+            </Button>
+          </PageFormActions>
+        </PageForm>
       </div>
     </AppShell>
   );

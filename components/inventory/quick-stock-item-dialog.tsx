@@ -1,10 +1,15 @@
 "use client";
 
+import { UnitSelect } from "@/components/inventory/unit-select";
+import { FormField } from "@/components/shared/page-form";
+import { useFetch } from "@/hooks/use-fetch";
+import type { UnitOfMeasure } from "@/lib/types";
 import { useState } from "react";
-import { FrappeButtonPrimary, FrappeButtonSecondary } from "@/components/frappe";
 import {
-  QuickCreateTrigger,
-} from "@/components/shared/quick-create-trigger";
+  FrappeButtonPrimary,
+  FrappeButtonSecondary,
+} from "@/components/frappe";
+import { QuickCreateTrigger } from "@/components/shared/quick-create-trigger";
 import {
   QuickCreateDialogShell,
   useQuickCreateDialog,
@@ -41,7 +46,16 @@ export function QuickStockItemDialog({
   const { open, setOpen, onOpenChange } = useQuickCreateDialog();
   const [description, setDescription] = useState("");
   const [sku, setSku] = useState("");
-  const [unit, setUnit] = useState("pcs");
+  const [unitId, setUnitId] = useState("");
+  const {
+    data: units,
+    loading: unitsLoading,
+    error: unitsError,
+    reload: reloadUnits,
+  } = useFetch<UnitOfMeasure[]>(() => api("/units"), [open], { enabled: open });
+  const effectiveUnitId =
+    unitId || units?.find((u) => u.code === "PCS")?.id || "";
+  const selectedUnit = units?.find((u) => u.id === effectiveUnitId);
   const [itemType, setItemType] = useState<ItemType | "">("");
   const [quantity, setQuantity] = useState("0");
   const [purchasePrice, setPurchasePrice] = useState("");
@@ -63,6 +77,14 @@ export function QuickStockItemDialog({
       toast.error("Item description is required");
       return;
     }
+    if (
+      !selectedUnit ||
+      !selectedUnit.isActive ||
+      selectedUnit.requiresReview
+    ) {
+      toast.error("Select an active stock unit");
+      return;
+    }
     setSaving(true);
     setSkuError(null);
     try {
@@ -78,7 +100,7 @@ export function QuickStockItemDialog({
         quantity: parseFloat(quantity) || 0,
         purchasePrice: parseFloat(purchasePrice) || 0,
         sku: sku || undefined,
-        unit,
+        unitId: effectiveUnitId,
       };
       if (itemType) body.itemType = itemType;
       if (reorderValue !== null) {
@@ -93,7 +115,7 @@ export function QuickStockItemDialog({
       setDescription("");
       setSku("");
       setSkuError(null);
-      setUnit("pcs");
+      setUnitId("");
       setItemType("");
       setQuantity("0");
       setPurchasePrice("");
@@ -127,13 +149,17 @@ export function QuickStockItemDialog({
       <QuickCreateDialogShell
         open={open}
         onOpenChange={onOpenChange}
-        title="New stock item"
+        title="Add product"
         footer={
           <>
             <FrappeButtonSecondary type="button" onClick={() => setOpen(false)}>
               Cancel
             </FrappeButtonSecondary>
-            <FrappeButtonPrimary type="button" disabled={saving} onClick={handleSubmit}>
+            <FrappeButtonPrimary
+              type="button"
+              disabled={saving}
+              onClick={handleSubmit}
+            >
               Create
             </FrappeButtonPrimary>
           </>
@@ -142,7 +168,7 @@ export function QuickStockItemDialog({
         <div className="grid gap-4 p-4">
           <div className="grid gap-2">
             <Label htmlFor="item-desc">
-              Description <span className="text-[var(--frappe-red)]">*</span>
+              Product name <span className="text-[var(--frappe-red)]">*</span>
             </Label>
             <Input
               id="item-desc"
@@ -168,14 +194,26 @@ export function QuickStockItemDialog({
                 <p className="text-destructive text-xs">{skuError}</p>
               ) : null}
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="item-unit">Unit</Label>
-              <Input
-                id="item-unit"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
+            <FormField label="Stock unit" required>
+              <UnitSelect
+                units={units ?? []}
+                value={effectiveUnitId}
+                onChange={setUnitId}
+                disabled={unitsLoading}
               />
-            </div>
+              {unitsError && (
+                <p role="alert" className="text-xs text-destructive">
+                  Unable to load units.{" "}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => void reloadUnits()}
+                  >
+                    Retry
+                  </button>
+                </p>
+              )}
+            </FormField>
           </div>
           <div className="grid gap-2">
             <Label>Item type</Label>
@@ -205,7 +243,7 @@ export function QuickStockItemDialog({
                 id="item-qty"
                 type="number"
                 min="0"
-                step="any"
+                step={selectedUnit?.decimalPlaces === 0 ? "1" : "0.001"}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
               />

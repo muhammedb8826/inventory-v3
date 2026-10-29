@@ -13,6 +13,7 @@ import { SearchSelect } from "@/components/shared/search-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -40,8 +41,15 @@ import {
   onPaymentMethodChange,
   useAutoPaymentAccount,
 } from "@/hooks/use-payment-bank-account";
-import { buildItemOptionMap, itemOptionsFromMap, parseDocumentLines, productItemId, resolveItem, type DocumentLineBody } from "@/lib/inventory-items";
-import { errorMessage } from "@/lib/format";
+import {
+  buildItemOptionMap,
+  itemOptionsFromMap,
+  parseDocumentLines,
+  productItemId,
+  resolveItem,
+  type DocumentLineBody,
+} from "@/lib/inventory-items";
+import { errorMessage, formatMoney } from "@/lib/format";
 import { PAYMENT_METHOD_OPTIONS } from "@/lib/form-select-options";
 import { fetchSuppliers, partySelectOptions } from "@/lib/party-fetch";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
@@ -84,7 +92,15 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
   });
   return rows.length > 0
     ? rows
-    : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }];
+    : [
+        {
+          itemId: "",
+          quantity: "1",
+          unitPrice: "",
+          lotNumber: "",
+          expiryDate: "",
+        },
+      ];
 }
 
 export function PurchaseForm({
@@ -102,19 +118,27 @@ export function PurchaseForm({
   const [supplierId, setSupplierId] = useState(purchase?.supplierId ?? "");
   const [locationId, setLocationId] = useState(purchase?.locationId ?? "");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    purchase?.paymentMethod ?? "CASH"
+    purchase?.paymentMethod ?? "CASH",
   );
   const [bankAccountId, setBankAccountId] = useState(
-    purchase?.bankAccountId ?? ""
+    purchase?.bankAccountId ?? "",
   );
   const [creditDueDate, setCreditDueDate] = useState(
-    purchase?.creditDueDate?.slice(0, 10) ?? ""
+    purchase?.creditDueDate?.slice(0, 10) ?? "",
   );
   const [notes, setNotes] = useState(purchase?.notes ?? "");
   const [lines, setLines] = useState<LineRow[]>(() =>
     purchase
       ? linesFromPurchase(purchase)
-      : [{ itemId: "", quantity: "1", unitPrice: "", lotNumber: "", expiryDate: "" }]
+      : [
+          {
+            itemId: "",
+            quantity: "1",
+            unitPrice: "",
+            lotNumber: "",
+            expiryDate: "",
+          },
+        ],
   );
   const [saving, setSaving] = useState(false);
   const [mtoPrefillDone, setMtoPrefillDone] = useState(false);
@@ -170,13 +194,7 @@ export function PurchaseForm({
       );
     }
     setMtoPrefillDone(true);
-  }, [
-    isEdit,
-    productionOrderId,
-    mtoOrder,
-    mtoRequirements,
-    mtoPrefillDone,
-  ]);
+  }, [isEdit, productionOrderId, mtoOrder, mtoRequirements, mtoPrefillDone]);
 
   const {
     data: suppliers,
@@ -200,15 +218,10 @@ export function PurchaseForm({
   const paymentAccounts = accountsForPaymentMethod(
     paymentMethod,
     banks,
-    bankAccountId
+    bankAccountId,
   );
 
-  useAutoPaymentAccount(
-    paymentMethod,
-    banks,
-    bankAccountId,
-    setBankAccountId
-  );
+  useAutoPaymentAccount(paymentMethod, banks, bankAccountId, setBankAccountId);
 
   const {
     data: stock,
@@ -217,23 +230,21 @@ export function PurchaseForm({
     setData: setStock,
   } = useFetch(
     () =>
-      locationId
-        ? fetchInventoryForLocation(locationId)
-        : Promise.resolve([]),
-    [locationId]
+      locationId ? fetchInventoryForLocation(locationId) : Promise.resolve([]),
+    [locationId],
   );
 
   const stockItems = stock ?? [];
-  const itemMap = buildItemOptionMap(
-    stockItems,
-    [...lines, ...(purchase?.lines ?? [])]
-  );
+  const itemMap = buildItemOptionMap(stockItems, [
+    ...lines,
+    ...(purchase?.lines ?? []),
+  ]);
   const itemOptions = itemOptionsFromMap(itemMap);
 
   const supplierOptions = partySelectOptions(
     suppliers ?? [],
     supplierId,
-    purchase?.supplier
+    purchase?.supplier,
   );
 
   const dataLoading =
@@ -299,11 +310,13 @@ export function PurchaseForm({
 
   function updateLine(i: number, patch: Partial<LineRow>) {
     setLines((prev) =>
-      prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row))
+      prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)),
     );
   }
 
-  function buildBody(documentLines: DocumentLineBody[]): Record<string, unknown> {
+  function buildBody(
+    documentLines: DocumentLineBody[],
+  ): Record<string, unknown> {
     const body: Record<string, unknown> = {
       supplierId,
       locationId,
@@ -336,12 +349,12 @@ export function PurchaseForm({
     const resolvedBankId = resolveBankAccountId(
       paymentMethod,
       banks,
-      bankAccountId
+      bankAccountId,
     );
     const bankError = bankAccountValidationError(
       paymentMethod,
       banks,
-      resolvedBankId
+      resolvedBankId,
     );
     if (bankError) {
       toast.error(bankError);
@@ -400,7 +413,40 @@ export function PurchaseForm({
     isEdit && purchase ? `/purchases/${purchase.id}` : "/purchases";
 
   return (
-    <PageForm onSubmit={handleSubmit}>
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <FormSummary
+          rows={[
+            {
+              label: "Supplier",
+              value: suppliers?.find((s) => s.id === supplierId)?.name,
+            },
+            {
+              label: "Location",
+              value: locations?.find((l) => l.id === locationId)?.name,
+            },
+            { label: "Payment", value: paymentMethod.replaceAll("_", " ") },
+            {
+              label: "Line items",
+              value: lines.filter((l) => l.itemId).length,
+            },
+            {
+              label: "Document total",
+              value: formatMoney(
+                lines.reduce(
+                  (sum, l) =>
+                    sum +
+                    (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0),
+                  0,
+                ),
+              ),
+            },
+          ]}
+          note="Confirm received quantities and unit costs before recording the purchase."
+        />
+      }
+    >
       {productionOrderId && !isEdit ? (
         <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
           Prefilling short materials from{" "}
@@ -495,7 +541,7 @@ export function PurchaseForm({
                   onValueChange={setBankAccountId}
                   options={bankAccountSelectOptions(
                     paymentAccounts,
-                    bankAccountId
+                    bankAccountId,
                   )}
                   listHref="/banks"
                   listLabel="All accounts"
@@ -576,8 +622,16 @@ export function PurchaseForm({
                 Stock ledger
               </Link>
             </div>
-            <div className="overflow-hidden rounded-xl border">
-              <div className="hidden grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] gap-2 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground sm:grid">
+            <div
+              className="form-line-editor overflow-hidden rounded-xl border"
+              style={
+                {
+                  "--line-columns":
+                    "minmax(12rem,1fr) 6rem 7rem 7rem 8rem 2.5rem",
+                } as React.CSSProperties
+              }
+            >
+              <div className="form-line-head grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] gap-2 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground ">
                 <span>Item</span>
                 <span>Qty</span>
                 <span>Rate</span>
@@ -589,56 +643,66 @@ export function PurchaseForm({
                 {lines.map((line, i) => (
                   <div
                     key={i}
-                    className="grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] sm:items-center"
+                    className="form-line-row grid gap-2 px-4 py-3 sm:items-center"
                   >
-                    <ItemSearchSelect
-                      value={line.itemId}
-                      onValueChange={(v) => {
-                        const item = itemMap.get(v);
-                        updateLine(i, { itemId: v, item });
-                      }}
-                      options={itemOptions}
-                      disabled={!locationId || stockLoading}
-                      placeholder="Item"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="any"
-                      className="h-10"
-                      value={line.quantity}
-                      onChange={(e) =>
-                        updateLine(i, { quantity: e.target.value })
-                      }
-                      required
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="any"
-                      className="h-10"
-                      value={line.unitPrice}
-                      onChange={(e) =>
-                        updateLine(i, { unitPrice: e.target.value })
-                      }
-                      required
-                    />
-                    <Input
-                      className="h-10"
-                      placeholder="Lot #"
-                      value={line.lotNumber ?? ""}
-                      onChange={(e) =>
-                        updateLine(i, { lotNumber: e.target.value })
-                      }
-                    />
-                    <Input
-                      type="date"
-                      className="h-10"
-                      value={line.expiryDate ?? ""}
-                      onChange={(e) =>
-                        updateLine(i, { expiryDate: e.target.value })
-                      }
-                    />
+                    <FormField label="Item" className="form-line-field">
+                      <ItemSearchSelect
+                        value={line.itemId}
+                        onValueChange={(v) => {
+                          const item = itemMap.get(v);
+                          updateLine(i, { itemId: v, item });
+                        }}
+                        options={itemOptions}
+                        disabled={!locationId || stockLoading}
+                        placeholder="Item"
+                      />
+                    </FormField>
+                    <FormField label="Quantity" className="form-line-field">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="h-10"
+                        value={line.quantity}
+                        onChange={(e) =>
+                          updateLine(i, { quantity: e.target.value })
+                        }
+                        required
+                      />
+                    </FormField>
+                    <FormField label="Unit price" className="form-line-field">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="h-10"
+                        value={line.unitPrice}
+                        onChange={(e) =>
+                          updateLine(i, { unitPrice: e.target.value })
+                        }
+                        required
+                      />
+                    </FormField>
+                    <FormField label="Lot / batch" className="form-line-field">
+                      <Input
+                        className="h-10"
+                        placeholder="Lot #"
+                        value={line.lotNumber ?? ""}
+                        onChange={(e) =>
+                          updateLine(i, { lotNumber: e.target.value })
+                        }
+                      />
+                    </FormField>
+                    <FormField label="Expiry date" className="form-line-field">
+                      <Input
+                        type="date"
+                        className="h-10"
+                        value={line.expiryDate ?? ""}
+                        onChange={(e) =>
+                          updateLine(i, { expiryDate: e.target.value })
+                        }
+                      />
+                    </FormField>
                     <Button
                       type="button"
                       size="icon"

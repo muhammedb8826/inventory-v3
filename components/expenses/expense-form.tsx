@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -20,7 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@/lib/api";
 import { apiList } from "@/lib/list-response";
 import { bankAccountSelectOptions } from "@/lib/bank-accounts";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, formatMoney } from "@/lib/format";
 import type { BankAccount, ExpenseCategory } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import { toast } from "sonner";
@@ -71,7 +72,26 @@ export function ExpenseForm() {
   }
 
   return (
-    <PageForm onSubmit={handleSubmit}>
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <FormSummary
+          rows={[
+            {
+              label: "Category",
+              value: categories?.find((c) => c.id === categoryId)?.name,
+            },
+            {
+              label: "Payment account",
+              value: banks?.find((b) => b.id === bankAccountId)?.name,
+            },
+            { label: "Expense date", value: expenseDate },
+            { label: "Amount", value: amount ? formatMoney(amount) : null },
+          ]}
+          note="This expense will be recorded against the selected payment account."
+        />
+      }
+    >
       <PageFormCard>
         <PageFormSection
           title="Expense"

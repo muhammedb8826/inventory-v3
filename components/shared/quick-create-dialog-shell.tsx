@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 /**
@@ -28,11 +29,16 @@ export function QuickCreateDialogShell({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
         <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Enter the details below. Fields marked with * are required.
+          </DialogDescription>
         </DialogHeader>
-        <div className="app-canvas px-6 py-5">{children}</div>
+        <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+          {children}
+        </div>
         <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
           {footer}
         </DialogFooter>
@@ -49,7 +55,7 @@ export function useQuickCreateDialog() {
 export function bindQuickCreateTrigger(
   trigger: React.ReactNode | undefined,
   openDialog: () => void,
-  fallback: React.ReactNode
+  fallback: React.ReactNode,
 ) {
   if (trigger) {
     if (React.isValidElement<{ onClick?: React.MouseEventHandler }>(trigger)) {

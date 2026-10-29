@@ -30,7 +30,7 @@ export default function NewPurchasePage() {
   return (
     <AppShell
       title="New Purchase"
-      subtitle="Not Saved"
+      subtitle="Choose a supplier, record received items, and confirm unit costs."
       variant="form"
       breadcrumbs={[
         { label: "Stock", href: "/dashboard" },

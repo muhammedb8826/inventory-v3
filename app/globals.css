@@ -574,3 +574,451 @@
     display: none;
   }
 }
+
+/* Form system: one language for full pages, quick-create and administration. */
+.form-page {
+  padding-bottom: 1.5rem;
+}
+.form-required-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.form-required-note > span {
+  color: var(--destructive);
+  font-weight: 600;
+}
+.form-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.form-aside {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.form-card,
+.form-summary {
+  min-width: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 2px 5px oklch(0.2 0.02 260 / 0.025);
+}
+.form-card {
+  counter-reset: form-section;
+  overflow: hidden;
+}
+.form-section {
+  counter-increment: form-section;
+  border-bottom: 1px solid var(--border);
+}
+.form-section:last-child {
+  border-bottom: 0;
+}
+.form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 0;
+}
+.form-section-heading h2 {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-weight: 650;
+  color: var(--foreground);
+  letter-spacing: -0.015em;
+}
+.form-section-heading p {
+  margin-top: 0.25rem;
+  max-width: 65ch;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.form-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+  background: color-mix(in oklab, var(--primary) 8%, transparent);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+.form-step::before {
+  content: counter(form-section, decimal-leading-zero);
+}
+.form-section-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.form-label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--foreground);
+  font-weight: 550;
+  gap: 0.25rem;
+}
+.form-help {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.form-help.text-destructive {
+  color: var(--destructive);
+}
+.form-summary {
+  padding: 1.25rem;
+}
+.form-summary > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  margin-bottom: 0.75rem;
+}
+.form-summary dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.form-summary dt {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  max-width: 50%;
+}
+.form-summary dd {
+  text-align: right;
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.form-summary-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  margin-top: 1rem;
+  border-radius: 0.65rem;
+  background: color-mix(in oklab, var(--primary) 6%, transparent);
+  color: var(--primary);
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+.form-actions {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-top: 1.25rem;
+  background: color-mix(in oklab, var(--card) 96%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  box-shadow: 0 1px 3px oklch(0.2 0.02 260 / 0.025);
+}
+.form-actions-note {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.form-action-buttons {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.form-action-buttons > * {
+  min-height: 2.75rem;
+  flex: 1;
+}
+.form-page
+  :is(
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    button[role="combobox"],
+    select
+  ),
+.app-modal
+  :is(
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    button[role="combobox"],
+    select
+  ),
+.workspace-frame
+  form
+  :is([data-slot="input"], [data-slot="select-trigger"], select) {
+  min-height: 2.75rem;
+  border-radius: 0.6rem;
+  background: var(--card);
+  border-color: color-mix(in oklab, var(--border) 82%, var(--muted-foreground));
+  box-shadow: 0 1px 2px oklch(0.2 0.02 260 / 0.015);
+}
+.form-page :is([data-slot="textarea"]),
+.app-modal [data-slot="textarea"] {
+  min-height: 6rem;
+  border-radius: 0.6rem;
+  line-height: 1.6;
+}
+:is(.form-page, .app-modal, .workspace-frame form)
+  :is(
+    input,
+    textarea,
+    select,
+    button[role="combobox"],
+    [data-slot="select-trigger"]
+  ):focus-visible {
+  border-color: var(--primary);
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 14%, transparent);
+}
+:is(.form-page, .app-modal) :is(input, textarea, select, button):disabled {
+  cursor: not-allowed;
+}
+:is(.form-page, .app-modal)
+  :is(input, textarea, select, button)[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+.app-modal [data-slot="dialog-header"] {
+  text-align: left;
+}
+.app-modal [data-slot="dialog-title"] {
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  font-weight: 650;
+}
+.app-modal [data-slot="dialog-description"] {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.app-modal [data-slot="dialog-footer"] {
+  gap: 0.65rem;
+}
+.app-modal [data-slot="dialog-footer"] > [data-slot="button"] {
+  min-height: 2.75rem;
+}
+.app-modal [data-slot="label"] {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.form-product-photo {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+.form-product-photo > h2 {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.form-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  min-height: 12rem;
+  padding: 1.25rem;
+  border: 1.5px dashed var(--border);
+  border-radius: 0.8rem;
+  background: color-mix(in oklab, var(--muted) 45%, var(--card));
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.form-upload-zone[data-dragging="true"] {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 7%, var(--card));
+}
+.form-upload-preview {
+  width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  border-radius: 0.6rem;
+}
+.form-upload-zone p {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+.form-line-label {
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+@media (min-width: 640px) {
+  .form-section-heading {
+    padding: 1.5rem 1.5rem 0;
+  }
+  .form-section-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+  .form-actions-note {
+    display: flex;
+  }
+  .form-action-buttons {
+    flex: initial;
+  }
+  .form-action-buttons > * {
+    flex: initial;
+    min-width: 6.25rem;
+  }
+}
+@media (min-width: 1280px) {
+  .form-layout {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    gap: 1.5rem;
+  }
+  .form-aside {
+    position: sticky;
+    top: 1rem;
+  }
+}
+@media (max-width: 639px) {
+  .form-actions {
+    padding: 0.8rem;
+    gap: 0.5rem;
+  }
+  .form-section-heading {
+    gap: 0.6rem;
+  }
+  .form-grid > [class*="col-span"] {
+    grid-column: 1 / -1;
+  }
+  .form-page :is(input, textarea, select) {
+    font-size: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form-upload-zone {
+    transition: none;
+  }
+}
+
+/* Line editors stay readable when a summary or a drawer narrows the form. */
+.form-line-editor {
+  container-type: inline-size;
+}
+.form-line-editor .form-line-head {
+  display: none;
+}
+.form-line-editor .form-line-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem;
+}
+.form-line-editor .form-line-row > :first-child {
+  grid-column: 1 / -1;
+}
+.form-line-editor .form-line-row > [data-slot="button"]:last-child {
+  justify-self: end;
+}
+.form-line-editor .form-line-row .form-field {
+  gap: 0.4rem;
+}
+.form-line-editor .form-line-row .form-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+@container (min-width:48rem) {
+  .form-line-editor .form-line-head {
+    display: grid;
+    grid-template-columns: var(--line-columns);
+    gap: 0.75rem;
+  }
+  .form-line-editor .form-line-row {
+    grid-template-columns: var(--line-columns);
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .form-line-editor .form-line-row > :first-child {
+    grid-column: auto;
+  }
+  .form-line-editor .form-line-row .form-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+.app-modal {
+  border-radius: 1rem;
+}
+.app-modal .app-canvas > .grid.p-4 {
+  padding: 0;
+}
+.form-line-editor .form-line-row .sm\:hidden {
+  display: inline;
+}
+@container (min-width:48rem) {
+  .form-line-editor .form-line-row .sm\:hidden {
+    display: none;
+  }
+}
+
+:is(.form-page, .app-modal) input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+.form-advanced {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.form-advanced > summary {
+  cursor: pointer;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.form-advanced > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 0.25rem;
+}
+
+:is(.form-page, .app-modal)
+  :is(input, textarea, select, button[role="combobox"]) {
+  scroll-margin-block: 6rem;
+}

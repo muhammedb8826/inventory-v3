@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -36,7 +37,7 @@ import {
   reorderPointBodyValue,
 } from "@/lib/inventory-stock";
 import { ITEM_TYPE_OPTIONS } from "@/lib/item-types";
-import { formatQty, errorMessage } from "@/lib/format";
+import { formatQty, formatMoney, errorMessage } from "@/lib/format";
 import { skuConflictMessage } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import type { ItemType, StockRecord } from "@/lib/types";
@@ -221,118 +222,138 @@ export function StockItemForm({
   }
 
   return (
-    <PageForm onSubmit={handleSubmit}>
-      <PageFormCard>
-        <PageFormSection
-          title="Photo"
-          description="Optional — helps staff recognize the item quickly."
-        >
-          <div
-            className={`flex flex-col gap-4 rounded-xl border border-dashed p-4 transition-colors sm:flex-row sm:items-center ${
-              dragOver
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 bg-muted/30"
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              onPickImage(e.dataTransfer.files?.[0]);
-            }}
-          >
-            <div className="bg-background flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm">
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <>
+          <section className="form-product-photo" aria-label="Product image">
+            <h2>
+              Product image{" "}
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                Optional
+              </span>
+            </h2>
+            <div
+              className="form-upload-zone"
+              data-dragging={dragOver}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                onPickImage(e.dataTransfer.files?.[0]);
+              }}
+            >
               {displayImageSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={displayImageSrc}
-                  alt=""
-                  className="size-full object-cover"
+                  alt={description.trim() || "Product preview"}
+                  className="form-upload-preview"
                 />
               ) : (
-                <ImageIcon className="text-muted-foreground size-7" />
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+                  <ImageIcon className="size-7" />
+                </div>
               )}
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
               <input
                 ref={fileRef}
                 type="file"
                 accept={ITEM_IMAGE_ACCEPT}
                 className="hidden"
+                aria-label="Upload product image"
                 onChange={(e) => onPickImage(e.target.files?.[0])}
               />
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
                   onClick={() => fileRef.current?.click()}
                 >
                   <UploadIcon className="size-4" />
-                  {displayImageSrc ? "Change" : "Upload"}
+                  {displayImageSrc ? "Change image" : "Choose image"}
                 </Button>
-                {displayImageSrc ? (
+                {displayImageSrc && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="text-destructive"
+                    aria-label="Remove product image"
                     onClick={() => {
                       if (previewObjectUrl) {
                         URL.revokeObjectURL(previewObjectUrl);
                         setPreviewObjectUrl(null);
                         setImageFile(null);
                         if (fileRef.current) fileRef.current.value = "";
-                      } else {
-                        setRemoveExistingImage(true);
-                      }
+                      } else setRemoveExistingImage(true);
                     }}
                   >
                     <Trash2Icon className="size-4" />
                     Remove
                   </Button>
-                ) : null}
+                )}
               </div>
-              <p className="text-muted-foreground text-xs">
-                Drop an image here, or browse · JPEG, PNG, WebP, GIF · max 5 MB
+              <p>
+                Drop an image here or choose a file.
+                <br />
+                JPEG, PNG, WebP or GIF. Maximum 5 MB.
               </p>
             </div>
-          </div>
-        </PageFormSection>
-
-        <PageFormSection title="Details">
+          </section>
+          <FormSummary
+            rows={[
+              { label: "Product", value: description.trim() },
+              { label: "SKU", value: sku.trim() },
+              {
+                label: "Stock unit",
+                value: selectedUnit
+                  ? `${selectedUnit.name} (${selectedUnit.symbol})`
+                  : null,
+              },
+              {
+                label: "Location",
+                value:
+                  record?.location?.name ??
+                  locations?.find((l) => l.id === locationId)?.name,
+              },
+              {
+                label: isEdit ? "On hand" : "Opening quantity",
+                value: `${formatQty(quantity)} ${selectedUnit?.symbol ?? ""}`,
+              },
+              {
+                label: "Unit cost",
+                value: purchasePrice ? formatMoney(purchasePrice) : null,
+              },
+              {
+                label: "Stock value",
+                value:
+                  purchasePrice &&
+                  Number.isFinite(Number(quantity) * Number(purchasePrice))
+                    ? formatMoney(Number(quantity) * Number(purchasePrice))
+                    : null,
+              },
+            ]}
+            note={
+              isEdit
+                ? "Use a stock adjustment to change quantities on an existing item."
+                : "Opening stock is posted to the selected location when you save."
+            }
+          />
+        </>
+      }
+    >
+      <PageFormCard>
+        <PageFormSection
+          title="Basic information"
+          description="Give the product a clear name and identifiers your team can recognize."
+        >
           <FormGrid>
-            {!isEdit ? (
-              <FormField label="Location" required className="sm:col-span-2">
-                <Select
-                  value={locationId || ""}
-                  onValueChange={setLocationId}
-                  disabled={locationsLoading}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue
-                      placeholder={
-                        locationsLoading
-                          ? "Loading locations…"
-                          : "Select location"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(locations ?? []).map((loc) => (
-                      <SelectItem key={loc.id} value={loc.id}>
-                        {loc.name}
-                        {loc.type ? ` · ${loc.type}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
-            ) : null}
-            <FormField label="Description" required className="sm:col-span-2">
+            <FormField label="Product name" required className="sm:col-span-2">
               <Input
                 className="h-10"
                 value={description}
@@ -364,6 +385,91 @@ export function StockItemForm({
                 placeholder="Optional"
               />
             </FormField>
+            <FormField label="Item type">
+              <Select
+                value={itemType || "__none__"}
+                onValueChange={(v) =>
+                  setItemType(v === "__none__" ? "" : (v as ItemType))
+                }
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Not set" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Not set</SelectItem>
+                  {ITEM_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          </FormGrid>
+          <details
+            className="form-advanced"
+            open={record?.item.isPhantom === true ? true : undefined}
+          >
+            <summary>
+              Manufacturing options{" "}
+              <span className="ml-1 text-xs text-muted-foreground">
+                Optional
+              </span>
+            </summary>
+            <div className="pt-4">
+              {" "}
+              <FormField
+                label="Phantom assembly"
+                hint="When used on a BOM, requirements pass through to this item’s default BOM instead of issuing stock."
+                className="sm:col-span-2"
+              >
+                <div className="flex h-10 items-center gap-2">
+                  <Switch checked={isPhantom} onCheckedChange={setIsPhantom} />
+                  <Label className="text-sm font-normal">
+                    {isPhantom ? "Phantom (non-stocked in BOMs)" : "Stocked"}
+                  </Label>
+                </div>
+              </FormField>
+            </div>
+          </details>
+        </PageFormSection>
+
+        <PageFormSection
+          title="Inventory and costing"
+          description={
+            isEdit
+              ? "Quantity is changed with Adjust on the inventory list."
+              : "Choose where stock is held and enter quantities in the selected stock unit."
+          }
+        >
+          <FormGrid>
+            {!isEdit ? (
+              <FormField label="Location" required>
+                <Select
+                  value={locationId || ""}
+                  onValueChange={setLocationId}
+                  disabled={locationsLoading}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue
+                      placeholder={
+                        locationsLoading
+                          ? "Loading locations…"
+                          : "Select location"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(locations ?? []).map((loc) => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name}
+                        {loc.type ? ` · ${loc.type}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            ) : null}
             <FormField label="Stock unit" required>
               <UnitSelect
                 units={units ?? []}
@@ -398,50 +504,7 @@ export function StockItemForm({
                 </div>
               )}
             </FormField>
-            <FormField label="Item type">
-              <Select
-                value={itemType || "__none__"}
-                onValueChange={(v) =>
-                  setItemType(v === "__none__" ? "" : (v as ItemType))
-                }
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Not set" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Not set</SelectItem>
-                  {ITEM_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField
-              label="Phantom assembly"
-              hint="When used on a BOM, requirements pass through to this item’s default BOM instead of issuing stock."
-              className="sm:col-span-2"
-            >
-              <div className="flex h-10 items-center gap-2">
-                <Switch checked={isPhantom} onCheckedChange={setIsPhantom} />
-                <Label className="text-sm font-normal">
-                  {isPhantom ? "Phantom (non-stocked in BOMs)" : "Stocked"}
-                </Label>
-              </div>
-            </FormField>
-          </FormGrid>
-        </PageFormSection>
 
-        <PageFormSection
-          title="Stock & price"
-          description={
-            isEdit
-              ? "Quantity is changed with Adjust on the inventory list."
-              : "Opening quantity is posted at the location above."
-          }
-        >
-          <FormGrid>
             {isEdit ? (
               <FormField label="On hand">
                 <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
@@ -506,7 +569,13 @@ export function StockItemForm({
       <PageFormActions>
         <PageFormCancel href="/inventory" />
         <Button type="submit" disabled={saving} className="min-w-28">
-          {saving ? <Spinner className="size-4" /> : isEdit ? "Save" : "Create"}
+          {saving ? (
+            <Spinner className="size-4" />
+          ) : isEdit ? (
+            "Save changes"
+          ) : (
+            "Add product"
+          )}
         </Button>
       </PageFormActions>
     </PageForm>

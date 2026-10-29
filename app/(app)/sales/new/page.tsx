@@ -141,7 +141,7 @@ export default function NewSalePage() {
   return (
     <AppShell
       title="New Sales Invoice"
-      subtitle="Not Saved"
+      subtitle="Choose a customer, add items, and confirm payment details."
       variant="form"
       breadcrumbs={[
         { label: "Stock", href: "/dashboard" },

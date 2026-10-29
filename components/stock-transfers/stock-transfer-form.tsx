@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  FormSummary,
   FormField,
   FormGrid,
   PageForm,
@@ -120,7 +121,28 @@ export function StockTransferForm() {
       : `${itemOptions.length} item(s) at source`;
 
   return (
-    <PageForm onSubmit={handleSubmit}>
+    <PageForm
+      onSubmit={handleSubmit}
+      aside={
+        <FormSummary
+          rows={[
+            {
+              label: "From",
+              value: locations?.find((l) => l.id === fromLocationId)?.name,
+            },
+            {
+              label: "To",
+              value: locations?.find((l) => l.id === toLocationId)?.name,
+            },
+            {
+              label: "Line items",
+              value: lines.filter((l) => l.itemId).length,
+            },
+          ]}
+          note="Check the source and destination before reserving stock for this transfer."
+        />
+      }
+    >
       <PageFormCard>
         <PageFormSection
           title="Route"
@@ -202,44 +224,55 @@ export function StockTransferForm() {
               Stock ledger
             </Link>
           </div>
-          <div className="overflow-hidden rounded-xl border">
+          <div
+            className="form-line-editor overflow-hidden rounded-xl border"
+            style={
+              {
+                "--line-columns": "minmax(12rem,1fr) 7rem 2.5rem",
+              } as React.CSSProperties
+            }
+          >
             <div className="divide-y">
               {lines.map((line, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_7rem_2.5rem] sm:items-center"
+                  className="form-line-row grid gap-3 px-4 py-3 sm:items-center"
                 >
-                  <ItemSearchSelect
-                    value={line.itemId}
-                    onValueChange={(v) =>
-                      setLines((prev) =>
-                        prev.map((row, idx) =>
-                          idx === i ? { ...row, itemId: v } : row,
-                        ),
-                      )
-                    }
-                    options={itemOptions}
-                    disabled={!fromLocationId || stockLoading}
-                    placeholder="Select item…"
-                    className="min-w-0"
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    className="h-10"
-                    value={line.quantity}
-                    onChange={(e) =>
-                      setLines((prev) =>
-                        prev.map((row, idx) =>
-                          idx === i
-                            ? { ...row, quantity: e.target.value }
-                            : row,
-                        ),
-                      )
-                    }
-                    required
-                  />
+                  <FormField label="Item" className="form-line-field">
+                    <ItemSearchSelect
+                      value={line.itemId}
+                      onValueChange={(v) =>
+                        setLines((prev) =>
+                          prev.map((row, idx) =>
+                            idx === i ? { ...row, itemId: v } : row,
+                          ),
+                        )
+                      }
+                      options={itemOptions}
+                      disabled={!fromLocationId || stockLoading}
+                      placeholder="Select item…"
+                      className="min-w-0"
+                    />
+                  </FormField>
+                  <FormField label="Quantity" className="form-line-field">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className="h-10"
+                      value={line.quantity}
+                      onChange={(e) =>
+                        setLines((prev) =>
+                          prev.map((row, idx) =>
+                            idx === i
+                              ? { ...row, quantity: e.target.value }
+                              : row,
+                          ),
+                        )
+                      }
+                      required
+                    />
+                  </FormField>
                   <Button
                     type="button"
                     size="icon"
