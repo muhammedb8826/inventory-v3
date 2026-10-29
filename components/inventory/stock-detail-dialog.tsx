@@ -152,7 +152,7 @@ export function StockDetailDialog({
                     <img
                       src={imageSrc}
                       alt={shown.item.description}
-                      className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
+                      className="h-auto max-h-[min(50svh,24rem)] w-full object-contain p-3"
                     />
                   ) : (
                     <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-muted-foreground sm:aspect-[21/9]">
