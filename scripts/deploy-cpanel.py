@@ -2,6 +2,8 @@
 """Upload only the CI release payload; preserve remote environment and user data."""
 import ftplib
 import io
+import hashlib
+import json
 import os
 from pathlib import Path, PurePosixPath
 import ssl
@@ -100,11 +102,37 @@ def deploy():
         client.cwd(root)
         remote_root = client.pwd()
         log('Application directory opened. Starting passive-mode uploads...')
+        # Only trust a manifest written after a fully completed previous upload.
+        manifest_name = '.inventory-deploy-manifest.json'
+        previous = {}
+        try:
+            saved = io.BytesIO()
+            client.retrbinary('RETR ' + manifest_name, saved.write)
+            document = json.loads(saved.getvalue())
+            if document.get('version') == 1 and isinstance(document.get('files'), dict):
+                previous = document['files']
+        except ftplib.error_perm as error:
+            if not str(error).startswith('550'):
+                raise
+        except (ValueError, TypeError, AttributeError):
+            log('Previous deployment manifest is invalid; uploading the complete payload.')
+        force = os.environ.get('FTP_FORCE_UPLOAD', '').lower() == 'true'
+        current = {
+            path.relative_to(payload).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in files
+        }
+        changed = {name for name, digest in current.items()
+                   if force or previous.get(name) != digest}
+        log(f'Upload plan: {len(changed)} changed/new files; '
+            f'{len(files) - len(changed)} unchanged files skipped.')
         uploaded = 0
         transferred = 0
         for directory, subdirs, filenames in os.walk(payload):
             subdirs.sort()
             relative = Path(directory).relative_to(payload)
+            if not any((Path(directory) / name).relative_to(payload).as_posix() in changed
+                       for name in filenames):
+                continue
             stage = 'preparing release subdirectory ' + relative.as_posix()
             client.cwd(remote_root)
             for part in relative.parts:
@@ -118,9 +146,11 @@ def deploy():
             for filename in sorted(filenames):
                 path = Path(directory) / filename
                 name = path.relative_to(payload).as_posix()
+                if name not in changed:
+                    continue
                 size = path.stat().st_size
                 stage = 'uploading ' + name
-                log(f'Uploading [{uploaded + 1}/{len(files)}] {name} ({size / 1048576:.2f} MiB)...')
+                log(f'Uploading [{uploaded + 1}/{len(changed)}] {name} ({size / 1048576:.2f} MiB)...')
                 last_progress = time.monotonic()
 
                 def progress(block):
@@ -135,6 +165,10 @@ def deploy():
                 with path.open('rb') as source:
                     client.storbinary('STOR ' + filename, source, blocksize=65536, callback=progress)
                 uploaded += 1
+        stage = 'saving completed deployment manifest'
+        client.cwd(remote_root)
+        client.storbinary('STOR ' + manifest_name, io.BytesIO(
+            json.dumps({'version': 1, 'files': current}, sort_keys=True).encode()))
         # Restart only after the complete upload, and only when host prerequisites are ready.
         if os.environ.get('CPANEL_AUTO_RESTART', '').lower() == 'true':
             stage = 'requesting Passenger restart'

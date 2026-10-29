@@ -50,3 +50,5 @@ lint-review.log
 
 .next-e2e/
 .next-build-check/
+
+release-payload/

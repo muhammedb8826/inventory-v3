@@ -68,3 +68,13 @@ APP_ORIGIN=https://factory.vgatefurnishing.com
 Use the frontend's public origin only, without `/api`, `/api/v1` or any other path. `API_URL` still points to the backend base URL including `/api/v1`; these settings serve different purposes. `CORS_ORIGIN` on the backend does not configure the frontend proxy's origin check.
 
 cPanel can terminate HTTPS and forward an internal HTTP request to Node. Without APP_ORIGIN, the browser origin and internal URL can differ. The proxy uses the explicit APP_ORIGIN to validate writes and continues rejecting cross-site, missing and invalid Origin headers. It does not trust arbitrary X-Forwarded-Host/Proto values. APP_ORIGIN is server-only, is read at runtime and does not need a GitHub build variable. Deploy the updated proxy code before applying this setting; the older code does not read it. If cPanel defines the same variable and a `.env` does too, keep both consistent (the process environment takes precedence).
+
+## Faster frontend transfers
+
+The frontend stages only production runtime files. Source maps, cache, development output, generated types, diagnostics and build tooling output are excluded. A smoke check boots this reduced payload and requests the login page plus JavaScript and CSS before deployment.
+
+The Python uploader compares SHA-256 checksums against `.inventory-deploy-manifest.json` in the remote application directory and skips unchanged files. The first optimized deployment uploads the complete reduced payload. Later builds can still change many generated chunks; skipping does not guarantee a fixed deployment time. The manifest is saved only after every payload file uploads successfully. Remote files are never deleted.
+
+If runtime files were manually changed/deleted on the host, set repository variable `FTP_FORCE_UPLOAD=true` for a repair deployment, then remove it. The manifest assumes the last uploaded files remain intact. Do not share the application directory with another deployment tool. Existing remote source maps and obsolete chunks are preserved; excluding them prevents future transfer but does not remove old copies.
+
+Commit and push the workflow, staging/smoke scripts and uploader together. Rerunning an older commit continues to use the old deployment behavior. No new secrets are required.
