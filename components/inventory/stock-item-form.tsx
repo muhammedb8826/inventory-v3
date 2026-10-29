@@ -40,6 +40,9 @@ import { formatQty, errorMessage } from "@/lib/format";
 import { skuConflictMessage } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import type { ItemType, StockRecord } from "@/lib/types";
+import { useFetch } from "@/hooks/use-fetch";
+import { UnitSelect } from "@/components/inventory/unit-select";
+import type { UnitOfMeasure } from "@/lib/types";
 import { useLocations } from "@/hooks/use-locations";
 import { toast } from "sonner";
 import { ImageIcon, Trash2Icon, UploadIcon } from "lucide-react";
@@ -64,13 +67,24 @@ export function StockItemForm({
   );
   const [sku, setSku] = useState(record?.item.sku ?? "");
   const [barcode, setBarcode] = useState(record?.item.barcode ?? "");
-  const [unit, setUnit] = useState(record?.item.unit ?? "pcs");
+  const {
+    data: units,
+    loading: unitsLoading,
+    error: unitsError,
+    reload: reloadUnits,
+  } = useFetch<UnitOfMeasure[]>(() => api("/units"));
+  const [unitId, setUnitId] = useState(record?.item.unitId ?? "");
+  const effectiveUnitId =
+    unitId || (!record ? units?.find((u) => u.code === "PCS")?.id : "") || "";
+  const selectedUnit = units?.find((u) => u.id === effectiveUnitId);
+  const quantityStep =
+    selectedUnit?.decimalPlaces === 0
+      ? "1"
+      : String(10 ** -(selectedUnit?.decimalPlaces ?? 3));
   const [itemType, setItemType] = useState<ItemType | "">(
     record?.item.itemType ?? "",
   );
-  const [isPhantom, setIsPhantom] = useState(
-    record?.item.isPhantom === true,
-  );
+  const [isPhantom, setIsPhantom] = useState(record?.item.isPhantom === true);
   const [quantity, setQuantity] = useState(record?.quantity ?? "0");
   const [purchasePrice, setPurchasePrice] = useState(
     record?.purchasePrice ?? "",
@@ -121,6 +135,13 @@ export function StockItemForm({
       toast.error("Select a location");
       return;
     }
+    if (
+      !selectedUnit ||
+      (!record && (!selectedUnit.isActive || selectedUnit.requiresReview))
+    ) {
+      toast.error("Select an active, reviewed stock unit");
+      return;
+    }
     setSaving(true);
     setSkuError(null);
     try {
@@ -144,7 +165,7 @@ export function StockItemForm({
             description: description.trim(),
             sku: optionalStringBodyValue(sku),
             barcode: optionalStringBodyValue(barcode),
-            unit: optionalStringBodyValue(unit),
+            unitId: effectiveUnitId,
             itemType: itemType || null,
             isPhantom,
             purchasePrice: parseFloat(purchasePrice),
@@ -165,7 +186,7 @@ export function StockItemForm({
           purchasePrice: parseFloat(purchasePrice),
           sku: optionalStringBodyValue(sku) ?? undefined,
           barcode: optionalStringBodyValue(barcode) ?? undefined,
-          unit: optionalStringBodyValue(unit) ?? undefined,
+          unitId: effectiveUnitId,
           isPhantom,
         };
         if (itemType) body.itemType = itemType;
@@ -287,7 +308,7 @@ export function StockItemForm({
             {!isEdit ? (
               <FormField label="Location" required className="sm:col-span-2">
                 <Select
-                  value={locationId || undefined}
+                  value={locationId || ""}
                   onValueChange={setLocationId}
                   disabled={locationsLoading}
                 >
@@ -343,12 +364,39 @@ export function StockItemForm({
                 placeholder="Optional"
               />
             </FormField>
-            <FormField label="Unit">
-              <Input
-                className="h-10"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
+            <FormField label="Stock unit" required>
+              <UnitSelect
+                units={units ?? []}
+                value={effectiveUnitId}
+                onChange={setUnitId}
+                disabled={unitsLoading || isEdit}
               />
+              <p className="text-xs text-muted-foreground">
+                {isEdit
+                  ? "Base unit is protected for existing items. Review legacy definitions in Units of measure."
+                  : "All stock balances and unit costs use this unit."}
+              </p>
+              {selectedUnit?.requiresReview && (
+                <p
+                  role="status"
+                  className="text-xs text-amber-700 dark:text-amber-300"
+                >
+                  Legacy unit requires administrator review. Existing quantities
+                  have been preserved.
+                </p>
+              )}
+              {unitsError && (
+                <div role="alert" className="text-sm text-destructive">
+                  Could not load units.{" "}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => void reloadUnits()}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </FormField>
             <FormField label="Item type">
               <Select
@@ -401,24 +449,34 @@ export function StockItemForm({
                 </div>
               </FormField>
             ) : (
-              <FormField label="Opening quantity" required>
+              <FormField
+                label="Opening quantity"
+                htmlFor="opening-quantity"
+                required
+              >
                 <Input
                   className="h-10"
                   type="number"
-                  step="any"
+                  step={quantityStep}
                   min="0"
+                  id="opening-quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   required
                 />
               </FormField>
             )}
-            <FormField label="Purchase price" required>
+            <FormField
+              label={`Purchase price per ${selectedUnit?.symbol ?? "stock unit"}`}
+              htmlFor="unit-purchase-price"
+              required
+            >
               <Input
                 className="h-10"
                 type="number"
                 step="any"
                 min="0"
+                id="unit-purchase-price"
                 value={purchasePrice}
                 onChange={(e) => setPurchasePrice(e.target.value)}
                 required
@@ -426,15 +484,17 @@ export function StockItemForm({
             </FormField>
             <FormField
               label="Reorder point"
+              htmlFor="reorder-point"
               hint="Low-stock alert threshold. Leave blank to disable."
               className="sm:col-span-2"
             >
               <Input
                 className="h-10"
                 type="number"
-                step="any"
                 min="0"
                 placeholder="Optional"
+                id="reorder-point"
+                step={quantityStep}
                 value={reorderPoint}
                 onChange={(e) => setReorderPoint(e.target.value)}
               />

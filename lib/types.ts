@@ -175,7 +175,20 @@ export interface Stocktake extends RecordMetadata {
   lines?: StocktakeLine[];
 }
 
+export interface UnitOfMeasure extends RecordMetadata {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string;
+  category: "COUNT" | "LENGTH" | "AREA" | "VOLUME" | "MASS" | "TIME" | "OTHER";
+  uneceCode?: string | null;
+  decimalPlaces: number;
+  isActive: boolean;
+  requiresReview: boolean;
+}
 export interface Item extends RecordMetadata {
+  unitId?: string;
+  stockUnit?: UnitOfMeasure;
   id: string;
   sku?: string | null;
   barcode?: string | null;

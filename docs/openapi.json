@@ -769,6 +769,29 @@
         ]
       }
     },
+    "/api/v1/users/{id}/deactivate": {
+      "post": {
+        "operationId": "UsersController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/api/v1/locations": {
       "get": {
         "operationId": "LocationsController_findAll",
@@ -1582,6 +1605,99 @@
         },
         "tags": [
           "Messages"
+        ]
+      }
+    },
+    "/api/v1/units": {
+      "get": {
+        "operationId": "UnitsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitOfMeasure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Units"
+        ]
+      },
+      "post": {
+        "operationId": "UnitsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitOfMeasure"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Units"
+        ]
+      }
+    },
+    "/api/v1/units/{id}": {
+      "patch": {
+        "operationId": "UnitsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitOfMeasure"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Units"
         ]
       }
     },
@@ -2937,6 +3053,29 @@
         ]
       }
     },
+    "/api/v1/production-orders/{id}/material-requirements": {
+      "get": {
+        "operationId": "ProductionController_materialRequirements",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Production"
+        ]
+      }
+    },
     "/api/v1/production-orders/{id}": {
       "get": {
         "operationId": "ProductionController_findOne",
@@ -3032,6 +3171,7 @@
             }
           }
         },
+        "summary": "Warehouse issue — production.write or dedicated production.issue.",
         "tags": [
           "Production"
         ]
@@ -4368,6 +4508,37 @@
         ]
       }
     },
+    "/api/v1/inquiries/{id}/confirm": {
+      "post": {
+        "operationId": "InquiriesController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerInquiry"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Firm demand: mark inquiry as QUOTED so production can plan against it.",
+        "tags": [
+          "Inquiries"
+        ]
+      }
+    },
     "/api/v1/public/inquiries": {
       "post": {
         "operationId": "PublicInquiriesController_create",
@@ -4818,6 +4989,87 @@
         },
         "responses": {
           "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankAccount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Banks"
+        ]
+      },
+      "delete": {
+        "operationId": "BanksController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banks"
+        ]
+      }
+    },
+    "/api/v1/banks/accounts/{id}/deactivate": {
+      "post": {
+        "operationId": "BanksController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankAccount"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Banks"
+        ]
+      }
+    },
+    "/api/v1/banks/accounts/{id}/activate": {
+      "post": {
+        "operationId": "BanksController_activate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -7072,6 +7324,69 @@
           "id"
         ]
       },
+      "UnitOfMeasure": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "COUNT",
+              "LENGTH",
+              "AREA",
+              "VOLUME",
+              "MASS",
+              "TIME",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "uneceCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "decimalPlaces": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "requiresReview": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "symbol",
+          "category",
+          "uneceCode",
+          "decimalPlaces",
+          "isActive",
+          "requiresReview",
+          "createdAt",
+          "updatedAt",
+          "id"
+        ]
+      },
       "Item": {
         "type": "object",
         "properties": {
@@ -7088,9 +7403,16 @@
           "description": {
             "type": "string"
           },
+          "unitId": {
+            "type": "string"
+          },
+          "stockUnit": {
+            "$ref": "#/components/schemas/UnitOfMeasure"
+          },
           "unit": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "Compatibility display symbol; stockUnit is the authoritative definition."
           },
           "itemType": {
             "type": "string",
@@ -7140,6 +7462,8 @@
           "sku",
           "barcode",
           "description",
+          "unitId",
+          "stockUnit",
           "unit",
           "itemType",
           "isPhantom",
@@ -7731,6 +8055,65 @@
           "body"
         ]
       },
+      "CreateUnitDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "COUNT",
+              "LENGTH",
+              "AREA",
+              "VOLUME",
+              "MASS",
+              "TIME",
+              "OTHER"
+            ]
+          },
+          "uneceCode": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[A-Z0-9]{3}$"
+          },
+          "decimalPlaces": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "symbol",
+          "category",
+          "decimalPlaces"
+        ]
+      },
+      "UpdateUnitDto": {
+        "type": "object",
+        "properties": {
+          "confirmLegacyReview": {
+            "type": "boolean"
+          }
+        }
+      },
       "CreateStockAdjustmentDto": {
         "type": "object",
         "properties": {
@@ -7897,6 +8280,10 @@
           "unit": {
             "type": "string"
           },
+          "unitId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "itemType": {
             "type": "string",
             "enum": [
@@ -7939,6 +8326,10 @@
           "unit": {
             "type": "string",
             "nullable": true
+          },
+          "unitId": {
+            "type": "string",
+            "format": "uuid"
           },
           "itemType": {
             "type": "string",

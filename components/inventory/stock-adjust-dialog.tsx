@@ -182,7 +182,13 @@ export function StockAdjustDialog({
                 <Input
                   id={`${formId}-quantity`}
                   type="number"
-                  step="any"
+                  step={
+                    record.item.stockUnit?.decimalPlaces === 0
+                      ? "1"
+                      : String(
+                          10 ** -(record.item.stockUnit?.decimalPlaces ?? 3),
+                        )
+                  }
                   min="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}

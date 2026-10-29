@@ -133,6 +133,34 @@ const inventory = [
     },
   },
 ];
+const units = [
+  {
+    id: "10000000-0000-4000-8000-000000000001",
+    code: "PCS",
+    name: "Piece",
+    symbol: "pcs",
+    category: "COUNT",
+    uneceCode: "H87",
+    decimalPlaces: 0,
+    isActive: true,
+    requiresReview: false,
+  },
+  {
+    id: "10000000-0000-4000-8000-000000000002",
+    code: "KG",
+    name: "Kilogram",
+    symbol: "kg",
+    category: "MASS",
+    uneceCode: "KGM",
+    decimalPlaces: 3,
+    isActive: true,
+    requiresReview: false,
+  },
+];
+for (const row of inventory) {
+  row.item.unitId = units[0].id;
+  row.item.stockUnit = units[0];
+}
 const token =
   "e30." +
   Buffer.from(
@@ -213,7 +241,21 @@ const server = createServer(async (req, res) => {
       data: locations,
       meta: { page: 1, limit: 100, total: 1, totalPages: 1 },
     };
-  else if (path === "/inventory")
+  else if (path === "/units") {
+    if (req.method === "POST") {
+      const value = {
+        ...JSON.parse(body),
+        id: "test-unit-" + Date.now(),
+        requiresReview: false,
+      };
+      units.push(value);
+      result = value;
+    } else result = units;
+  } else if (path.startsWith("/units/") && req.method === "PATCH") {
+    const unit = units.find((u) => u.id === path.split("/").pop());
+    Object.assign(unit ?? {}, JSON.parse(body));
+    result = unit;
+  } else if (path === "/inventory")
     result = {
       data: inventory,
       meta: { page: 1, limit: 20, total: 3, totalPages: 1 },

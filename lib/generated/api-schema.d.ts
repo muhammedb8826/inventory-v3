@@ -218,6 +218,22 @@ export interface paths {
         patch: operations["UsersController_update"];
         trace?: never;
     };
+    "/api/v1/users/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UsersController_deactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/locations": {
         parameters: {
             query?: never;
@@ -457,6 +473,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["MessagesController_markRead"];
+        trace?: never;
+    };
+    "/api/v1/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UnitsController_list"];
+        put?: never;
+        post: operations["UnitsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UnitsController_update"];
         trace?: never;
     };
     "/api/v1/inventory": {
@@ -779,6 +827,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/production-orders/{id}/material-requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductionController_materialRequirements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/production-orders/{id}": {
         parameters: {
             query?: never;
@@ -820,6 +884,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Warehouse issue — production.write or dedicated production.issue. */
         post: operations["ProductionController_issue"];
         delete?: never;
         options?: never;
@@ -1179,6 +1244,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inquiries/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Firm demand: mark inquiry as QUOTED so production can plan against it. */
+        post: operations["InquiriesController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/inquiries": {
         parameters: {
             query?: never;
@@ -1286,10 +1368,42 @@ export interface paths {
         get: operations["BanksController_findAccount"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["BanksController_remove"];
         options?: never;
         head?: never;
         patch: operations["BanksController_updateAccount"];
+        trace?: never;
+    };
+    "/api/v1/banks/accounts/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BanksController_deactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/banks/accounts/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BanksController_activate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/banks/transactions": {
@@ -1881,12 +1995,31 @@ export interface components {
             createdAt: string;
             id: string;
         };
+        UnitOfMeasure: {
+            code: string;
+            name: string;
+            symbol: string;
+            /** @enum {string} */
+            category: "COUNT" | "LENGTH" | "AREA" | "VOLUME" | "MASS" | "TIME" | "OTHER";
+            uneceCode: string | null;
+            decimalPlaces: number;
+            isActive: boolean;
+            requiresReview: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
         Item: {
             /** @description Unique when set (partial unique index `UQ_items_sku_not_null`). */
             sku: string | null;
             /** @description Unique when set (scan / POS lookup). */
             barcode: string | null;
             description: string;
+            unitId: string;
+            stockUnit: components["schemas"]["UnitOfMeasure"];
+            /** @description Compatibility display symbol; stockUnit is the authoritative definition. */
             unit: string | null;
             /** @enum {string} */
             itemType: "RAW" | "SEMI" | "FINISHED" | "OTHER";
@@ -2072,6 +2205,19 @@ export interface components {
             recipientId: string;
             body: string;
         };
+        CreateUnitDto: {
+            code: string;
+            name: string;
+            symbol: string;
+            /** @enum {string} */
+            category: "COUNT" | "LENGTH" | "AREA" | "VOLUME" | "MASS" | "TIME" | "OTHER";
+            uneceCode?: string | null;
+            decimalPlaces: number;
+            isActive?: boolean;
+        };
+        UpdateUnitDto: {
+            confirmLegacyReview?: boolean;
+        };
         CreateStockAdjustmentDto: {
             /** Format: uuid */
             locationId: string;
@@ -2121,6 +2267,8 @@ export interface components {
             quantity: number;
             purchasePrice: number;
             unit?: string;
+            /** Format: uuid */
+            unitId?: string;
             /** @enum {string} */
             itemType?: "RAW" | "SEMI" | "FINISHED" | "OTHER";
             /** @description Phantom / non-stocked assembly (pass-through in BOMs by default). */
@@ -2132,6 +2280,8 @@ export interface components {
             sku?: string | null;
             barcode?: string | null;
             unit?: string | null;
+            /** Format: uuid */
+            unitId?: string;
             /** @enum {string} */
             itemType?: "RAW" | "SEMI" | "FINISHED" | "OTHER";
             isPhantom?: boolean;
@@ -3534,6 +3684,25 @@ export interface operations {
             };
         };
     };
+    UsersController_deactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     LocationsController_findAll: {
         parameters: {
             query?: {
@@ -4039,6 +4208,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InternalMessage"];
+                };
+            };
+        };
+    };
+    UnitsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOfMeasure"][];
+                };
+            };
+        };
+    };
+    UnitsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUnitDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOfMeasure"];
+                };
+            };
+        };
+    };
+    UnitsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUnitDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOfMeasure"];
                 };
             };
         };
@@ -4698,6 +4934,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProductionOrder"];
                 };
+            };
+        };
+    };
+    ProductionController_materialRequirements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5537,6 +5792,27 @@ export interface operations {
             };
         };
     };
+    InquiriesController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerInquiry"];
+                };
+            };
+        };
+    };
     PublicInquiriesController_create: {
         parameters: {
             query?: never;
@@ -5780,6 +6056,25 @@ export interface operations {
             };
         };
     };
+    BanksController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     BanksController_updateAccount: {
         parameters: {
             query?: never;
@@ -5796,6 +6091,48 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankAccount"];
+                };
+            };
+        };
+    };
+    BanksController_deactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankAccount"];
+                };
+            };
+        };
+    };
+    BanksController_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

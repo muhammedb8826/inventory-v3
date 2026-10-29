@@ -22,6 +22,7 @@ import {
   MessagesSquare,
   Palette,
   Warehouse,
+  Ruler,
 } from "lucide-react";
 
 export interface NavItem {
@@ -133,6 +134,12 @@ export const mainNav: NavItem[] = [
 
 export const masterNav: NavItem[] = [
   {
+    title: "Units of measure",
+    href: "/units",
+    icon: Ruler,
+    permission: "inventory.write",
+  },
+  {
     title: "Locations",
     href: "/locations",
     icon: MapPin,
@@ -153,7 +160,12 @@ export const masterNav: NavItem[] = [
 ];
 
 export const adminNav: NavItem[] = [
-  { title: 'Audit trail', href: '/settings/audit', icon: Shield, permission: 'settings.read' },
+  {
+    title: "Audit trail",
+    href: "/settings/audit",
+    icon: Shield,
+    permission: "settings.read",
+  },
   {
     title: "Branding",
     href: "/settings/branding",
