@@ -242,6 +242,7 @@ export function InquiryFormFields({
                         dimensions={line.dimensions}
                         savedFactor={line.savedFactor}
                         frozenSnapshot={line.preserveSnapshot}
+                        preserveHistorical
                         onResolved={(unitId, unitFactor, meta) => {
                           const current = latest.current.lines[index];
                           if (!current || current.unitId !== unitId) return;

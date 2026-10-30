@@ -135,6 +135,7 @@ async function setup(
     return route.fulfill({
       json: {
         baseUnit: base,
+        unitGroup: area ? undefined : { kind: "PACKAGING" },
         conversions: [],
         options: [
           { unit: base, factor: "1" },

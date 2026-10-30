@@ -1,4 +1,5 @@
 "use client";
+import { validFrozenUnit } from "@/lib/unit-rules";
 import { AreaCalculator } from "./area-calculator";
 import type { AreaDimensions } from "@/lib/types";
 import { useEffect, useMemo, useRef } from "react";
@@ -25,6 +26,7 @@ export function TransactionUnitField({
   dimensions,
   onAreaChange,
   frozenSnapshot,
+  preserveHistorical = false,
   onResolved,
 }: {
   itemId: string;
@@ -34,6 +36,7 @@ export function TransactionUnitField({
   savedFactor?: number;
   dimensions?: AreaDimensions;
   onAreaChange?: (quantity: string, dimensions: AreaDimensions) => void;
+  preserveHistorical?: boolean;
   frozenSnapshot?: import("@/lib/types").UnitSnapshot;
   onResolved?: (
     unitId: string,
@@ -63,10 +66,19 @@ export function TransactionUnitField({
   );
   const options = useMemo(() => {
     if (!data) return [];
-    if (!frozenSnapshot) return data.options;
-    const original = data.options.find(
-      (o) => o.unit.id === frozenSnapshot.unitId,
+    const available = data.options.filter(
+      (o) =>
+        o.unit.id === data.baseUnit.id ||
+        (!data.requiresReview &&
+          validFrozenUnit(
+            data.baseUnit,
+            o.unit,
+            o.factor,
+            data.unitGroup?.kind,
+          )),
     );
+    if (!frozenSnapshot) return available;
+    const original = available.find((o) => o.unit.id === frozenSnapshot.unitId);
     const unit = original?.unit ?? {
       id: frozenSnapshot.unitId,
       code: frozenSnapshot.code,
@@ -80,8 +92,19 @@ export function TransactionUnitField({
       requiresReview: false,
       uneceCode: null,
     };
+    if (
+      !preserveHistorical &&
+      (data.requiresReview ||
+        !validFrozenUnit(
+          data.baseUnit,
+          unit,
+          frozenSnapshot.factor,
+          data.unitGroup?.kind,
+        ))
+    )
+      return available;
     return [
-      ...data.options.filter((o) => o.unit.id !== frozenSnapshot.unitId),
+      ...available.filter((o) => o.unit.id !== frozenSnapshot.unitId),
       {
         ...original,
         unit: {
@@ -93,12 +116,12 @@ export function TransactionUnitField({
         salesDefault: original?.salesDefault ?? false,
       },
     ];
-  }, [data, frozenSnapshot]);
+  }, [data, frozenSnapshot, preserveHistorical]);
   const selected = options.find(
     (o) => o.unit.id === (value || data?.baseUnit.id),
   );
   const frozenActive = frozenSnapshot?.unitId === selected?.unit.id;
-  const squareMetre = (frozenActive ? options : (data?.options ?? [])).find(
+  const squareMetre = options.find(
     (o) => o.unit.code === "M2" && o.unit.category === "AREA",
   );
   const resolvedRef = useRef(onResolved);
@@ -174,6 +197,12 @@ export function TransactionUnitField({
               : "Choose an item first"}
         </span>
       </FormField>
+      {(data?.requiresReview || (frozenSnapshot && !selected)) && (
+        <p role="alert" className="text-xs text-destructive">
+          Review the item unit configuration. Unrelated measurement categories
+          and invalid standard ratios cannot be used for new transactions.
+        </p>
+      )}
       {frozenActive && (
         <p className="text-xs text-muted-foreground">
           Using the saved inquiry conversion for this unit.

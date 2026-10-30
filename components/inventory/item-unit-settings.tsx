@@ -1,4 +1,5 @@
 "use client";
+import { allowedConversion, fixedUnitFactor } from "@/lib/unit-rules";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useFetch } from "@/hooks/use-fetch";
@@ -86,12 +87,26 @@ export function ItemUnitSettings({
   return (
     <PageFormSection
       title="Units and conversions"
-      description="Set any item-specific ratio for purchases, sales, BOMs and production. Common measurement conversions are provided automatically; your saved ratio takes priority for this item."
+      description="Measurement conversions stay within the stock unit category. Standard ratios are fixed. Use a reusable packaging profile for roll, box or pack sizes across measurement and count units."
     >
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {errorMessage(error)}
         </p>
+      )}
+      {data?.requiresReview && (
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 p-3 text-sm"
+        >
+          Review these settings before using alternative units. Historical
+          transactions are unchanged.
+          <ul className="list-disc pl-5">
+            {data.reviewIssues?.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </div>
       )}
       {data && (
         <p className="text-sm text-muted-foreground">
@@ -104,7 +119,12 @@ export function ItemUnitSettings({
         {rows.map((row, i) => {
           const option = data?.options.find((o) => o.unit.id === row.unitId);
           const unit = units?.find((u) => u.id === row.unitId);
-          const fixed = unit?.id === data?.baseUnit.id;
+          const standard =
+            unit && data
+              ? fixedUnitFactor(unit, data.baseUnit, rows, units ?? [])
+              : undefined;
+          const fixed =
+            unit?.id === data?.baseUnit.id || standard !== undefined;
           const ratio =
             row.stockQuantity !== undefined || row.unitQuantity !== undefined;
           const factor = ratio
@@ -120,20 +140,30 @@ export function ItemUnitSettings({
                   value={row.unitId}
                   units={(units ?? []).filter(
                     (u) =>
-                      u.id === row.unitId ||
-                      (u.id !== data?.baseUnit.id &&
-                        !rows.some((r) => r.unitId === u.id)),
+                      !!data &&
+                      allowedConversion(data.baseUnit, u) &&
+                      (u.id === row.unitId ||
+                        (u.id !== data.baseUnit.id &&
+                          !rows.some((r) => r.unitId === u.id))),
                   )}
                   onChange={(unitId) => {
                     const next = data?.options.find(
                       (o) => o.unit.id === unitId,
                     );
-                    const useRatio =
-                      data?.baseUnit.category === "COUNT" &&
-                      units?.find((u) => u.id === unitId)?.category === "AREA";
+                    const useRatio = false;
+                    const target = units?.find((u) => u.id === unitId);
+                    const fixedFactor =
+                      data && target
+                        ? fixedUnitFactor(
+                            target,
+                            data.baseUnit,
+                            rows,
+                            units ?? [],
+                          )
+                        : undefined;
                     patch(i, {
                       unitId,
-                      factor: next?.factor ?? "1",
+                      factor: String(fixedFactor ?? next?.factor ?? 1),
                       stockQuantity: useRatio
                         ? (next?.factor ?? "1")
                         : undefined,
@@ -194,6 +224,23 @@ export function ItemUnitSettings({
                   />
                 </FormField>
               )}
+              {standard !== undefined &&
+                Math.abs(Number(row.factor) - standard) >
+                  Math.abs(standard) * 1e-12 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      patch(i, {
+                        factor: String(standard),
+                        stockQuantity: undefined,
+                        unitQuantity: undefined,
+                      })
+                    }
+                  >
+                    Apply standard ratio
+                  </Button>
+                )}
               {!fixed &&
                 !(
                   data?.baseUnit.category === "COUNT" &&
@@ -235,9 +282,9 @@ export function ItemUnitSettings({
               {data?.baseUnit.category === "COUNT" &&
                 unit?.category === "AREA" && (
                   <p className="text-xs text-muted-foreground sm:col-span-2">
-                    Use this ratio only when every piece has the same area.
-                    Partial areas that produce fractional stock pieces cannot be
-                    posted.
+                    This legacy conversion mixes categories. Remove it; area
+                    measurements require an area stock unit. Use an explicit
+                    packaging profile for fixed-size pieces.
                   </p>
                 )}
               <label className="flex min-h-11 items-center gap-2 text-sm">

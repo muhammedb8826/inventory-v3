@@ -1098,6 +1098,8 @@ export interface UnitSnapshot {
   unitPrice?: string;
 }
 export interface ItemUnitOptions {
+  requiresReview?: boolean;
+  reviewIssues?: string[];
   unitGroup?: UnitGroup | null;
   canChangeBaseUnit?: boolean;
   baseUnitLockReason?: string | null;
@@ -1113,6 +1115,9 @@ export interface ItemUnitOptions {
 }
 
 export interface UnitGroup {
+  kind?: "CATEGORY" | "PACKAGING";
+  requiresReview?: boolean;
+  reviewIssues?: string[];
   id: string;
   name: string;
   category: UnitOfMeasure["category"];

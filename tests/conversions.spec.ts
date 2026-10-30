@@ -203,10 +203,9 @@ test("fabric area calculator fills quantity and retains dimensions in the purcha
   });
 });
 
-test("fixed piece-to-area ratios preview quantity and cost without rounded reciprocal inputs", async ({
+test("alternative units exclude unrelated physical measurement categories", async ({
   page,
 }) => {
-  await login(page);
   const pcs = {
     id: "10000000-0000-4000-8000-000000000001",
     code: "PCS",
@@ -217,89 +216,33 @@ test("fixed piece-to-area ratios preview quantity and cost without rounded recip
     isActive: true,
     requiresReview: false,
   };
-  const area = {
-    ...pcs,
-    id: "10000000-0000-4000-8000-000000000006",
-    code: "M2",
-    name: "Square metre",
-    symbol: "m2",
-    category: "AREA",
-    decimalPlaces: 3,
-  };
-  let conversions: Record<string, unknown>[] = [];
-  await page.route("**/api/backend/units/items/*", async (route) => {
-    if (route.request().method() === "PATCH")
-      conversions = route
-        .request()
-        .postDataJSON()
-        .conversions.map((c: Record<string, unknown>) => ({
-          ...c,
-          factor: String(Number(c.stockQuantity) / Number(c.unitQuantity)),
-        }));
-    await route.fulfill({
+  await page.route("**/api/backend/units/items/*", (route) =>
+    route.fulfill({
       json: {
         baseUnit: pcs,
         canChangeBaseUnit: false,
-        baseUnitLockReason: "Stock unit is protected by stock history.",
-        conversions,
-        options: [
-          { unit: pcs, factor: "1", isStandard: true },
-          ...conversions.map((c) => ({ ...c, unit: area, isStandard: false })),
-        ],
+        conversions: [],
+        options: [{ unit: pcs, factor: "1" }],
       },
-    });
-  });
+    }),
+  );
+  await login(page);
   await page.goto("/inventory/stock-a/edit");
   await expect(
-    page.getByText("Stock unit is protected by stock history.", {
-      exact: true,
-    }),
-  ).toBeVisible({ timeout: 15000 });
-  await expect(
-    page.getByRole("combobox", { name: "Stock unit", exact: true }).first(),
-  ).toBeDisabled();
+    page.getByRole("heading", { name: "Units and conversions" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Add alternative unit" }).click();
   await page
     .getByRole("combobox", { name: "Stock unit", exact: true })
     .last()
     .click();
-  await page.getByRole("option", { name: /Square metre/ }).click();
-  await page.getByLabel("Stock reference quantity", { exact: true }).fill("1");
-  await page
-    .getByLabel("Alternative reference quantity", { exact: true })
-    .fill("3");
-  await page.getByText("Preview quantity and cost", { exact: true }).click();
-  await page.getByLabel("Preview quantity", { exact: true }).fill("6");
-  await page.getByLabel("Preview unit price", { exact: true }).fill("30");
-  await expect(page.getByText("6 m2 = 2 pcs", { exact: true })).toBeVisible();
-  await expect(
-    page.getByText("Stock unit cost: 90 per pcs. Total: 180.", { exact: true }),
-  ).toBeVisible();
-  const pending = page.waitForRequest(
-    (r) =>
-      r.url().includes("/api/backend/units/items/") && r.method() === "PATCH",
+  await expect(page.getByRole("option", { name: /Square metre/ })).toHaveCount(
+    0,
   );
-  await page.getByRole("button", { name: "Save unit settings" }).click();
-  expect((await pending).postDataJSON()).toEqual({
-    conversions: [{ unitId: area.id, stockQuantity: 1, unitQuantity: 3 }],
-  });
-  await expect(
-    page.getByText("Unit conversions saved", { exact: true }),
-  ).toBeVisible();
-  await page.getByLabel("Preview quantity", { exact: true }).fill("1");
-  await expect(page.getByText(/This quantity does not fit/)).toBeVisible();
-  for (const width of [390, 320]) {
-    await page.setViewportSize({ width, height: 844 });
-    await page
-      .getByRole("button", { name: "Save unit settings" })
-      .scrollIntoViewIfNeeded();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-  }
+  await expect(page.getByRole("option", { name: /Kilogram/ })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: /Box/ })).toBeVisible();
 });
+
 test("unused items allow base-unit correction with an explicit cost review", async ({
   page,
 }) => {
@@ -330,17 +273,18 @@ test("unused items allow base-unit correction with an explicit cost review", asy
   });
 });
 
-
-test("custom conversions can use units from a different measurement category", async ({ page }) => {
+test("item unit settings do not offer mass units for a count item", async ({
+  page,
+}) => {
   await login(page);
   await page.goto("/inventory/stock-a/edit");
-  await expect(page.getByRole("heading", { name: "Units and conversions" })).toBeVisible({ timeout: 20000 });
+  await expect(
+    page.getByRole("heading", { name: "Units and conversions" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Add alternative unit" }).click();
-  await page.getByRole("combobox", { name: "Stock unit", exact: true }).last().click();
-  await page.getByRole("option", { name: /Kilogram/ }).click();
-  await page.getByLabel("Conversion factor", { exact: true }).last().fill("5");
-  const pending = page.waitForRequest(r => r.url().includes("/api/backend/units/items/") && r.method() === "PATCH");
-  await page.getByRole("button", { name: "Save unit settings" }).click();
-  expect((await pending).postDataJSON().conversions.at(-1).factor).toBe(5);
-  await expect(page.getByText("Unit conversions saved", { exact: true })).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Stock unit", exact: true })
+    .last()
+    .click();
+  await expect(page.getByRole("option", { name: /Kilogram/ })).toHaveCount(0);
 });

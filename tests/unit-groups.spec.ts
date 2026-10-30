@@ -28,6 +28,9 @@ test("configure a reusable group once and select it on a new item", async ({
     .getByLabel("Category name", { exact: true })
     .fill("Boxes of ten");
   await dialog
+    .getByLabel("Measurement category", { exact: true })
+    .selectOption("COUNT");
+  await dialog
     .getByRole("combobox", { name: "Stock unit", exact: true })
     .click();
   await page.getByRole("option", { name: /Piece/ }).click();
@@ -110,4 +113,221 @@ test("configure a reusable group once and select it on a new item", async ({
       ),
     ).toBe(true);
   }
+});
+
+test("measurement categories reject unrelated units while explicit profiles allow rolls", async ({
+  page,
+}) => {
+  const m = {
+    id: "30000000-0000-4000-8000-000000000001",
+    code: "M",
+    name: "Metre",
+    symbol: "m",
+    category: "LENGTH",
+    decimalPlaces: 3,
+    isActive: true,
+    requiresReview: false,
+  };
+  const cm = {
+    ...m,
+    id: "30000000-0000-4000-8000-000000000002",
+    code: "CM",
+    name: "Centimetre",
+    symbol: "cm",
+  };
+  const kg = {
+    ...m,
+    id: "30000000-0000-4000-8000-000000000003",
+    code: "KG",
+    name: "Kilogram",
+    symbol: "kg",
+    category: "MASS",
+  };
+  const roll = {
+    ...m,
+    id: "30000000-0000-4000-8000-000000000004",
+    code: "ROLL",
+    name: "Roll",
+    symbol: "roll",
+    category: "COUNT",
+    decimalPlaces: 0,
+  };
+  await page.route("**/api/backend/units", (route) =>
+    route.fulfill({ json: [m, cm, kg, roll] }),
+  );
+  let saved: Record<string, unknown> | undefined;
+  await page.route("**/api/backend/units/groups", (route) => {
+    if (route.request().method() === "POST") {
+      saved = route.request().postDataJSON();
+      return route.fulfill({
+        status: 201,
+        json: { ...saved, id: "group", baseUnit: m },
+      });
+    }
+    return route.fulfill({ json: [] });
+  });
+  await page.goto("/login");
+  await page.getByLabel(/email/i).fill("test@example.test");
+  await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
+  await page.getByRole("button", { name: /sign in|log in|login/i }).click();
+  await page.waitForURL("**/dashboard");
+  await page.goto("/units");
+  await page.getByRole("button", { name: "New category", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Measurement category", { exact: true })
+    .selectOption("LENGTH");
+  await dialog
+    .getByRole("combobox", { name: "Stock unit", exact: true })
+    .click();
+  await expect(page.getByRole("option", { name: /Kilogram/ })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: /Roll/ })).toHaveCount(0);
+  await page
+    .getByRole("option", { name: /Metre/, exact: false })
+    .filter({ hasText: "Metre (m)" })
+    .first()
+    .click();
+  await dialog.getByRole("button", { name: "Add a line", exact: true }).click();
+  await dialog
+    .getByRole("combobox", { name: "Stock unit", exact: true })
+    .last()
+    .click();
+  await expect(page.getByRole("option", { name: /Kilogram/ })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: /Roll/ })).toHaveCount(0);
+  await page.getByRole("option", { name: /Centimetre/ }).click();
+  await expect(
+    dialog.getByLabel("Conversion ratio", { exact: true }),
+  ).toHaveValue("0.01");
+  await expect(
+    dialog.getByLabel("Conversion ratio", { exact: true }),
+  ).toHaveAttribute("readonly", "");
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Packaging profiles", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "New packaging profile", exact: true })
+    .click();
+  dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Profile name", { exact: true })
+    .fill("Fabric roll - 50 m");
+  await dialog
+    .getByLabel("Measurement category", { exact: true })
+    .selectOption("LENGTH");
+  await dialog
+    .getByRole("combobox", { name: "Stock unit", exact: true })
+    .click();
+  await page
+    .getByRole("option", { name: /Metre/ })
+    .filter({ hasText: "Metre (m)" })
+    .first()
+    .click();
+  await dialog.getByRole("button", { name: "Add a line", exact: true }).click();
+  await dialog
+    .getByRole("combobox", { name: "Stock unit", exact: true })
+    .last()
+    .click();
+  await expect(page.getByRole("option", { name: /Kilogram/ })).toHaveCount(0);
+  await page.getByRole("option", { name: /Roll/ }).click();
+  await dialog.getByLabel("Conversion ratio", { exact: true }).fill("50");
+  await dialog
+    .getByRole("button", { name: "Save profile", exact: true })
+    .click();
+  await expect(
+    page.getByText("Packaging profile saved", { exact: true }),
+  ).toBeVisible();
+  expect(saved).toMatchObject({
+    kind: "PACKAGING",
+    category: "LENGTH",
+    baseUnitId: m.id,
+    conversions: [{ unitId: roll.id, factor: 50 }],
+  });
+});
+
+test("invalid existing standard ratios require explicit review before saving", async ({
+  page,
+}) => {
+  const m = {
+    id: "40000000-0000-4000-8000-000000000001",
+    code: "M",
+    name: "Metre",
+    symbol: "m",
+    category: "LENGTH",
+    decimalPlaces: 3,
+    isActive: true,
+    requiresReview: false,
+  };
+  const cm = {
+    ...m,
+    id: "40000000-0000-4000-8000-000000000002",
+    code: "CM",
+    name: "Centimetre",
+    symbol: "cm",
+  };
+  let group = {
+    id: "40000000-0000-4000-8000-000000000003",
+    kind: "CATEGORY",
+    name: "Legacy length",
+    category: "LENGTH",
+    baseUnitId: m.id,
+    baseUnit: m,
+    conversions: [{ unitId: cm.id, factor: "0.02" }],
+    isActive: true,
+    requiresReview: true,
+    reviewIssues: ["A standard metre is 100 centimetres."],
+  };
+  let body: Record<string, unknown> | undefined;
+  await page.route("**/api/backend/units", (route) =>
+    route.fulfill({ json: [m, cm] }),
+  );
+  await page.route("**/api/backend/units/groups**", (route) => {
+    if (route.request().method() === "PATCH") {
+      body = route.request().postDataJSON();
+      group = {
+        ...group,
+        requiresReview: false,
+        reviewIssues: [],
+        conversions: [{ unitId: cm.id, factor: "0.01" }],
+      };
+      return route.fulfill({ json: group });
+    }
+    return route.fulfill({ json: [group] });
+  });
+  await page.goto("/login");
+  await page.getByLabel(/email/i).fill("test@example.test");
+  await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
+  await page.getByRole("button", { name: /sign in|log in|login/i }).click();
+  await page.waitForURL("**/dashboard");
+  await page.goto("/units");
+  await expect(
+    page.getByText("Review required", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Legacy length", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Historical stock and transactions are unchanged",
+  );
+  await expect(
+    dialog.getByLabel("Conversion ratio", { exact: true }),
+  ).toHaveValue("0.02");
+  await dialog
+    .getByRole("button", { name: "Apply standard ratio", exact: true })
+    .click();
+  await expect(
+    dialog.getByLabel("Conversion ratio", { exact: true }),
+  ).toHaveValue("0.01");
+  await dialog
+    .getByRole("button", { name: "Save category", exact: true })
+    .click();
+  await expect(page.getByText("Category saved", { exact: true })).toBeVisible();
+  expect(body?.conversions).toEqual([
+    expect.objectContaining({
+      unitId: cm.id,
+      stockQuantity: 1,
+      unitQuantity: 100,
+    }),
+  ]);
 });

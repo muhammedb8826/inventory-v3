@@ -1236,3 +1236,16 @@ Open [http://localhost:3000](http://localhost:3000).
 | `/settings/branding` | `GET/PATCH /settings/branding`, `POST/DELETE /settings/branding/hero-image`; public `GET /public/branding` |
 | `/users`, `/roles` | admin CRUD |
 | `/notifications`, `/notifications/[id]` | in-app notification bell, list, and detail |
+
+
+### UOM category boundaries and reusable packaging profiles
+
+`unit_groups.kind` is `CATEGORY` (default) or `PACKAGING`. For both kinds, the reference unit must belong to `category`. Ordinary categories only contain alternatives from that same measurement category. Packaging profiles may additionally contain COUNT units (e.g. ROLL or PACK) against a physical stock unit; they never permit mass-to-length, length-to-area or other unrelated physical dimensions. Use an area stock unit for width x length; the existing area calculator converts its result through area units.
+
+Seeded standard relationships are fixed, including metre/centimetre, kilogram/gram and piece/dozen. This applies to groups, per-item settings and actual transaction normalization. A custom reference unit does not permit redefining the relative ratios between standard units. Use a distinct custom unit code for a custom measure. Standard unit codes cannot be renamed or assigned to the wrong category.
+
+Configure a reusable profile such as `Fabric roll - 50 m` with `kind: PACKAGING`, `category: LENGTH`, reference `M`, and `ROLL` factor `50`; assign it to matching items. A `Pack of 10` profile uses COUNT with PCS reference and PACK factor 10. Measurements remain in the stock unit across purchases, sales, BOMs, production, inquiries and transfers.
+
+`GET /units/groups` and `GET /units/items/:id` expose computed `requiresReview` and `reviewIssues`. Existing invalid configurations are retained for review; alternatives are blocked until repaired, and invalid groups cannot be assigned to new items. The original stock unit remains available where its definition is valid. No stock balances, costs or document snapshots are rewritten. Saved invalid inquiry measurements can be preserved during historical record edits but cannot be reused to create a new sale or production order. Valid historic packaging snapshots retain their original factor.
+
+Deploy migration `1749200000000-UnitCategoryBoundaries` before restarting the API: it adds the configuration kind and flags wrongly classified seeded unit definitions for explicit review. Existing groups default to CATEGORY; mixed legacy roll/pack setups are not silently approved as packaging profiles. Review them in Units, select Packaging profile only when the definition is genuinely a fixed package size, and correct or remove invalid entries. No reseeding is needed.

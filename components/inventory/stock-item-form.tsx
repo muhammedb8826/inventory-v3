@@ -510,17 +510,31 @@ export function StockItemForm({
                     ?.filter(
                       (g) =>
                         (g.isActive || g.id === unitGroupId) &&
+                        (!g.requiresReview || g.id === unitGroupId) &&
                         (!isEdit ||
                           unitPolicy?.canChangeBaseUnit ||
                           g.baseUnitId === record?.item.unitId),
                     )
                     .map((g) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        {g.name} - {g.baseUnit.symbol} base
+                      <SelectItem
+                        key={g.id}
+                        value={g.id}
+                        disabled={g.requiresReview}
+                      >
+                        {g.name} - {g.baseUnit.symbol} base{" "}
+                        {g.kind === "PACKAGING" ? "(Packaging profile)" : ""}{" "}
+                        {g.requiresReview ? "(Review required)" : ""}
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
+              {unitGroups?.find((g) => g.id === unitGroupId)
+                ?.requiresReview && (
+                <p role="alert" className="text-xs text-destructive">
+                  This unit configuration requires review. Fix it in unit
+                  settings before using alternative units.
+                </p>
+              )}
               <a href="/units" className="text-xs text-primary underline">
                 Manage unit categories
               </a>

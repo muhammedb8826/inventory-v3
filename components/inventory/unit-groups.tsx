@@ -1,4 +1,5 @@
 "use client";
+import { allowedConversion, fixedUnitFactor } from "@/lib/unit-rules";
 import { useState } from "react";
 import { useFetch } from "@/hooks/use-fetch";
 import { api } from "@/lib/api";
@@ -68,6 +69,9 @@ export function UnitGroups({
   );
   const [editing, setEditing] = useState<UnitGroup | null | undefined>();
   const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<"CATEGORY" | "PACKAGING">(
+    "CATEGORY",
+  );
   const members = (g: UnitGroup) =>
     [g.baseUnitId, ...g.conversions.map((c) => c.unitId)]
       .map((id) => units.find((u) => u.id === id))
@@ -77,6 +81,7 @@ export function UnitGroups({
       method: "PATCH",
       body: {
         name: g.name,
+        kind: g.kind ?? "CATEGORY",
         category: g.category,
         baseUnitId: g.baseUnitId,
         isActive,
@@ -86,6 +91,27 @@ export function UnitGroups({
   }
   return (
     <section className="space-y-4" aria-label="Unit categories">
+      <div className="flex flex-wrap gap-2" aria-label="Configuration types">
+        <Button
+          type="button"
+          variant={kindFilter === "CATEGORY" ? "default" : "outline"}
+          onClick={() => setKindFilter("CATEGORY")}
+        >
+          Measurement categories
+        </Button>
+        <Button
+          type="button"
+          variant={kindFilter === "PACKAGING" ? "default" : "outline"}
+          onClick={() => setKindFilter("PACKAGING")}
+        >
+          Packaging profiles
+        </Button>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {kindFilter === "CATEGORY"
+          ? "Keep mass, length, area and other measurements separate. Standard conversions are fixed."
+          : "Define package sizes once, such as 1 roll = 50 m, and assign the profile to matching items. Physical measurement categories cannot be mixed."}
+      </p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Input
           aria-label="Search categories"
@@ -95,7 +121,7 @@ export function UnitGroups({
           onChange={(e) => setSearch(e.target.value)}
         />
         <Button type="button" onClick={() => setEditing(null)}>
-          New category
+          {kindFilter === "CATEGORY" ? "New category" : "New packaging profile"}
         </Button>
       </div>
       {error && (
@@ -109,14 +135,20 @@ export function UnitGroups({
       <DataCardTable<UnitGroup>
         loading={loading}
         storageKey="unit-categories"
-        rows={(data ?? []).filter((g) =>
-          `${g.name} ${members(g)
-            .map((u) => `${u.name} ${u.code} ${u.symbol}`)
-            .join(" ")}`
-            .toLowerCase()
-            .includes(search.toLowerCase()),
-        )}
-        emptyTitle="No unit categories"
+        rows={(data ?? [])
+          .filter((g) => (g.kind ?? "CATEGORY") === kindFilter)
+          .filter((g) =>
+            `${g.name} ${members(g)
+              .map((u) => `${u.name} ${u.code} ${u.symbol}`)
+              .join(" ")}`
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+          )}
+        emptyTitle={
+          kindFilter === "PACKAGING"
+            ? "No packaging profiles"
+            : "No unit categories"
+        }
         emptyDescription="Create a category, choose its reference unit, and add conversion lines."
         onBulkComplete={reload}
         bulkActions={[
@@ -139,7 +171,8 @@ export function UnitGroups({
         columns={[
           {
             key: "name",
-            header: "Category",
+            header:
+              kindFilter === "PACKAGING" ? "Packaging profile" : "Category",
             hideable: false,
             cell: (g) => (
               <button
@@ -175,10 +208,21 @@ export function UnitGroups({
           {
             key: "isActive",
             header: "Status",
-            defaultVisible: false,
             cell: (g) => (
-              <Badge variant={g.isActive ? "secondary" : "outline"}>
-                {g.isActive ? "Active" : "Inactive"}
+              <Badge
+                variant={
+                  g.requiresReview
+                    ? "destructive"
+                    : g.isActive
+                      ? "secondary"
+                      : "outline"
+                }
+              >
+                {g.requiresReview
+                  ? "Review required"
+                  : g.isActive
+                    ? "Active"
+                    : "Inactive"}
               </Badge>
             ),
           },
@@ -207,6 +251,7 @@ export function UnitGroups({
       {editing !== undefined && (
         <GroupEditor
           group={editing}
+          initialKind={kindFilter}
           units={units}
           onCreateUnit={onCreateUnit}
           onClose={() => setEditing(undefined)}
@@ -221,18 +266,23 @@ export function UnitGroups({
 }
 function GroupEditor({
   group,
+  initialKind,
   units,
   onClose,
   onSaved,
   onCreateUnit,
 }: {
   group: UnitGroup | null;
+  initialKind: "CATEGORY" | "PACKAGING";
   units: UnitOfMeasure[];
   onClose: () => void;
   onSaved: () => void;
   onCreateUnit: () => void;
 }) {
   const [name, setName] = useState(group?.name ?? "");
+  const [kind, setKind] = useState<"CATEGORY" | "PACKAGING">(
+    group?.kind ?? initialKind,
+  );
   const [category, setCategory] = useState<UnitOfMeasure["category"]>(
     group?.category ?? "MASS",
   );
@@ -269,12 +319,8 @@ function GroupEditor({
   };
   function suggested(id: string) {
     const unit = units.find((u) => u.id === id);
-    return unit &&
-      base &&
-      unit.category === base.category &&
-      reference[unit.code] &&
-      reference[base.code]
-      ? String(reference[unit.code] / reference[base.code])
+    return unit && base
+      ? String(fixedUnitFactor(unit, base, rows, units) ?? 1)
       : "1";
   }
   async function save() {
@@ -288,17 +334,31 @@ function GroupEditor({
         throw new Error(
           "Enter a name, base unit and positive conversion for each unit.",
         );
+      if (
+        !base ||
+        base.category !== category ||
+        rows.some((r) => {
+          const u = units.find((u) => u.id === r.unitId);
+          return !u || !allowedConversion(base, u, kind);
+        })
+      )
+        throw new Error(
+          "The base unit must match the measurement category. Use only matching units, or count units in an explicit packaging profile.",
+        );
       await api(group ? `/units/groups/${group.id}` : "/units/groups", {
         method: group ? "PATCH" : "POST",
         body: {
           name,
+          kind,
           category,
           baseUnitId: baseId,
           isActive: active,
           conversions: rows.map(conversionPayload),
         },
       });
-      toast.success("Category saved");
+      toast.success(
+        kind === "PACKAGING" ? "Packaging profile saved" : "Category saved",
+      );
       onSaved();
     } catch (e) {
       toast.error(errorMessage(e));
@@ -320,7 +380,7 @@ function GroupEditor({
         ? String(reference[next.code] / reference[old.code])
         : undefined);
     setBaseId(id);
-    if (next) setCategory(next.category);
+
     if (old && ratio)
       setRows((prev) => [
         ...prev
@@ -349,10 +409,17 @@ function GroupEditor({
     >
       <DialogContent className="flex max-h-[92svh] flex-col overflow-hidden sm:max-w-5xl">
         <DialogHeader>
-          <DialogTitle>{group ? group.name : "New unit category"}</DialogTitle>
+          <DialogTitle>
+            {group
+              ? group.name
+              : kind === "PACKAGING"
+                ? "New packaging profile"
+                : "New unit category"}
+          </DialogTitle>
           <DialogDescription>
-            Choose a reference unit and add the units that convert to it. These
-            settings are shared by every item in this category.
+            Choose the measurement category first. All measurement units must
+            match it. Packaging profiles may additionally contain count-based
+            packages.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -363,10 +430,77 @@ function GroupEditor({
           }}
         >
           <div className="min-h-0 space-y-6 overflow-y-auto pr-1">
+            {group?.requiresReview && (
+              <div
+                role="alert"
+                className="rounded-xl border border-destructive/30 p-3 text-sm"
+              >
+                <strong>
+                  Review required. Historical stock and transactions are
+                  unchanged.
+                </strong>
+                <ul className="mt-2 list-disc pl-5">
+                  {group.reviewIssues?.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Category name" required>
+              <FormField
+                label="Configuration type"
+                htmlFor="unit-configuration-type"
+              >
+                <select
+                  id="unit-configuration-type"
+                  className="app-control h-11 rounded-md border bg-background px-3"
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value as typeof kind)}
+                >
+                  <option value="CATEGORY">Measurement category</option>
+                  <option value="PACKAGING">Packaging profile</option>
+                </select>
+              </FormField>
+              <FormField
+                label="Measurement category"
+                htmlFor="unit-measurement-category"
+              >
+                <select
+                  id="unit-measurement-category"
+                  className="app-control h-11 rounded-md border bg-background px-3"
+                  value={category}
+                  onChange={(e) => {
+                    const next = e.target.value as typeof category;
+                    setCategory(next);
+                    if (base?.category !== next) {
+                      setBaseId("");
+                      setRows([]);
+                    }
+                  }}
+                >
+                  {[
+                    "COUNT",
+                    "LENGTH",
+                    "AREA",
+                    "VOLUME",
+                    "MASS",
+                    "TIME",
+                    "OTHER",
+                  ].map((c) => (
+                    <option key={c} value={c}>
+                      {c.charAt(0) + c.slice(1).toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField
+                label={kind === "PACKAGING" ? "Profile name" : "Category name"}
+                required
+              >
                 <Input
-                  aria-label="Category name"
+                  aria-label={
+                    kind === "PACKAGING" ? "Profile name" : "Category name"
+                  }
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Mass or Fabric rolls - 50 m"
@@ -378,7 +512,7 @@ function GroupEditor({
                 hint="Stock and unit costs use this unit. Protected once assigned to items."
               >
                 <UnitSelect
-                  units={units}
+                  units={units.filter((u) => u.category === category)}
                   value={baseId}
                   onChange={changeBase}
                 />
@@ -427,12 +561,22 @@ function GroupEditor({
                     )}
                     {rows.map((row, i) => {
                       const unit = units.find((u) => u.id === row.unitId);
+                      const fixed =
+                        unit && base
+                          ? fixedUnitFactor(unit, base, rows, units)
+                          : undefined;
+                      const invalidStandard =
+                        fixed !== undefined &&
+                        Math.abs(Number(row.factor) - fixed) >
+                          Math.abs(fixed) * 1e-12;
                       return (
                         <tr key={i} className="border-b last:border-0">
                           <td className="min-w-48 p-3">
                             <UnitSelect
                               units={units.filter(
                                 (u) =>
+                                  !!base &&
+                                  allowedConversion(base, u, kind) &&
                                   u.id !== baseId &&
                                   (u.id === row.unitId ||
                                     !rows.some((r) => r.unitId === u.id)),
@@ -465,6 +609,7 @@ function GroupEditor({
                           <td className="p-3">
                             <Input
                               aria-label="Conversion ratio"
+                              readOnly={fixed !== undefined}
                               type="number"
                               min="0.0000000001"
                               step="any"
@@ -484,6 +629,29 @@ function GroupEditor({
                                 )
                               }
                             />
+                            {invalidStandard && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setRows((prev) =>
+                                    prev.map((r, j) =>
+                                      j === i
+                                        ? {
+                                            ...r,
+                                            factor: String(fixed),
+                                            stockQuantity: undefined,
+                                            unitQuantity: undefined,
+                                          }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              >
+                                Apply standard ratio
+                              </Button>
+                            )}
                           </td>
                           <td className="p-3 tabular-nums">
                             {unit ? 10 ** -unit.decimalPlaces : "-"}
@@ -611,7 +779,11 @@ function GroupEditor({
                 Cancel
               </Button>
               <Button disabled={saving}>
-                {saving ? "Saving..." : "Save category"}
+                {saving
+                  ? "Saving..."
+                  : kind === "PACKAGING"
+                    ? "Save profile"
+                    : "Save category"}
               </Button>
             </div>
           </div>
