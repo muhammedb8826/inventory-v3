@@ -1,4 +1,5 @@
 "use client";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ import { toast } from "sonner";
 export function ProductionOrderForm() {
   const router = useRouter();
   const [bomId, setBomId] = useState("");
+  const [unitId, setUnitId] = useState<string | undefined>();
   const [locationId, setLocationId] = useState("");
   const [finishedLocationId, setFinishedLocationId] = useState("");
   const [quantityPlanned, setQuantityPlanned] = useState("1");
@@ -72,6 +74,7 @@ export function ProductionOrderForm() {
           locationId,
           finishedLocationId: finishedLocationId || locationId,
           quantityPlanned: qty,
+          unitId,
           explodeBom,
           notes: notes.trim() || undefined,
         },
@@ -126,7 +129,13 @@ export function ProductionOrderForm() {
         >
           <FormGrid>
             <FormField label="BOM" required className="sm:col-span-2">
-              <Select value={bomId || undefined} onValueChange={setBomId}>
+              <Select
+                value={bomId || undefined}
+                onValueChange={(id) => {
+                  setBomId(id);
+                  setUnitId(undefined);
+                }}
+              >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select BOM" />
                 </SelectTrigger>
@@ -189,6 +198,13 @@ export function ProductionOrderForm() {
                 </SelectContent>
               </Select>
             </FormField>
+            <TransactionUnitField
+              key={bomId}
+              itemId={boms?.find((b) => b.id === bomId)?.finishedItemId ?? ""}
+              value={unitId}
+              quantity={quantityPlanned}
+              onChange={setUnitId}
+            />
             <FormField label="Quantity planned" required>
               <Input
                 className="h-10"

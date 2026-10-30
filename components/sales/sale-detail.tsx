@@ -1,4 +1,5 @@
 "use client";
+import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -92,10 +93,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
             <Badge variant="outline">{paymentLabel}</Badge>
           )}
           {canWrite && !isVoided ? (
-            <SaleReturnDialog
-              sale={sale}
-              onSuccess={() => router.refresh()}
-            />
+            <SaleReturnDialog sale={sale} onSuccess={() => router.refresh()} />
           ) : null}
           <SaleDocumentActions saleId={sale.id} status={sale.status} />
         </div>
@@ -105,9 +103,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
         <PageFormSection
           title="Sales invoice"
           description={
-            sale.createdAt
-              ? `Created ${formatDate(sale.createdAt)}`
-              : undefined
+            sale.createdAt ? `Created ${formatDate(sale.createdAt)}` : undefined
           }
         >
           <FormGrid>
@@ -116,10 +112,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
               value={sale.customer?.name ?? "—"}
               href={sale.customerId ? `/customers` : undefined}
             />
-            <DetailField
-              label="Location"
-              value={sale.location?.name ?? "—"}
-            />
+            <DetailField label="Location" value={sale.location?.name ?? "—"} />
             <DetailField label="Payment method" value={paymentLabel} />
             {sale.paymentMethod !== "CREDIT" ? (
               <DetailField
@@ -130,9 +123,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
               <DetailField
                 label="Credit due date"
                 value={
-                  sale.creditDueDate
-                    ? formatDate(sale.creditDueDate)
-                    : "—"
+                  sale.creditDueDate ? formatDate(sale.creditDueDate) : "—"
                 }
               />
             )}
@@ -151,14 +142,14 @@ export function SaleDetail({ sale }: { sale: Sale }) {
             ) : null}
             {formatCommissionRate(
               sale.commissionPercent,
-              sale.commissionBasis
+              sale.commissionBasis,
             ) ? (
               <DetailField
                 label="Commission rate"
                 value={
                   formatCommissionRate(
                     sale.commissionPercent,
-                    sale.commissionBasis
+                    sale.commissionBasis,
                   )!
                 }
               />
@@ -170,16 +161,11 @@ export function SaleDetail({ sale }: { sale: Sale }) {
               />
             ) : null}
             {sale.createdBy && sale.createdBy.id !== soldBy?.id ? (
-              <DetailField
-                label="Entered by"
-                value={sale.createdBy.fullName}
-              />
+              <DetailField label="Entered by" value={sale.createdBy.fullName} />
             ) : null}
             <DetailField
               label="Document ID"
-              value={
-                <span className="font-mono text-xs">{sale.id}</span>
-              }
+              value={<span className="font-mono text-xs">{sale.id}</span>}
             />
             {sale.notes ? (
               <div className="sm:col-span-2">
@@ -205,7 +191,9 @@ export function SaleDetail({ sale }: { sale: Sale }) {
                     <th className="px-4 py-2.5">Item</th>
                     <th className="px-4 py-2.5">SKU</th>
                     <th className="px-4 py-2.5 text-right tabular-nums">Qty</th>
-                    <th className="px-4 py-2.5 text-right tabular-nums">Rate</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Rate
+                    </th>
                     <th className="px-4 py-2.5 text-right tabular-nums">
                       Amount
                     </th>
@@ -221,11 +209,17 @@ export function SaleDetail({ sale }: { sale: Sale }) {
                         {line.item?.sku ?? "—"}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(line.quantity)}
-                        {line.item?.unit ? ` ${line.item.unit}` : ""}
+                        <UnitQuantityDisplay
+                          quantity={line.quantity}
+                          unit={line.item?.unit}
+                          snapshot={line.unitSnapshot}
+                          commercial
+                        />
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatMoney(line.unitPrice)}
+                        {formatMoney(
+                          line.unitSnapshot?.unitPrice ?? line.unitPrice,
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                         {formatMoney(lineAmount(line))}

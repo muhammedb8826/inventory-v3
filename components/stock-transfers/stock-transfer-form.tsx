@@ -1,4 +1,5 @@
 "use client";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -46,7 +47,9 @@ export function StockTransferForm() {
   const [fromLocationId, setFromLocationId] = useState("");
   const [toLocationId, setToLocationId] = useState("");
   const [notes, setNotes] = useState("");
-  const [lines, setLines] = useState([{ itemId: "", quantity: "1" }]);
+  const [lines, setLines] = useState<
+    { itemId: string; quantity: string; unitId?: string }[]
+  >([{ itemId: "", quantity: "1" }]);
   const [saving, setSaving] = useState(false);
 
   const {
@@ -228,7 +231,7 @@ export function StockTransferForm() {
             className="form-line-editor overflow-hidden rounded-xl border"
             style={
               {
-                "--line-columns": "minmax(12rem,1fr) 7rem 2.5rem",
+                "--line-columns": "minmax(12rem,1fr) 10rem 7rem 2.5rem",
               } as React.CSSProperties
             }
           >
@@ -244,7 +247,9 @@ export function StockTransferForm() {
                       onValueChange={(v) =>
                         setLines((prev) =>
                           prev.map((row, idx) =>
-                            idx === i ? { ...row, itemId: v } : row,
+                            idx === i
+                              ? { ...row, itemId: v, unitId: undefined }
+                              : row,
                           ),
                         )
                       }
@@ -254,6 +259,19 @@ export function StockTransferForm() {
                       className="min-w-0"
                     />
                   </FormField>
+                  <TransactionUnitField
+                    key={line.itemId}
+                    itemId={line.itemId}
+                    value={line.unitId}
+                    quantity={line.quantity}
+                    onChange={(unitId) =>
+                      setLines((prev) =>
+                        prev.map((row, index) =>
+                          index === i ? { ...row, unitId } : row,
+                        ),
+                      )
+                    }
+                  />
                   <FormField label="Quantity" className="form-line-field">
                     <Input
                       type="number"

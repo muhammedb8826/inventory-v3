@@ -1,5 +1,7 @@
 # Frontend API Contract — Stock Management System
 
+
+Unit conversions: see [Units of measure](UNITS_OF_MEASURE.md). Document inputs may select an alternative unit; stored quantity/rate fields remain base values, and unitSnapshot contains the original commercial representation.
 This document is the **canonical REST contract** for the NestJS backend (`inventory-api`). The Next.js frontend consumes these endpoints via `NEXT_PUBLIC_API_URL`.
 
 **Base URL:** `http://localhost:3001/api/v1` (backend `PORT`; frontend override: `NEXT_PUBLIC_API_URL` in `.env.local`)

@@ -165,10 +165,45 @@ const units = [
     requiresReview: false,
   },
 ];
+units.push({
+  id: "10000000-0000-4000-8000-000000000011",
+  code: "BOX",
+  name: "Box",
+  symbol: "box",
+  category: "COUNT",
+  decimalPlaces: 0,
+  isActive: true,
+  requiresReview: false,
+});
+units.push({
+  id: "10000000-0000-4000-8000-000000000006",
+  code: "M2",
+  name: "Square metre",
+  symbol: "m2",
+  category: "AREA",
+  decimalPlaces: 3,
+  isActive: true,
+  requiresReview: false,
+});
 for (const row of inventory) {
   row.item.unitId = units[0].id;
   row.item.stockUnit = units[0];
 }
+const unusedStock = {
+  ...inventory[0],
+  id: "stock-unused",
+  itemId: "item-unused",
+  quantity: "0.000",
+  reserved: "0.000",
+  available: "0.000",
+  reorderPoint: "0.000",
+  item: {
+    ...inventory[0].item,
+    id: "item-unused",
+    description: "Unused fabric",
+    sku: "UNUSED-01",
+  },
+};
 const token =
   "e30." +
   Buffer.from(
@@ -287,6 +322,34 @@ const server = createServer(async (req, res) => {
       units.push(value);
       result = value;
     } else result = units;
+  } else if (path === "/units/groups") {
+    result = [];
+  } else if (path.startsWith("/units/items/")) {
+    const item =
+      inventory.find((row) => row.itemId === path.split("/").pop())?.item ??
+      (path.endsWith("/item-unused") ? unusedStock.item : inventory[0].item);
+    if (req.method === "PATCH")
+      item.unitConversions = JSON.parse(body).conversions.map((c) => ({
+        ...c,
+        factor: c.factor ?? String(c.stockQuantity / c.unitQuantity),
+      }));
+    const conversions = item.unitConversions ?? [];
+    result = {
+      baseUnit: units.find((u) => u.id === item.unitId) ?? units[0],
+      canChangeBaseUnit: item.id === "item-unused" && conversions.length === 0,
+      baseUnitLockReason:
+        item.id === "item-unused"
+          ? null
+          : "Stock unit is protected by existing stock and history.",
+      conversions,
+      options: [
+        { unit: units[0], factor: "1", isStandard: true },
+        ...conversions.map((c) => ({
+          ...c,
+          unit: units.find((u) => u.id === c.unitId),
+        })),
+      ],
+    };
   } else if (path.startsWith("/units/") && req.method === "PATCH") {
     const unit = units.find((u) => u.id === path.split("/").pop());
     Object.assign(unit ?? {}, JSON.parse(body));
@@ -317,7 +380,19 @@ const server = createServer(async (req, res) => {
       meta: { page: 1, limit: 20, total: 3, totalPages: 1 },
       totals: { quantity: "54.000", inventoryValue: "62700.00" },
     };
-  else if (/^\/inventory\/stock-/.test(path))
+  else if (path === "/inventory/stock-unused") {
+    if (req.method === "PATCH") {
+      const dto = JSON.parse(body);
+      const unit = units.find((u) => u.id === dto.unitId);
+      Object.assign(unusedStock.item, {
+        unitId: unit.id,
+        stockUnit: unit,
+        unit: unit.symbol,
+      });
+      unusedStock.purchasePrice = String(dto.purchasePrice);
+    }
+    result = unusedStock;
+  } else if (/^\/inventory\/stock-/.test(path))
     result = inventory.find((row) => row.id === path.split("/").pop());
   else if (path === "/customers")
     result = {

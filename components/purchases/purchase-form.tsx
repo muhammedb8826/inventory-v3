@@ -1,4 +1,5 @@
 "use client";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -70,6 +71,9 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
 interface LineRow {
+  dimensions?: import("@/lib/types").AreaDimensions;
+  unitId?: string;
+  unitFactor?: number;
   itemId: string;
   quantity: string;
   unitPrice: string;
@@ -83,8 +87,11 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
     const itemId = productItemId({ itemId: l.itemId, item: l.item });
     return {
       itemId,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
+      quantity: l.unitSnapshot?.quantity ?? l.quantity,
+      dimensions: l.unitSnapshot?.dimensions,
+      unitId: l.unitSnapshot?.unitId ?? l.item?.unitId ?? "",
+      unitFactor: Number(l.unitSnapshot?.factor ?? 1),
+      unitPrice: l.unitSnapshot?.unitPrice ?? l.unitPrice,
       lotNumber: "",
       expiryDate: "",
       item: l.item ? resolveItem(itemId, l.item) : undefined,
@@ -182,6 +189,7 @@ export function PurchaseForm({
         shortLines.map((l) => ({
           itemId: l.componentItemId,
           quantity: l.shortage,
+          unitId: "",
           unitPrice: "",
           lotNumber: "",
           expiryDate: "",
@@ -270,7 +278,7 @@ export function PurchaseForm({
         changed = true;
         return {
           ...row,
-          unitPrice: String(price),
+          unitPrice: String(Number(price) * (row.unitFactor ?? 1)),
           item: row.item ?? resolveItem(row.itemId, match.item),
         };
       });
@@ -330,6 +338,14 @@ export function PurchaseForm({
     }
     if (paymentMethod === "CREDIT" && creditDueDate) {
       body.creditDueDate = creditDueDate;
+    }
+    if (purchase) {
+      const original = parseDocumentLines(linesFromPurchase(purchase));
+      if (
+        "lines" in original &&
+        JSON.stringify(original.lines) === JSON.stringify(documentLines)
+      )
+        delete body.lines;
     }
     return sanitizePaymentDocumentBody(body);
   }
@@ -627,12 +643,13 @@ export function PurchaseForm({
               style={
                 {
                   "--line-columns":
-                    "minmax(12rem,1fr) 6rem 7rem 7rem 8rem 2.5rem",
+                    "minmax(8rem,1fr) 7rem 5rem 6rem 5rem 7rem 2.5rem",
                 } as React.CSSProperties
               }
             >
               <div className="form-line-head grid-cols-[minmax(0,1fr)_6rem_7rem_7rem_8rem_2.5rem] gap-2 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground ">
                 <span>Item</span>
+                <span>Unit</span>
                 <span>Qty</span>
                 <span>Rate</span>
                 <span>Lot</span>
@@ -650,13 +667,44 @@ export function PurchaseForm({
                         value={line.itemId}
                         onValueChange={(v) => {
                           const item = itemMap.get(v);
-                          updateLine(i, { itemId: v, item });
+                          updateLine(i, {
+                            itemId: v,
+                            dimensions: undefined,
+                            item,
+                            unitId: undefined,
+                            unitFactor: 1,
+                          });
                         }}
                         options={itemOptions}
                         disabled={!locationId || stockLoading}
                         placeholder="Item"
                       />
                     </FormField>
+                    <TransactionUnitField
+                      key={line.itemId}
+                      itemId={line.itemId}
+                      value={line.unitId}
+                      savedFactor={line.unitFactor}
+                      dimensions={line.dimensions}
+                      onAreaChange={(quantity, dimensions) =>
+                        updateLine(i, { quantity, dimensions })
+                      }
+                      quantity={line.quantity}
+                      kind="purchase"
+                      onChange={(unitId, factor, oldFactor) =>
+                        updateLine(i, {
+                          unitId,
+                          dimensions: undefined,
+                          unitFactor: factor,
+                          unitPrice: line.unitPrice
+                            ? String(
+                                (Number(line.unitPrice) * factor) /
+                                  (line.unitFactor ?? oldFactor),
+                              )
+                            : line.unitPrice,
+                        })
+                      }
+                    />
                     <FormField label="Quantity" className="form-line-field">
                       <Input
                         type="number"
@@ -665,7 +713,10 @@ export function PurchaseForm({
                         className="h-10"
                         value={line.quantity}
                         onChange={(e) =>
-                          updateLine(i, { quantity: e.target.value })
+                          updateLine(i, {
+                            quantity: e.target.value,
+                            dimensions: undefined,
+                          })
                         }
                         required
                       />

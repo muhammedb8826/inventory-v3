@@ -1,4 +1,5 @@
 "use client";
+import { UnitGroups } from "@/components/inventory/unit-groups";
 import { useState } from "react";
 import { PlusIcon, PencilIcon } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -48,13 +49,13 @@ export default function UnitsPage() {
   );
   if (authLoading)
     return (
-      <AppShell title="Units of measure">
+      <AppShell title="Unit categories">
         <PageLoading />
       </AppShell>
     );
   if (!canManage)
     return (
-      <AppShell title="Units of measure">
+      <AppShell title="Unit categories">
         <AccessDenied />
       </AppShell>
     );
@@ -65,136 +66,146 @@ export default function UnitsPage() {
   );
   return (
     <AppShell
-      title="Units of measure"
-      subtitle="Control stock units, quantity precision and legacy definitions."
+      title="Unit categories"
+      subtitle="Configure categories once and reuse their units across your inventory."
     >
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          {data?.filter((u) => u.requiresReview).length ?? 0} units need review.
-          Unit definitions are protected once used. All quantities stay in each
-          item stock unit.
-        </p>
-        <Button onClick={() => setEditing(null)}>
-          <PlusIcon className="size-4" />
-          Add unit
-        </Button>
-      </div>
-      {error && (
-        <p role="alert" className="mb-4 text-destructive">
-          {error}{" "}
-          <button className="underline" onClick={() => void reload()}>
-            Retry
-          </button>
-        </p>
-      )}
-      <Input
-        aria-label="Search units"
-        placeholder="Search units..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 max-w-md"
-      />
-      <DataCardTable<UnitOfMeasure>
-        rows={rows}
-        loading={loading}
-        storageKey="units"
-        onBulkComplete={() => void reload()}
-        bulkActions={[
-          {
-            id: "activate",
-            label: "Activate selected",
-            description:
-              "Make the selected units available for new items. Legacy units still require review.",
-            eligible: (u) => !u.isActive,
-            run: (u) =>
-              api(`/units/${u.id}`, {
-                method: "PATCH",
-                body: { isActive: true },
-              }),
-          },
-          {
-            id: "deactivate",
-            label: "Deactivate selected",
-            description:
-              "Hide selected units from new item selection. Existing stock records retain their units.",
-            eligible: (u) => u.isActive,
-            run: (u) =>
-              api(`/units/${u.id}`, {
-                method: "PATCH",
-                body: { isActive: false },
-              }),
-          },
-        ]}
-        columns={[
-          {
-            key: "name",
-            header: "Unit",
-            cell: (u) => (
-              <div>
-                <span className="font-medium">{u.name}</span>
-                <span className="ml-2 text-muted-foreground">{u.symbol}</span>
-              </div>
-            ),
-          },
-          { key: "code", header: "Code", cell: (u) => u.code },
-          {
-            key: "category",
-            header: "Category",
-            cell: (u) => u.category.toLowerCase(),
-          },
-          {
-            key: "decimalPlaces",
-            header: "Quantity precision",
-            cell: (u) =>
-              u.decimalPlaces === 0
-                ? "Whole numbers"
-                : `${u.decimalPlaces} decimal places`,
-          },
-          {
-            key: "isActive",
-            header: "Status",
-            cell: (u) => (
-              <Badge
-                variant={
-                  u.requiresReview
-                    ? "outline"
-                    : u.isActive
-                      ? "secondary"
-                      : "outline"
-                }
-              >
-                {u.requiresReview
-                  ? "Needs review"
-                  : u.isActive
-                    ? "Active"
-                    : "Inactive"}
-              </Badge>
-            ),
-          },
-          {
-            key: "uneceCode",
-            header: "UNECE code",
-            cell: (u) => u.uneceCode ?? "\u2014",
-            defaultVisible: false,
-          },
-          {
-            key: "actions",
-            header: "Actions",
-            cell: (u) => (
-              <RowActionsMenu
-                label={u.name}
-                actions={[
-                  {
-                    label: u.requiresReview ? "Review unit" : "Edit unit",
-                    icon: PencilIcon,
-                    onSelect: () => setEditing(u),
-                  },
-                ]}
-              />
-            ),
-          },
-        ]}
-      />
+      <UnitGroups units={data ?? []} onCreateUnit={() => setEditing(null)} />
+      <details className="mt-8 rounded-xl border bg-card p-4 sm:p-6">
+        <summary className="cursor-pointer font-medium">
+          Unit catalog and legacy review
+        </summary>
+        <div className="mt-5">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              {data?.filter((u) => u.requiresReview).length ?? 0} units need
+              review. Unit definitions are protected once used. All quantities
+              stay in each item stock unit.
+            </p>
+            <Button onClick={() => setEditing(null)}>
+              <PlusIcon className="size-4" />
+              Add unit
+            </Button>
+          </div>
+          {error && (
+            <p role="alert" className="mb-4 text-destructive">
+              {error}{" "}
+              <button className="underline" onClick={() => void reload()}>
+                Retry
+              </button>
+            </p>
+          )}
+          <Input
+            aria-label="Search units"
+            placeholder="Search units..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="mb-4 max-w-md"
+          />
+          <DataCardTable<UnitOfMeasure>
+            rows={rows}
+            loading={loading}
+            storageKey="units"
+            onBulkComplete={() => void reload()}
+            bulkActions={[
+              {
+                id: "activate",
+                label: "Activate selected",
+                description:
+                  "Make the selected units available for new items. Legacy units still require review.",
+                eligible: (u) => !u.isActive,
+                run: (u) =>
+                  api(`/units/${u.id}`, {
+                    method: "PATCH",
+                    body: { isActive: true },
+                  }),
+              },
+              {
+                id: "deactivate",
+                label: "Deactivate selected",
+                description:
+                  "Hide selected units from new item selection. Existing stock records retain their units.",
+                eligible: (u) => u.isActive,
+                run: (u) =>
+                  api(`/units/${u.id}`, {
+                    method: "PATCH",
+                    body: { isActive: false },
+                  }),
+              },
+            ]}
+            columns={[
+              {
+                key: "name",
+                header: "Unit",
+                cell: (u) => (
+                  <div>
+                    <span className="font-medium">{u.name}</span>
+                    <span className="ml-2 text-muted-foreground">
+                      {u.symbol}
+                    </span>
+                  </div>
+                ),
+              },
+              { key: "code", header: "Code", cell: (u) => u.code },
+              {
+                key: "category",
+                header: "Category",
+                cell: (u) => u.category.toLowerCase(),
+              },
+              {
+                key: "decimalPlaces",
+                header: "Quantity precision",
+                cell: (u) =>
+                  u.decimalPlaces === 0
+                    ? "Whole numbers"
+                    : `${u.decimalPlaces} decimal places`,
+              },
+              {
+                key: "isActive",
+                header: "Status",
+                cell: (u) => (
+                  <Badge
+                    variant={
+                      u.requiresReview
+                        ? "outline"
+                        : u.isActive
+                          ? "secondary"
+                          : "outline"
+                    }
+                  >
+                    {u.requiresReview
+                      ? "Needs review"
+                      : u.isActive
+                        ? "Active"
+                        : "Inactive"}
+                  </Badge>
+                ),
+              },
+              {
+                key: "uneceCode",
+                header: "UNECE code",
+                cell: (u) => u.uneceCode ?? "\u2014",
+                defaultVisible: false,
+              },
+              {
+                key: "actions",
+                header: "Actions",
+                cell: (u) => (
+                  <RowActionsMenu
+                    label={u.name}
+                    actions={[
+                      {
+                        label: u.requiresReview ? "Review unit" : "Edit unit",
+                        icon: PencilIcon,
+                        onSelect: () => setEditing(u),
+                      },
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
+        </div>
+      </details>
       {editing !== undefined && (
         <UnitDialog
           key={editing?.id ?? "new"}
@@ -271,9 +282,9 @@ function UnitDialog({
                 : "Add unit"}
           </DialogTitle>
           <DialogDescription>
-            Decimals are limited to the inventory ledger three-place
-            precision. Boxes and rolls need item-specific conversions; they are
-            not universal units.
+            Decimals are limited to the inventory ledger three-place precision.
+            Boxes and rolls need item-specific conversions; they are not
+            universal units.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="space-y-4">

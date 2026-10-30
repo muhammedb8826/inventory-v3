@@ -1,4 +1,5 @@
 "use client";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -79,6 +80,9 @@ import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 
 interface LineRow {
+  dimensions?: import("@/lib/types").AreaDimensions;
+  unitId?: string;
+  unitFactor?: number;
   itemId: string;
   quantity: string;
   unitPrice: string;
@@ -90,8 +94,11 @@ function linesFromSale(sale: Sale): LineRow[] {
     const itemId = productItemId({ itemId: l.itemId, item: l.item });
     return {
       itemId,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
+      quantity: l.unitSnapshot?.quantity ?? l.quantity,
+      dimensions: l.unitSnapshot?.dimensions,
+      unitId: l.unitSnapshot?.unitId ?? l.item?.unitId ?? "",
+      unitFactor: Number(l.unitSnapshot?.factor ?? 1),
+      unitPrice: l.unitSnapshot?.unitPrice ?? l.unitPrice,
       item: l.item ? resolveItem(itemId, l.item) : undefined,
     };
   });
@@ -161,7 +168,11 @@ export function SaleForm({
 
   const [lines, setLines] = useState<LineRow[]>(() => {
     if (sale) return linesFromSale(sale);
-    if (initial?.lines?.length) return initial.lines;
+    if (initial?.lines?.length)
+      return initial.lines.map((line) => ({
+        ...line,
+        unitId: line.unitId ?? "",
+      }));
     return [{ itemId: "", quantity: "1", unitPrice: "" }];
   });
   const [saving, setSaving] = useState(false);
@@ -325,6 +336,14 @@ export function SaleForm({
         body.commissionPercent = pct;
         body.commissionBasis = commissionBasis;
       }
+    }
+    if (sale) {
+      const original = parseDocumentLines(linesFromSale(sale));
+      if (
+        "lines" in original &&
+        JSON.stringify(original.lines) === JSON.stringify(documentLines)
+      )
+        delete body.lines;
     }
     return sanitizePaymentDocumentBody(body);
   }
@@ -668,12 +687,13 @@ export function SaleForm({
               className="form-line-editor overflow-hidden rounded-xl border"
               style={
                 {
-                  "--line-columns": "minmax(12rem,1fr) 7rem 8rem 2.5rem",
+                  "--line-columns": "minmax(12rem,1fr) 10rem 7rem 8rem 2.5rem",
                 } as React.CSSProperties
               }
             >
               <div className="form-line-head grid-cols-[minmax(0,1fr)_7rem_8rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground ">
                 <span>Item</span>
+                <span>Unit</span>
                 <span>Qty</span>
                 <span>Rate</span>
                 <span className="sr-only">Remove</span>
@@ -689,7 +709,13 @@ export function SaleForm({
                         value={line.itemId}
                         onValueChange={(v) => {
                           const item = itemMap.get(v);
-                          updateLine(i, { itemId: v, item });
+                          updateLine(i, {
+                            itemId: v,
+                            dimensions: undefined,
+                            item,
+                            unitId: undefined,
+                            unitFactor: 1,
+                          });
                         }}
                         options={itemOptions}
                         disabled={!locationId}
@@ -699,6 +725,31 @@ export function SaleForm({
                         placeholder="Item"
                       />
                     </FormField>
+                    <TransactionUnitField
+                      key={line.itemId}
+                      itemId={line.itemId}
+                      value={line.unitId}
+                      savedFactor={line.unitFactor}
+                      dimensions={line.dimensions}
+                      onAreaChange={(quantity, dimensions) =>
+                        updateLine(i, { quantity, dimensions })
+                      }
+                      quantity={line.quantity}
+                      kind="sales"
+                      onChange={(unitId, factor, oldFactor) =>
+                        updateLine(i, {
+                          unitId,
+                          dimensions: undefined,
+                          unitFactor: factor,
+                          unitPrice: line.unitPrice
+                            ? String(
+                                (Number(line.unitPrice) * factor) /
+                                  (line.unitFactor ?? oldFactor),
+                              )
+                            : line.unitPrice,
+                        })
+                      }
+                    />
                     <FormField label="Quantity" className="form-line-field">
                       <Input
                         type="number"
@@ -707,7 +758,10 @@ export function SaleForm({
                         className="h-10"
                         value={line.quantity}
                         onChange={(e) =>
-                          updateLine(i, { quantity: e.target.value })
+                          updateLine(i, {
+                            quantity: e.target.value,
+                            dimensions: undefined,
+                          })
                         }
                         required
                       />

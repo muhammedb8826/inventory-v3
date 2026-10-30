@@ -1,4 +1,5 @@
 "use client";
+import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -126,9 +127,7 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
             />
             <DetailField
               label="Document ID"
-              value={
-                <span className="font-mono text-xs">{purchase.id}</span>
-              }
+              value={<span className="font-mono text-xs">{purchase.id}</span>}
             />
             {purchase.notes ? (
               <div className="sm:col-span-2">
@@ -154,7 +153,9 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
                     <th className="px-4 py-2.5">Item</th>
                     <th className="px-4 py-2.5">SKU</th>
                     <th className="px-4 py-2.5 text-right tabular-nums">Qty</th>
-                    <th className="px-4 py-2.5 text-right tabular-nums">Rate</th>
+                    <th className="px-4 py-2.5 text-right tabular-nums">
+                      Rate
+                    </th>
                     <th className="px-4 py-2.5 text-right tabular-nums">
                       Amount
                     </th>
@@ -170,11 +171,17 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
                         {line.item?.sku ?? "—"}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(line.quantity)}
-                        {line.item?.unit ? ` ${line.item.unit}` : ""}
+                        <UnitQuantityDisplay
+                          quantity={line.quantity}
+                          unit={line.item?.unit}
+                          snapshot={line.unitSnapshot}
+                          commercial
+                        />
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatMoney(line.unitPrice)}
+                        {formatMoney(
+                          line.unitSnapshot?.unitPrice ?? line.unitPrice,
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                         {formatMoney(lineAmount(line))}

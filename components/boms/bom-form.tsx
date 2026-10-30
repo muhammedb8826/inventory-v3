@@ -1,4 +1,5 @@
 "use client";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,8 @@ import { toast } from "sonner";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 
 interface BomLineRow {
+  dimensions?: import("@/lib/types").AreaDimensions;
+  unitId?: string;
   componentItemId: string;
   quantity: string;
   scrapPercent: string;
@@ -36,7 +39,9 @@ interface BomLineRow {
 function linesFromBom(bom: Bom): BomLineRow[] {
   const rows = (bom.lines ?? []).map((line) => ({
     componentItemId: line.componentItemId,
-    quantity: String(line.quantity ?? ""),
+    quantity: String(line.unitSnapshot?.quantity ?? line.quantity ?? ""),
+    dimensions: line.unitSnapshot?.dimensions,
+    unitId: line.unitSnapshot?.unitId ?? line.componentItem?.unitId,
     scrapPercent:
       line.scrapPercent != null && line.scrapPercent !== ""
         ? String(line.scrapPercent)
@@ -157,10 +162,14 @@ export function BomForm({ bom }: { bom?: Bom }) {
       const entry: {
         componentItemId: string;
         quantity: number;
+        unitId?: string;
+        dimensions?: import("@/lib/types").AreaDimensions;
         scrapPercent?: number;
         isPhantom: boolean;
       } = {
         componentItemId: line.componentItemId,
+        unitId: line.unitId,
+        dimensions: line.dimensions,
         quantity,
         isPhantom: line.isPhantom,
       };
@@ -337,12 +346,14 @@ export function BomForm({ bom }: { bom?: Bom }) {
             className="form-line-editor overflow-hidden rounded-xl border"
             style={
               {
-                "--line-columns": "minmax(12rem,1fr) 7rem 7rem 6.5rem 2.5rem",
+                "--line-columns":
+                  "minmax(10rem,1fr) 8rem 6rem 6rem 5rem 2.5rem",
               } as React.CSSProperties
             }
           >
             <div className="form-line-head grid-cols-[minmax(0,1fr)_7rem_7rem_6.5rem_2.5rem] gap-3 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground ">
               <span>Component</span>
+              <span>Unit</span>
               <span>Qty / FG</span>
               <span>Scrap %</span>
               <span>Phantom</span>
@@ -369,6 +380,8 @@ export function BomForm({ bom }: { bom?: Bom }) {
                           fromBomLine?.isPhantom === true;
                         updateLine(index, {
                           componentItemId,
+                          unitId: undefined,
+                          dimensions: undefined,
                           isPhantom: inheritPhantom,
                         });
                       }}
@@ -377,6 +390,19 @@ export function BomForm({ bom }: { bom?: Bom }) {
                       searchPlaceholder="Search component…"
                     />
                   </FormField>
+                  <TransactionUnitField
+                    key={line.componentItemId}
+                    itemId={line.componentItemId}
+                    value={line.unitId}
+                    quantity={line.quantity}
+                    dimensions={line.dimensions}
+                    onAreaChange={(quantity, dimensions) =>
+                      updateLine(index, { quantity, dimensions })
+                    }
+                    onChange={(unitId) =>
+                      updateLine(index, { unitId, dimensions: undefined })
+                    }
+                  />
                   <FormField label="Quantity" className="form-line-field">
                     <Input
                       type="number"
@@ -385,7 +411,10 @@ export function BomForm({ bom }: { bom?: Bom }) {
                       className="h-10"
                       value={line.quantity}
                       onChange={(e) =>
-                        updateLine(index, { quantity: e.target.value })
+                        updateLine(index, {
+                          quantity: e.target.value,
+                          dimensions: undefined,
+                        })
                       }
                     />
                   </FormField>

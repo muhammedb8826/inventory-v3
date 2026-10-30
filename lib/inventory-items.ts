@@ -1,3 +1,4 @@
+import type { AreaDimensions } from "./types";
 import type { Item, StockRecord } from "@/lib/types";
 
 const UUID_RE =
@@ -37,7 +38,7 @@ export function resolveItem(itemId: string, item?: Partial<Item> | null): Item {
 /** Build productId → Item map for line-item selects (stock + existing lines). */
 export function buildItemOptionMap(
   stock: { id?: string; itemId: string; item?: Item | null }[],
-  lines: { itemId: string; item?: Item | null }[]
+  lines: { itemId: string; item?: Item | null }[],
 ): Map<string, Item> {
   const map = new Map<string, Item>();
   for (const source of [...stock, ...lines]) {
@@ -61,6 +62,8 @@ export function itemOptionsFromStock(stock: StockRecord[]) {
 }
 
 export interface DocumentLineInput {
+  dimensions?: AreaDimensions;
+  unitId?: string;
   itemId: string;
   quantity: string | number;
   unitPrice?: string | number;
@@ -69,6 +72,8 @@ export interface DocumentLineInput {
 }
 
 export interface DocumentLineBody {
+  dimensions?: AreaDimensions;
+  unitId?: string;
   itemId: string;
   quantity: number;
   unitPrice: number;
@@ -77,7 +82,7 @@ export interface DocumentLineBody {
 }
 
 export function parseDocumentLines(
-  lines: DocumentLineInput[]
+  lines: DocumentLineInput[],
 ): { lines: DocumentLineBody[] } | { error: string } {
   const parsed: DocumentLineBody[] = [];
 
@@ -106,6 +111,8 @@ export function parseDocumentLines(
       return { error: "Enter a valid unit price for each line." };
     }
     const row: DocumentLineBody = { itemId, quantity, unitPrice };
+    if (line.unitId) row.unitId = line.unitId;
+    if (line.dimensions) row.dimensions = line.dimensions;
     const lotNumber = line.lotNumber?.trim();
     if (lotNumber) row.lotNumber = lotNumber;
     const expiryDate = line.expiryDate?.trim();
@@ -121,14 +128,30 @@ export function parseDocumentLines(
 }
 
 export interface TransferLineInput {
+  dimensions?: AreaDimensions;
+  unitId?: string;
   itemId: string;
   quantity: string | number;
 }
 
 export function parseTransferLines(
-  lines: TransferLineInput[]
-): { lines: { itemId: string; quantity: number }[] } | { error: string } {
-  const parsed: { itemId: string; quantity: number }[] = [];
+  lines: TransferLineInput[],
+):
+  | {
+      lines: {
+        itemId: string;
+        quantity: number;
+        unitId?: string;
+        dimensions?: AreaDimensions;
+      }[];
+    }
+  | { error: string } {
+  const parsed: {
+    itemId: string;
+    quantity: number;
+    unitId?: string;
+    dimensions?: AreaDimensions;
+  }[] = [];
 
   for (const line of lines) {
     const itemId = productItemId(line);
@@ -146,7 +169,12 @@ export function parseTransferLines(
     if (Number.isNaN(quantity) || quantity <= 0) {
       return { error: "Enter a valid quantity for each line." };
     }
-    parsed.push({ itemId, quantity });
+    parsed.push({
+      itemId,
+      quantity,
+      ...(line.unitId ? { unitId: line.unitId } : {}),
+      ...(line.dimensions ? { dimensions: line.dimensions } : {}),
+    });
   }
 
   if (parsed.length === 0) {

@@ -16,7 +16,8 @@ test('stock unit selection is searchable and controls quantity precision',async(
 });
 test('unit catalog supports creation and responsive management',async({page})=>{
   await login(page);await page.goto('/units');
-  await expect(page.getByRole('heading',{name:'Units of measure',exact:true})).toBeVisible({timeout:15000});
+  await expect(page.getByRole('heading',{name:'Unit categories',exact:true})).toBeVisible({timeout:15000});
+  await page.getByText('Unit catalog and legacy review',{exact:true}).click();
   await page.getByRole('button',{name:'Add unit',exact:true}).click();
   await page.getByLabel('Code',{exact:true}).fill('TEST_M');await page.getByLabel('Name',{exact:true}).fill('Test metre');await page.getByLabel('Symbol',{exact:true}).fill('tm');
   await page.getByLabel('Category',{exact:true}).selectOption('LENGTH');await page.getByLabel('Quantity precision',{exact:true}).selectOption('3');

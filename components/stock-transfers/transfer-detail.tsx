@@ -1,4 +1,5 @@
 "use client";
+import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -44,7 +45,7 @@ export function TransferDetail({
   async function runAction(
     path: string,
     method: "POST" | "DELETE",
-    success: string
+    success: string,
   ) {
     setBusy(true);
     try {
@@ -67,7 +68,7 @@ export function TransferDetail({
     void runAction(
       `/stock-transfers/${transfer.id}`,
       "DELETE",
-      transfer.status === "PENDING" ? "Transfer cancelled" : "Transfer voided"
+      transfer.status === "PENDING" ? "Transfer cancelled" : "Transfer voided",
     );
   }
 
@@ -98,7 +99,7 @@ export function TransferDetail({
                   void runAction(
                     `/stock-transfers/${transfer.id}/ship`,
                     "POST",
-                    "Shipped — in transit"
+                    "Shipped — in transit",
                   )
                 }
               >
@@ -125,7 +126,7 @@ export function TransferDetail({
                 void runAction(
                   `/stock-transfers/${transfer.id}/receive`,
                   "POST",
-                  "Received at destination"
+                  "Received at destination",
                 )
               }
             >
@@ -164,15 +165,10 @@ export function TransferDetail({
               label="From"
               value={transfer.fromLocation?.name ?? "—"}
             />
-            <DetailField
-              label="To"
-              value={transfer.toLocation?.name ?? "—"}
-            />
+            <DetailField label="To" value={transfer.toLocation?.name ?? "—"} />
             <DetailField
               label="Document ID"
-              value={
-                <span className="font-mono text-xs">{transfer.id}</span>
-              }
+              value={<span className="font-mono text-xs">{transfer.id}</span>}
             />
             {transfer.notes ? (
               <div className="sm:col-span-2">
@@ -210,8 +206,11 @@ export function TransferDetail({
                         {line.item?.sku ?? "—"}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(line.quantity)}
-                        {line.item?.unit ? ` ${line.item.unit}` : ""}
+                        <UnitQuantityDisplay
+                          quantity={line.quantity}
+                          unit={line.item?.unit}
+                          snapshot={line.unitSnapshot}
+                        />
                       </td>
                     </tr>
                   ))}

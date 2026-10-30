@@ -1,4 +1,5 @@
 "use client";
+import { ItemUnitSettings } from "./item-unit-settings";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,6 +75,20 @@ export function StockItemForm({
     error: unitsError,
     reload: reloadUnits,
   } = useFetch<UnitOfMeasure[]>(() => api("/units"));
+  const { data: unitPolicy, reload: reloadUnitPolicy } = useFetch<
+    import("@/lib/types").ItemUnitOptions | null
+  >(
+    () =>
+      record ? api(`/units/items/${record.itemId}`) : Promise.resolve(null),
+    [record?.itemId],
+    { enabled: !!record },
+  );
+  const { data: unitGroups } = useFetch<import("@/lib/types").UnitGroup[]>(() =>
+    api("/units/groups"),
+  );
+  const [unitGroupId, setUnitGroupId] = useState(
+    record?.item.unitGroupId ?? "",
+  );
   const [unitId, setUnitId] = useState(record?.item.unitId ?? "");
   const effectiveUnitId =
     unitId || (!record ? units?.find((u) => u.code === "PCS")?.id : "") || "";
@@ -167,6 +182,7 @@ export function StockItemForm({
             sku: optionalStringBodyValue(sku),
             barcode: optionalStringBodyValue(barcode),
             unitId: effectiveUnitId,
+            unitGroupId: unitGroupId || null,
             itemType: itemType || null,
             isPhantom,
             purchasePrice: parseFloat(purchasePrice),
@@ -188,6 +204,7 @@ export function StockItemForm({
           sku: optionalStringBodyValue(sku) ?? undefined,
           barcode: optionalStringBodyValue(barcode) ?? undefined,
           unitId: effectiveUnitId,
+          unitGroupId: unitGroupId || null,
           isPhantom,
         };
         if (itemType) body.itemType = itemType;
@@ -470,17 +487,64 @@ export function StockItemForm({
                 </Select>
               </FormField>
             ) : null}
+            <FormField
+              label="Unit category"
+              hint="Choose once. Purchases, sales and BOMs inherit this category's conversions."
+            >
+              <Select
+                value={unitGroupId || "individual"}
+                onValueChange={(id) => {
+                  const group = unitGroups?.find((g) => g.id === id);
+                  setUnitGroupId(group?.id ?? "");
+                  if (group) setUnitId(group.baseUnitId);
+                }}
+              >
+                <SelectTrigger aria-label="Unit category">
+                  <SelectValue placeholder="Choose a unit category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">
+                    Individual unit / existing setup
+                  </SelectItem>
+                  {unitGroups
+                    ?.filter(
+                      (g) =>
+                        (g.isActive || g.id === unitGroupId) &&
+                        (!isEdit ||
+                          unitPolicy?.canChangeBaseUnit ||
+                          g.baseUnitId === record?.item.unitId),
+                    )
+                    .map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name} - {g.baseUnit.symbol} base
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <a href="/units" className="text-xs text-primary underline">
+                Manage unit categories
+              </a>
+            </FormField>
             <FormField label="Stock unit" required>
               <UnitSelect
                 units={units ?? []}
                 value={effectiveUnitId}
                 onChange={setUnitId}
-                disabled={unitsLoading || isEdit}
+                disabled={
+                  !!unitGroupId ||
+                  unitsLoading ||
+                  (isEdit && !unitPolicy?.canChangeBaseUnit)
+                }
               />
               <p className="text-xs text-muted-foreground">
                 {isEdit
-                  ? "Base unit is protected for existing items. Review legacy definitions in Units of measure."
-                  : "All stock balances and unit costs use this unit."}
+                  ? unitPolicy?.canChangeBaseUnit
+                    ? "This item has no stock or transaction history. You can correct its base unit; review the unit cost and reorder point before saving."
+                    : (unitPolicy?.baseUnitLockReason ??
+                      "Checking whether the stock unit can be corrected...")
+                  : unitGroupId
+                    ? "The selected category supplies the stock unit and all conversions."
+                    : "All stock balances and unit costs use this unit."}
               </p>
               {selectedUnit?.requiresReview && (
                 <p
@@ -566,6 +630,30 @@ export function StockItemForm({
         </PageFormSection>
       </PageFormCard>
 
+      {record && (
+        <PageFormCard>
+          {unitGroupId ? (
+            <PageFormSection
+              title="Category conversions"
+              description="This item inherits its category settings. Configure the category once to reuse it across items."
+            >
+              <a href="/units" className="text-sm text-primary underline">
+                Manage unit categories and conversions
+              </a>
+            </PageFormSection>
+          ) : effectiveUnitId === record.item.unitId ? (
+            <ItemUnitSettings
+              itemId={record.itemId}
+              onSaved={reloadUnitPolicy}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Save the corrected stock unit before configuring alternative
+              units.
+            </p>
+          )}
+        </PageFormCard>
+      )}
       <PageFormActions>
         <PageFormCancel href="/inventory" />
         <Button type="submit" disabled={saving} className="min-w-28">

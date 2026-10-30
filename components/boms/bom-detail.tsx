@@ -1,4 +1,5 @@
 "use client";
+import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -130,12 +131,7 @@ export function BomDetail({
               Set default
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={revise}
-          >
+          <Button size="sm" variant="outline" disabled={busy} onClick={revise}>
             Revise
           </Button>
           <Button size="sm" variant="outline" asChild>
@@ -163,9 +159,7 @@ export function BomDetail({
             <DetailField label="Version" value={bom.version ?? "—"} />
             <DetailField
               label="Yield %"
-              value={
-                bom.yieldPercent != null ? `${bom.yieldPercent}%` : "100%"
-              }
+              value={bom.yieldPercent != null ? `${bom.yieldPercent}%` : "100%"}
             />
             <DetailField
               label="Effective"
@@ -231,10 +225,11 @@ export function BomDetail({
                         )}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {formatQty(String(line.quantity))}
-                        {line.componentItem?.unit
-                          ? ` ${line.componentItem.unit}`
-                          : ""}
+                        <UnitQuantityDisplay
+                          quantity={line.quantity}
+                          unit={line.componentItem?.unit}
+                          snapshot={line.unitSnapshot}
+                        />
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
                         {line.scrapPercent != null && line.scrapPercent !== ""

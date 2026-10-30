@@ -1,5 +1,5 @@
 "use client";
-import type { components } from '@/lib/generated/api-schema';
+import type { components } from "@/lib/generated/api-schema";
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useFetch } from '@/hooks/use-fetch';
-import { apiList } from '@/lib/list-response';
-import type { BankAccount } from '@/lib/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFetch } from "@/hooks/use-fetch";
+import { apiList } from "@/lib/list-response";
+import type { BankAccount } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { errorMessage, formatQty } from "@/lib/format";
 import type { Sale, SaleLine } from "@/lib/types";
@@ -33,9 +39,13 @@ export function SaleReturnDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
+  const [returnUnits, setReturnUnits] = useState<Record<string, string>>({});
   const [qtys, setQtys] = useState<Record<string, string>>({});
-  const [bankAccountId, setBankAccountId] = useState('');
-  const { data: accounts } = useFetch(() => apiList<BankAccount>('/banks/accounts'), []);
+  const [bankAccountId, setBankAccountId] = useState("");
+  const { data: accounts } = useFetch(
+    () => apiList<BankAccount>("/banks/accounts"),
+    [],
+  );
   const [saving, setSaving] = useState(false);
 
   const lines = useMemo(
@@ -49,12 +59,17 @@ export function SaleReturnDialog({
       if (line.id) next[line.id] = "";
     }
     setQtys(next);
+    setReturnUnits({});
     setNotes("");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const returnLines: { saleLineId: string; quantity: number }[] = [];
+    const returnLines: {
+      saleLineId: string;
+      quantity: number;
+      unitId?: string;
+    }[] = [];
     for (const line of lines) {
       if (!line.id) continue;
       const raw = qtys[line.id]?.trim();
@@ -65,13 +80,24 @@ export function SaleReturnDialog({
         return;
       }
       const sold = parseFloat(line.quantity);
-      if (quantity > sold + 1e-9) {
+      const unitId = returnUnits[line.id];
+      const factor =
+        unitId &&
+        unitId !== line.item?.unitId &&
+        unitId === line.unitSnapshot?.unitId
+          ? Number(line.unitSnapshot.factor)
+          : 1;
+      if (quantity * factor > sold + 1e-9) {
         toast.error(
           `Return qty exceeds sold for ${line.item?.description ?? line.itemId}`,
         );
         return;
       }
-      returnLines.push({ saleLineId: line.id, quantity });
+      returnLines.push({
+        saleLineId: line.id,
+        quantity,
+        ...(unitId && unitId !== "base" ? { unitId } : {}),
+      });
     }
     if (returnLines.length === 0) {
       toast.error("Enter at least one return quantity");
@@ -81,7 +107,11 @@ export function SaleReturnDialog({
     try {
       await api(`/sales/${sale.id}/returns`, {
         method: "POST",
-        body: { lines: returnLines, bankAccountId: bankAccountId || undefined, notes: notes.trim() || undefined } satisfies components['schemas']['CreateSaleReturnDto'],
+        body: {
+          lines: returnLines,
+          bankAccountId: bankAccountId || undefined,
+          notes: notes.trim() || undefined,
+        } satisfies components["schemas"]["CreateSaleReturnDto"],
         idempotent: true,
       });
       toast.success("Return posted with stock and financial settlement");
@@ -116,12 +146,38 @@ export function SaleReturnDialog({
             <DialogTitle>Customer return</DialogTitle>
           </DialogHeader>
           <div className="grid max-h-[60vh] gap-3 overflow-y-auto py-4">
-            <p className="text-sm text-muted-foreground">Unpaid credit is reduced first. Any paid portion is refunded to the selected account or the original payment account. Tracked lots are restored in their original expiry order. Verify the physical batch before posting.</p>
-            <div className="grid gap-2"><Label htmlFor="return-account">Refund account</Label><Select value={bankAccountId} onValueChange={setBankAccountId}><SelectTrigger id="return-account"><SelectValue placeholder="Use original payment account" /></SelectTrigger><SelectContent>{(accounts ?? []).filter(a => a.isActive !== false).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select></div>
+            <p className="text-sm text-muted-foreground">
+              Unpaid credit is reduced first. Any paid portion is refunded to
+              the selected account or the original payment account. Tracked lots
+              are restored in their original expiry order. Verify the physical
+              batch before posting.
+            </p>
+            <div className="grid gap-2">
+              <Label htmlFor="return-account">Refund account</Label>
+              <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                <SelectTrigger id="return-account">
+                  <SelectValue placeholder="Use original payment account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(accounts ?? [])
+                    .filter((a) => a.isActive !== false)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
             {lines.map((line) => (
               <ReturnLineRow
                 key={line.id}
                 line={line}
+                unitId={returnUnits[line.id!] ?? line.item?.unitId ?? "base"}
+                onUnitChange={(unitId) => {
+                  setReturnUnits((prev) => ({ ...prev, [line.id!]: unitId }));
+                  setQtys((prev) => ({ ...prev, [line.id!]: "" }));
+                }}
                 value={qtys[line.id!] ?? ""}
                 onChange={(v) =>
                   setQtys((prev) => ({ ...prev, [line.id!]: v }))
@@ -152,8 +208,12 @@ function ReturnLineRow({
   line,
   value,
   onChange,
+  unitId,
+  onUnitChange,
 }: {
   line: SaleLine;
+  unitId: string;
+  onUnitChange: (unitId: string) => void;
   value: string;
   onChange: (v: string) => void;
 }) {
@@ -168,9 +228,29 @@ function ReturnLineRow({
           {line.item?.unit ? ` ${line.item.unit}` : ""}
         </p>
       </div>
+      {line.unitSnapshot && line.unitSnapshot.unitId !== line.item?.unitId && (
+        <Select value={unitId} onValueChange={onUnitChange}>
+          <SelectTrigger aria-label="Return unit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={line.item?.unitId ?? "base"}>
+              {line.item?.unit ?? "Stock unit"}
+            </SelectItem>
+            <SelectItem value={line.unitSnapshot.unitId}>
+              {line.unitSnapshot.symbol} (original factor{" "}
+              {line.unitSnapshot.factor})
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      )}
       <Input
+        aria-label={`Return quantity for ${line.item?.description ?? line.itemId}`}
+        type="number"
+        min="0"
+        step="any"
         inputMode="decimal"
-        placeholder="Return qty"
+        placeholder={`Return quantity in ${unitId === line.unitSnapshot?.unitId ? line.unitSnapshot.symbol : (line.item?.unit ?? "stock units")}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

@@ -187,6 +187,9 @@ export interface UnitOfMeasure extends RecordMetadata {
   requiresReview: boolean;
 }
 export interface Item extends RecordMetadata {
+  unitGroupId?: string | null;
+  unitGroup?: UnitGroup | null;
+  unitConversions?: ItemConversion[];
   unitId?: string;
   stockUnit?: UnitOfMeasure;
   id: string;
@@ -423,6 +426,7 @@ export interface Permission {
 }
 
 export interface PurchaseLine {
+  unitSnapshot?: UnitSnapshot | null;
   id?: string;
   itemId: string;
   quantity: string;
@@ -455,6 +459,7 @@ export interface Purchase extends RecordMetadata {
 }
 
 export interface SaleLine {
+  unitSnapshot?: UnitSnapshot | null;
   id?: string;
   itemId: string;
   quantity: string;
@@ -745,6 +750,7 @@ export interface ReportCashFlow {
 }
 
 export interface StockTransferLine {
+  unitSnapshot?: UnitSnapshot | null;
   id?: string;
   itemId: string;
   quantity: string;
@@ -764,6 +770,7 @@ export interface StockTransfer {
 }
 
 export interface BomLine {
+  unitSnapshot?: UnitSnapshot | null;
   id?: string;
   componentItemId: string;
   quantity: string | number;
@@ -856,6 +863,7 @@ export interface MaterialRequirements {
 }
 
 export interface ProductionOrder extends RecordMetadata {
+  unitSnapshot?: UnitSnapshot | null;
   id: string;
   orderNumber?: string | null;
   bomId: string;
@@ -1065,4 +1073,52 @@ export interface UpdateBrandingBody {
   appName?: string;
   headline?: string | null;
   supportingText?: string | null;
+}
+
+export interface ItemConversion {
+  stockQuantity?: string;
+  unitQuantity?: string;
+  unitId: string;
+  factor: string;
+  purchaseDefault?: boolean;
+  salesDefault?: boolean;
+}
+export interface AreaDimensions {
+  widthMetres: number;
+  lengthMetres: number;
+  count: number;
+}
+export interface UnitSnapshot {
+  dimensions?: AreaDimensions;
+  unitId: string;
+  code: string;
+  symbol: string;
+  decimalPlaces?: number;
+  factor: string;
+  quantity: string;
+  unitPrice?: string;
+}
+export interface ItemUnitOptions {
+  unitGroup?: UnitGroup | null;
+  canChangeBaseUnit?: boolean;
+  baseUnitLockReason?: string | null;
+  baseUnit: UnitOfMeasure;
+  conversions: ItemConversion[];
+  options: {
+    unit: UnitOfMeasure;
+    factor: string;
+    purchaseDefault: boolean;
+    salesDefault: boolean;
+    isStandard?: boolean;
+  }[];
+}
+
+export interface UnitGroup {
+  id: string;
+  name: string;
+  category: UnitOfMeasure["category"];
+  baseUnitId: string;
+  baseUnit: UnitOfMeasure;
+  conversions: ItemConversion[];
+  isActive: boolean;
 }

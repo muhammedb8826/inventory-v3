@@ -491,6 +491,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/units/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UnitsController_groups"];
+        put?: never;
+        post: operations["UnitsController_createGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UnitsController_updateGroup"];
+        trace?: never;
+    };
+    "/api/v1/units/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UnitsController_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UnitsController_configure"];
+        trace?: never;
+    };
     "/api/v1/units/{id}": {
         parameters: {
             query?: never;
@@ -2011,6 +2059,19 @@ export interface components {
             updatedAt: string;
             id: string;
         };
+        UnitGroup: {
+            name: string;
+            category: string;
+            baseUnitId: string;
+            baseUnit: components["schemas"]["UnitOfMeasure"];
+            conversions: Record<string, never>[];
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
         Item: {
             /** @description Unique when set (partial unique index `UQ_items_sku_not_null`). */
             sku: string | null;
@@ -2019,6 +2080,9 @@ export interface components {
             description: string;
             unitId: string;
             stockUnit: components["schemas"]["UnitOfMeasure"];
+            unitConversions: Record<string, never>[];
+            unitGroupId: string | null;
+            unitGroup: components["schemas"]["UnitGroup"] | null;
             /** @description Compatibility display symbol; stockUnit is the authoritative definition. */
             unit: string | null;
             /** @enum {string} */
@@ -2205,6 +2269,27 @@ export interface components {
             recipientId: string;
             body: string;
         };
+        ItemConversionDto: {
+            /** Format: uuid */
+            unitId: string;
+            factor?: number;
+            stockQuantity?: number;
+            unitQuantity?: number;
+            purchaseDefault?: boolean;
+            salesDefault?: boolean;
+        };
+        SaveUnitGroupDto: {
+            name: string;
+            /** @enum {string} */
+            category: "COUNT" | "LENGTH" | "AREA" | "VOLUME" | "MASS" | "TIME" | "OTHER";
+            /** Format: uuid */
+            baseUnitId: string;
+            isActive?: boolean;
+            conversions: components["schemas"]["ItemConversionDto"][];
+        };
+        UpdateItemConversionsDto: {
+            conversions: components["schemas"]["ItemConversionDto"][];
+        };
         CreateUnitDto: {
             code: string;
             name: string;
@@ -2269,6 +2354,8 @@ export interface components {
             unit?: string;
             /** Format: uuid */
             unitId?: string;
+            /** Format: uuid */
+            unitGroupId?: string | null;
             /** @enum {string} */
             itemType?: "RAW" | "SEMI" | "FINISHED" | "OTHER";
             /** @description Phantom / non-stocked assembly (pass-through in BOMs by default). */
@@ -2282,6 +2369,8 @@ export interface components {
             unit?: string | null;
             /** Format: uuid */
             unitId?: string;
+            /** Format: uuid */
+            unitGroupId?: string | null;
             /** @enum {string} */
             itemType?: "RAW" | "SEMI" | "FINISHED" | "OTHER";
             isPhantom?: boolean;
@@ -2294,6 +2383,7 @@ export interface components {
             componentItemId: string;
             /** @description Quantity of component required to make 1 finished unit. */
             quantity: string;
+            unitSnapshot: Record<string, never> | null;
             scrapPercent: string;
             /**
              * @description Phantom / non-stocked: do not issue this component; explode its default BOM
@@ -2325,7 +2415,15 @@ export interface components {
             updatedAt: string;
             id: string;
         };
+        AreaDimensionsDto: {
+            widthMetres: number;
+            lengthMetres: number;
+            count: number;
+        };
         BomLineDto: {
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             componentItemId: string;
             quantity: number;
@@ -2356,6 +2454,9 @@ export interface components {
             lines?: components["schemas"]["BomLineDto"][];
         };
         UpdateBomLineDto: {
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             componentItemId: string;
             quantity: number;
@@ -2431,6 +2532,7 @@ export interface components {
             /** @description Finished-goods receipt location (defaults to component location). */
             finishedLocationId: string | null;
             quantityPlanned: string;
+            unitSnapshot: Record<string, never> | null;
             quantityCompleted: string;
             quantityScrapped: string;
             /** @enum {string} */
@@ -2498,6 +2600,7 @@ export interface components {
             saleId: string;
             itemId: string;
             quantity: string;
+            unitSnapshot: Record<string, never> | null;
             unitPrice: string;
             purchaseCost: string;
             lineTotal: string;
@@ -2630,6 +2733,8 @@ export interface components {
         };
         CreateProductionOrderDto: {
             /** Format: uuid */
+            unitId?: string;
+            /** Format: uuid */
             bomId: string;
             /**
              * Format: uuid
@@ -2683,6 +2788,9 @@ export interface components {
             notes?: string;
         };
         StockTransferLineDto: {
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             itemId: string;
             quantity: number;
@@ -2721,6 +2829,7 @@ export interface components {
             transferId: string;
             itemId: string;
             quantity: string;
+            unitSnapshot: Record<string, never> | null;
             /** @description Snapshot of source unit cost when shipped (IN_TRANSIT). */
             unitCost: string | null;
             transfer: components["schemas"]["StockTransfer"];
@@ -2783,6 +2892,7 @@ export interface components {
             purchaseId: string;
             itemId: string;
             quantity: string;
+            unitSnapshot: Record<string, never> | null;
             unitPrice: string;
             lineTotal: string;
             purchase: components["schemas"]["Purchase"];
@@ -2943,6 +3053,9 @@ export interface components {
             itemId?: string;
         };
         PurchaseLineDto: {
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             itemId: string;
             quantity: number;
@@ -2996,6 +3109,9 @@ export interface components {
             isActive?: boolean;
         };
         SaleLineDto: {
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             itemId: string;
             quantity: number;
@@ -3033,6 +3149,8 @@ export interface components {
             lines: components["schemas"]["SaleLineDto"][];
         };
         SaleReturnLineDto: {
+            /** Format: uuid */
+            unitId?: string;
             /** Format: uuid */
             saleLineId: string;
             quantity: number;
@@ -4251,6 +4369,115 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UnitOfMeasure"];
                 };
+            };
+        };
+    };
+    UnitsController_groups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitGroup"][];
+                };
+            };
+        };
+    };
+    UnitsController_createGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveUnitGroupDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitGroup"];
+                };
+            };
+        };
+    };
+    UnitsController_updateGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveUnitGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitGroup"];
+                };
+            };
+        };
+    };
+    UnitsController_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UnitsController_configure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateItemConversionsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

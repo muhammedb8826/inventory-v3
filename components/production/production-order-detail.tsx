@@ -85,9 +85,7 @@ export function ProductionOrderDetail({
     return Math.max(0, planned - done);
   }, [order.quantityPlanned, order.quantityCompleted]);
   const [completeQty, setCompleteQty] = useState(String(remaining || 1));
-  const [unbuildQty, setUnbuildQty] = useState(
-    order.quantityCompleted ?? "1",
-  );
+  const [unbuildQty, setUnbuildQty] = useState(order.quantityCompleted ?? "1");
   const [scrapQty, setScrapQty] = useState("1");
   const [autoIssue, setAutoIssue] = useState(true);
 
@@ -467,14 +465,12 @@ export function ProductionOrderDetail({
             <DetailField
               label="FG receipt location"
               value={
-                order.finishedLocation?.name ??
-                order.location?.name ??
-                "—"
+                order.finishedLocation?.name ?? order.location?.name ?? "—"
               }
             />
             <DetailField
               label="Planned qty"
-              value={formatQty(order.quantityPlanned)}
+              value={`${formatQty(order.quantityPlanned)} ${order.finishedItem?.unit ?? ""}${order.unitSnapshot && Number(order.unitSnapshot.factor) !== 1 ? ` (entered ${order.unitSnapshot.quantity} ${order.unitSnapshot.symbol})` : ""}`}
             />
             <DetailField
               label="Completed / remaining"
@@ -488,9 +484,7 @@ export function ProductionOrderDetail({
             ) : null}
             <DetailField
               label="Document ID"
-              value={
-                <span className="font-mono text-xs">{order.id}</span>
-              }
+              value={<span className="font-mono text-xs">{order.id}</span>}
             />
             {order.inquiryId ? (
               <DetailField
@@ -592,7 +586,8 @@ export function ProductionOrderDetail({
                             <td
                               className={cn(
                                 "px-4 py-2.5 text-right tabular-nums",
-                                short && "font-medium text-amber-700 dark:text-amber-400",
+                                short &&
+                                  "font-medium text-amber-700 dark:text-amber-400",
                               )}
                             >
                               {formatQty(line.shortage)}
@@ -644,7 +639,9 @@ export function ProductionOrderDetail({
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Finished quantity (remaining {formatQty(remaining)})</Label>
+                <Label>
+                  Finished quantity (remaining {formatQty(remaining)})
+                </Label>
                 <Input
                   type="number"
                   step="any"
