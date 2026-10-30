@@ -253,23 +253,6 @@ export default function InquiriesPage() {
                   </SelectContent>
                 </Select>
               </FilterField>
-              <FilterField label="Source">
-                <Select
-                  value={source || "__all__"}
-                  onValueChange={(v) =>
-                    setSource(v === "__all__" ? "" : (v as InquirySource))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All sources</SelectItem>
-                    <SelectItem value="PUBLIC">Public</SelectItem>
-                    <SelectItem value="INTERNAL">Internal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterField>
               <FilterField label="Priority">
                 <Select
                   value={priority || "__all__"}
@@ -368,21 +351,19 @@ export default function InquiriesPage() {
             },
             {
               key: "contact",
-              header: "Contact",
+              header: "Customer",
               cell: (r) => (
-                <div className="min-w-0">
-                  <div className="font-medium text-[var(--frappe-text)]">
-                    {r.contactName}
-                  </div>
-                  <div className="text-xs text-[var(--frappe-text-muted)]">
-                    {r.phone || r.email || "—"}
-                  </div>
-                </div>
+                <span className="font-medium">
+                  {r.customer?.name ??
+                    (r.source === "PUBLIC"
+                      ? r.contactName
+                      : "Internal request")}
+                </span>
               ),
             },
             {
               key: "subject",
-              header: "Subject",
+              header: "Inquiry",
               cell: (r) => (
                 <button
                   type="button"
@@ -425,6 +406,7 @@ export default function InquiriesPage() {
             {
               key: "source",
               header: "Source",
+              defaultVisible: false,
               cell: (r) => <InquirySourceBadge source={r.source} />,
             },
             {

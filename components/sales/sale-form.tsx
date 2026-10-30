@@ -80,6 +80,8 @@ import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 
 interface LineRow {
+  inquiryLineId?: string;
+  inquirySnapshot?: import("@/lib/types").UnitSnapshot;
   dimensions?: import("@/lib/types").AreaDimensions;
   unitId?: string;
   unitFactor?: number;
@@ -711,6 +713,8 @@ export function SaleForm({
                           const item = itemMap.get(v);
                           updateLine(i, {
                             itemId: v,
+                            inquiryLineId: undefined,
+                            inquirySnapshot: undefined,
                             dimensions: undefined,
                             item,
                             unitId: undefined,
@@ -729,6 +733,7 @@ export function SaleForm({
                       key={line.itemId}
                       itemId={line.itemId}
                       value={line.unitId}
+                      frozenSnapshot={line.inquirySnapshot}
                       savedFactor={line.unitFactor}
                       dimensions={line.dimensions}
                       onAreaChange={(quantity, dimensions) =>

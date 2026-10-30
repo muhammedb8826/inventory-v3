@@ -3,28 +3,15 @@ import type { Currency } from "@/lib/currency";
 
 export type LocationType = "WAREHOUSE" | "SHOWROOM" | "BIN";
 export type StocktakeStatus =
-  | "DRAFT"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "CANCELLED";
+  "DRAFT" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 export type PaymentMethod = "CASH" | "BANK" | "CREDIT";
 export type BankAccountType = "CASH" | "BANK";
 export type BankTransactionType =
-  | "SALE"
-  | "PURCHASE"
-  | "ADJUSTMENT"
-  | "CREDIT_PAYMENT"
-  | "EXPENSE";
+  "SALE" | "PURCHASE" | "ADJUSTMENT" | "CREDIT_PAYMENT" | "EXPENSE";
 export type BankTransactionDirection = "in" | "out";
 export type StockAdjustmentDirection = "in" | "out";
 export type StockAdjustmentReason =
-  | "DAMAGE"
-  | "LOSS"
-  | "FOUND"
-  | "COUNT"
-  | "OPENING"
-  | "RETURN"
-  | "OTHER";
+  "DAMAGE" | "LOSS" | "FOUND" | "COUNT" | "OPENING" | "RETURN" | "OTHER";
 
 export type StockMovementType =
   | "SALE"
@@ -45,16 +32,9 @@ export type StockMovementType =
   | "STOCKTAKE";
 export type ItemType = "RAW" | "SEMI" | "FINISHED" | "OTHER";
 export type ProductionOrderStatus =
-  | "DRAFT"
-  | "RELEASED"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "CANCELLED";
+  "DRAFT" | "RELEASED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 export type TransferStatus =
-  | "PENDING"
-  | "IN_TRANSIT"
-  | "COMPLETED"
-  | "CANCELLED";
+  "PENDING" | "IN_TRANSIT" | "COMPLETED" | "CANCELLED";
 export type CreditStatus = "OPEN" | "PARTIAL" | "PAID";
 /** How a credit balance was created. OPENING is cutover AR/AP with no sale/purchase. */
 export type CreditSource = "SALE" | "PURCHASE" | "OPENING";
@@ -757,7 +737,7 @@ export interface StockTransferLine {
   item?: Item;
 }
 
-export interface StockTransfer {
+export interface StockTransfer extends RecordMetadata {
   id: string;
   status: TransferStatus;
   fromLocationId?: string;
@@ -960,12 +940,7 @@ export interface MessageUnreadCount {
 }
 
 export type InquiryStatus =
-  | "NEW"
-  | "IN_PROGRESS"
-  | "QUOTED"
-  | "CONVERTED"
-  | "CLOSED"
-  | "CANCELLED";
+  "NEW" | "IN_PROGRESS" | "QUOTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
 
 export type InquirySource = "PUBLIC" | "INTERNAL";
 
@@ -973,12 +948,10 @@ export type InquiryPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
 /** CRM assignment ownership — assign → PENDING → Accept/Decline */
 export type InquiryAssignmentStatus =
-  | "UNASSIGNED"
-  | "PENDING"
-  | "ACCEPTED"
-  | "DECLINED";
+  "UNASSIGNED" | "PENDING" | "ACCEPTED" | "DECLINED";
 
 export interface InquiryLine {
+  unitSnapshot?: UnitSnapshot | null;
   id?: string;
   itemId: string;
   quantity?: string | null;
@@ -987,12 +960,24 @@ export interface InquiryLine {
 }
 
 export interface InquiryLineInput {
+  unitId?: string;
+  dimensions?: AreaDimensions;
   itemId: string;
   quantity?: number;
   notes?: string;
 }
 
-export interface Inquiry {
+export interface InquiryAttachment {
+  id: string;
+  inquiryId: string;
+  name: string;
+  mime: string;
+  size: number;
+  createdAt: string;
+}
+export interface Inquiry extends RecordMetadata {
+  requestedDeliveryDate?: string | null;
+  attachments?: InquiryAttachment[];
   id: string;
   contactName: string;
   phone?: string | null;
@@ -1026,8 +1011,9 @@ export interface Inquiry {
 }
 
 export interface CreateInquiryBody {
-  contactName: string;
-  subject: string;
+  requestedDeliveryDate?: string;
+  contactName?: string;
+  subject?: string;
   message: string;
   phone?: string;
   email?: string;
@@ -1042,6 +1028,7 @@ export interface CreateInquiryBody {
 }
 
 export interface UpdateInquiryBody {
+  requestedDeliveryDate?: string | null;
   contactName?: string;
   phone?: string | null;
   email?: string | null;
@@ -1089,6 +1076,8 @@ export interface AreaDimensions {
   count: number;
 }
 export interface UnitSnapshot {
+  category?: UnitOfMeasure["category"];
+  squareMetreFactor?: string;
   dimensions?: AreaDimensions;
   unitId: string;
   code: string;

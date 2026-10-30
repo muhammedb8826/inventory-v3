@@ -18,9 +18,7 @@ export const INQUIRY_ITEM_TYPE_OPTIONS: {
 export const DEFAULT_INQUIRY_ITEM_TYPES: ItemType[] = ["FINISHED"];
 
 /** Untyped catalog rows are treated as sellable FG for inquiry pickers. */
-export function normalizeInquiryItemType(
-  itemType?: ItemType | null,
-): ItemType {
+export function normalizeInquiryItemType(itemType?: ItemType | null): ItemType {
   return itemType ?? "FINISHED";
 }
 
@@ -45,10 +43,7 @@ export function InquiryItemTypeFilter({
 
   return (
     <div
-      className={cn(
-        "flex flex-wrap items-center gap-2",
-        className,
-      )}
+      className={cn("flex flex-wrap items-center gap-2", className)}
       role="group"
       aria-label="Item types to show"
     >

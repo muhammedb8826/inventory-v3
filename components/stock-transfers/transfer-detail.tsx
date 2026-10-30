@@ -1,4 +1,5 @@
 "use client";
+import { RecordActivity } from "@/components/shared/record-metadata";
 import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import { useState } from "react";
@@ -151,6 +152,7 @@ export function TransferDetail({
         </Badge>
       </div>
 
+      <RecordActivity record={transfer} />
       <PageFormCard>
         <PageFormSection
           title="Transfer"

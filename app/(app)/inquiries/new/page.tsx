@@ -7,8 +7,8 @@ import { InquiryForm } from "@/components/inquiries/inquiry-form";
 export default function NewInquiryPage() {
   return (
     <AppShell
-      title="New inquiry"
-      subtitle="Capture contact details and requirements for your team to follow up."
+      title="New customer inquiry"
+      subtitle="Capture products, measurements and delivery requirements in one place."
       variant="form"
       breadcrumbs={[
         { label: "CRM", href: "/dashboard" },

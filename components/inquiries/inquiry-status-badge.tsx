@@ -1,8 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  inquiryAssignmentLabel,
-  inquiryStatusLabel,
-} from "@/lib/inquiries";
+import { inquiryAssignmentLabel, inquiryStatusLabel } from "@/lib/inquiries";
 import type {
   InquiryAssignmentStatus,
   InquiryPriority,

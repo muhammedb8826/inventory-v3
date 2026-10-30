@@ -322,6 +322,11 @@ const server = createServer(async (req, res) => {
       units.push(value);
       result = value;
     } else result = units;
+  } else if (path === "/inquiries/catalog") {
+    result = {
+      data: inventory.map((row) => row.item),
+      meta: { page: 1, limit: 100, total: inventory.length, totalPages: 1 },
+    };
   } else if (path === "/units/groups") {
     result = [];
   } else if (path.startsWith("/units/items/")) {

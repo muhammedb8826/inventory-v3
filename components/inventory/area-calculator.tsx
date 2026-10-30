@@ -29,8 +29,10 @@ export function AreaCalculator({
   );
   const converted = Number((area * areaFactor).toPrecision(15));
   const valid =
-    Number(width) > 0 &&
-    Number(length) > 0 &&
+    Number(width) >= 0.001 &&
+    Math.abs(Number(width) - Number(Number(width).toFixed(3))) < 1e-9 &&
+    Number(length) >= 0.001 &&
+    Math.abs(Number(length) - Number(Number(length).toFixed(3))) < 1e-9 &&
     Number.isInteger(Number(count)) &&
     Number(count) > 0 &&
     Number.isFinite(area) &&

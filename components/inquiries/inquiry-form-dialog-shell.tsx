@@ -2,6 +2,7 @@
 
 import {
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,6 +39,9 @@ export function InquiryFormDialogHeader({
   return (
     <DialogHeader className="shrink-0 space-y-2 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-4 pb-3 pt-4 text-left sm:px-6 sm:pb-4 sm:pt-5">
       <DialogTitle className="pr-8 text-base sm:text-lg">{title}</DialogTitle>
+      <DialogDescription className="sr-only">
+        Review customer requirements, product measurements and inquiry workflow.
+      </DialogDescription>
       {children}
     </DialogHeader>
   );

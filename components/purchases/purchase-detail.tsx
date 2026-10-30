@@ -1,4 +1,5 @@
 "use client";
+import { RecordActivity } from "@/components/shared/record-metadata";
 import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import Link from "next/link";
@@ -86,6 +87,7 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
         </div>
       </div>
 
+      <RecordActivity record={purchase} />
       <PageFormCard>
         <PageFormSection
           title="Purchase details"

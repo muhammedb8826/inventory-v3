@@ -1,4 +1,5 @@
 "use client";
+import { RecordActivity } from "@/components/shared/record-metadata";
 import { UnitQuantityDisplay } from "@/components/inventory/unit-quantity-display";
 
 import Link from "next/link";
@@ -99,6 +100,7 @@ export function SaleDetail({ sale }: { sale: Sale }) {
         </div>
       </div>
 
+      <RecordActivity record={sale} />
       <PageFormCard>
         <PageFormSection
           title="Sales invoice"
@@ -146,12 +148,10 @@ export function SaleDetail({ sale }: { sale: Sale }) {
             ) ? (
               <DetailField
                 label="Commission rate"
-                value={
-                  formatCommissionRate(
-                    sale.commissionPercent,
-                    sale.commissionBasis,
-                  )!
-                }
+                value={formatCommissionRate(
+                  sale.commissionPercent,
+                  sale.commissionBasis,
+                )!}
               />
             ) : null}
             {sale.commissionAmount ? (

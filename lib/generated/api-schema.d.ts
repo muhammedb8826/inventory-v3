@@ -1228,6 +1228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inquiries/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InquiriesController_catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inquiries/{id}": {
         parameters: {
             query?: never;
@@ -1242,6 +1258,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["InquiriesController_update"];
+        trace?: never;
+    };
+    "/api/v1/inquiries/{id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InquiriesController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inquiries/{id}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InquiriesController_download"];
+        put?: never;
+        post?: never;
+        delete: operations["InquiriesController_removeAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/inquiries/{id}/accept": {
@@ -2489,6 +2537,8 @@ export interface components {
         };
         StartProductionFromInquiryDto: {
             /** Format: uuid */
+            inquiryLineId?: string;
+            /** Format: uuid */
             inquiryId: string;
             /** Format: uuid */
             locationId: string;
@@ -2507,6 +2557,15 @@ export interface components {
             quantityPlanned?: number;
             explodeBom?: boolean;
             notes?: string;
+        };
+        InquiryAttachment: {
+            inquiryId: string;
+            name: string;
+            mime: string;
+            size: number;
+            /** Format: date-time */
+            createdAt: string;
+            id: string;
         };
         ProductionOrderLine: {
             id: string;
@@ -2684,6 +2743,7 @@ export interface components {
             id: string;
             inquiryId: string;
             itemId: string;
+            unitSnapshot: Record<string, never> | null;
             /** @description Requested quantity (optional interest qty). */
             quantity: string | null;
             notes: string | null;
@@ -2712,6 +2772,8 @@ export interface components {
             acceptedAt: string | null;
             createdById: string | null;
             internalNotes: string | null;
+            requestedDeliveryDate: string | null;
+            attachments: components["schemas"]["InquiryAttachment"][];
             /** Format: date-time */
             followUpAt: string | null;
             convertedSaleId: string | null;
@@ -2978,11 +3040,18 @@ export interface components {
         };
         InquiryLineDto: {
             /** Format: uuid */
+            unitId?: string;
+            dimensions?: components["schemas"]["AreaDimensionsDto"];
+            /** Format: uuid */
             itemId: string;
             quantity?: number;
             notes?: string;
         };
         CreateInquiryDto: {
+            /** @description Derived from the linked customer or submitting employee for internal requests. */
+            contactName?: string;
+            /** @description Generated from requested products when omitted. */
+            subject?: string;
             /** @enum {string} */
             priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
             /** Format: uuid */
@@ -2991,12 +3060,11 @@ export interface components {
             assignedToUserId?: string;
             internalNotes?: string;
             followUpAt?: string;
-            contactName: string;
             phone?: string;
             /** Format: email */
             email?: string;
-            subject: string;
-            message: string;
+            message?: string;
+            requestedDeliveryDate?: string;
             /**
              * @description Preferred: multiple catalog items of interest.
              *     Legacy: single `itemId` still accepted and stored as one line.
@@ -3009,6 +3077,12 @@ export interface components {
             itemId?: string;
         };
         UpdateInquiryDto: {
+            /**
+             * Format: uuid
+             * @deprecated
+             * @description Legacy clients may echo the unchanged link. It cannot be assigned or cleared here.
+             */
+            readonly convertedSaleId?: string | null;
             contactName?: string;
             phone?: string | null;
             /** Format: email */
@@ -3031,8 +3105,7 @@ export interface components {
             assignedToUserId?: string | null;
             internalNotes?: string | null;
             followUpAt?: string | null;
-            /** Format: uuid */
-            convertedSaleId?: string | null;
+            requestedDeliveryDate?: string | null;
         };
         PublicCreateInquiryDto: {
             contactName: string;
@@ -3040,7 +3113,8 @@ export interface components {
             /** Format: email */
             email?: string;
             subject: string;
-            message: string;
+            message?: string;
+            requestedDeliveryDate?: string;
             /**
              * @description Preferred: multiple catalog items of interest.
              *     Legacy: single `itemId` still accepted and stored as one line.
@@ -3109,6 +3183,8 @@ export interface components {
             isActive?: boolean;
         };
         SaleLineDto: {
+            /** Format: uuid */
+            inquiryLineId?: string;
             dimensions?: components["schemas"]["AreaDimensionsDto"];
             /** Format: uuid */
             unitId?: string;
@@ -5889,6 +5965,27 @@ export interface operations {
             };
         };
     };
+    InquiriesController_catalog: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     InquiriesController_findOne: {
         parameters: {
             query?: never;
@@ -5926,7 +6023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["CustomerInquiry"];
                 };
             };
         };
@@ -5953,6 +6050,73 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CustomerInquiry"];
                 };
+            };
+        };
+    };
+    InquiriesController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InquiryAttachment"][];
+                };
+            };
+        };
+    };
+    InquiriesController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    InquiriesController_removeAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

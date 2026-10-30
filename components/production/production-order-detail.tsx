@@ -1,4 +1,5 @@
 "use client";
+import { RecordActivity } from "@/components/shared/record-metadata";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -425,6 +426,7 @@ export function ProductionOrderDetail({
         </div>
       ) : null}
 
+      <RecordActivity record={order} />
       <PageFormCard>
         <PageFormSection
           title={order.orderNumber ?? "Order"}
@@ -472,6 +474,12 @@ export function ProductionOrderDetail({
               label="Planned qty"
               value={`${formatQty(order.quantityPlanned)} ${order.finishedItem?.unit ?? ""}${order.unitSnapshot && Number(order.unitSnapshot.factor) !== 1 ? ` (entered ${order.unitSnapshot.quantity} ${order.unitSnapshot.symbol})` : ""}`}
             />
+            {order.unitSnapshot?.dimensions && (
+              <DetailField
+                label="Requested dimensions"
+                value={`${order.unitSnapshot.dimensions.widthMetres} m x ${order.unitSnapshot.dimensions.lengthMetres} m x ${order.unitSnapshot.dimensions.count}`}
+              />
+            )}
             <DetailField
               label="Completed / remaining"
               value={`${formatQty(order.quantityCompleted ?? "0")} / ${formatQty(remaining)}`}
@@ -499,6 +507,12 @@ export function ProductionOrderDetail({
                 }
               />
             ) : null}
+            {order.inquiry?.requestedDeliveryDate && (
+              <DetailField
+                label="Requested delivery"
+                value={order.inquiry.requestedDeliveryDate}
+              />
+            )}
             {order.saleId ? (
               <DetailField
                 label="Sale"

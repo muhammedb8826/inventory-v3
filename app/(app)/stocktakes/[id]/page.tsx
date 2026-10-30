@@ -1,4 +1,5 @@
 "use client";
+import { RecordActivity } from "@/components/shared/record-metadata";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -29,7 +30,12 @@ export default function StocktakeDetailPage() {
   const { user } = useAuth();
   const canWrite = hasPermission(user, "stocktake.write");
 
-  const { data: session, loading, error, reload } = useFetch(
+  const {
+    data: session,
+    loading,
+    error,
+    reload,
+  } = useFetch(
     () =>
       id
         ? api<Stocktake>(`/stocktakes/${id}`)
@@ -50,8 +56,7 @@ export default function StocktakeDetailPage() {
     setCounts(next);
   }, [session]);
 
-  const open =
-    session?.status === "IN_PROGRESS" || session?.status === "DRAFT";
+  const open = session?.status === "IN_PROGRESS" || session?.status === "DRAFT";
 
   async function saveCounts() {
     if (!session) return;
@@ -86,7 +91,9 @@ export default function StocktakeDetailPage() {
 
   async function complete() {
     if (!session) return;
-    if (!confirm("Apply variances as stock adjustments and close this stocktake?")) {
+    if (
+      !confirm("Apply variances as stock adjustments and close this stocktake?")
+    ) {
       return;
     }
     setSaving(true);
@@ -118,7 +125,9 @@ export default function StocktakeDetailPage() {
 
   return (
     <AppShell
-      title={loading ? "Stocktake" : `Stocktake — ${session?.location?.name ?? ""}`}
+      title={
+        loading ? "Stocktake" : `Stocktake — ${session?.location?.name ?? ""}`
+      }
       variant="form"
       breadcrumbs={[
         { label: "Operations", href: "/dashboard" },
@@ -172,6 +181,7 @@ export default function StocktakeDetailPage() {
               </div>
             </div>
 
+            <RecordActivity record={session} />
             <PageFormCard>
               <PageFormSection title="Session">
                 <FormGrid>
@@ -184,9 +194,7 @@ export default function StocktakeDetailPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Created</p>
                     <p className="text-sm font-medium">
-                      {session.createdAt
-                        ? formatDate(session.createdAt)
-                        : "—"}
+                      {session.createdAt ? formatDate(session.createdAt) : "—"}
                     </p>
                   </div>
                   {session.notes ? (

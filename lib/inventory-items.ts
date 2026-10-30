@@ -62,6 +62,7 @@ export function itemOptionsFromStock(stock: StockRecord[]) {
 }
 
 export interface DocumentLineInput {
+  inquiryLineId?: string;
   dimensions?: AreaDimensions;
   unitId?: string;
   itemId: string;
@@ -72,6 +73,7 @@ export interface DocumentLineInput {
 }
 
 export interface DocumentLineBody {
+  inquiryLineId?: string;
   dimensions?: AreaDimensions;
   unitId?: string;
   itemId: string;
@@ -111,6 +113,7 @@ export function parseDocumentLines(
       return { error: "Enter a valid unit price for each line." };
     }
     const row: DocumentLineBody = { itemId, quantity, unitPrice };
+    if (line.inquiryLineId) row.inquiryLineId = line.inquiryLineId;
     if (line.unitId) row.unitId = line.unitId;
     if (line.dimensions) row.dimensions = line.dimensions;
     const lotNumber = line.lotNumber?.trim();
@@ -134,9 +137,7 @@ export interface TransferLineInput {
   quantity: string | number;
 }
 
-export function parseTransferLines(
-  lines: TransferLineInput[],
-):
+export function parseTransferLines(lines: TransferLineInput[]):
   | {
       lines: {
         itemId: string;

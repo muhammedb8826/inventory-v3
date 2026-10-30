@@ -13,6 +13,11 @@ import type { Inquiry, Item, ProductionOrder } from "@/lib/types";
 import { toast } from "sonner";
 
 type PrefillLine = {
+  unitId?: string;
+  dimensions?: import("@/lib/types").AreaDimensions;
+  unitFactor?: number;
+  inquirySnapshot?: import("@/lib/types").UnitSnapshot;
+  inquiryLineId?: string;
   itemId: string;
   quantity: string;
   unitPrice: string;
@@ -73,10 +78,16 @@ function NewSaleFromMto() {
               });
               return {
                 itemId,
+                inquiryLineId: l.id,
+                inquirySnapshot: l.unitSnapshot ?? undefined,
+                unitId: l.unitSnapshot?.unitId ?? l.item?.unitId ?? "",
+                unitFactor: Number(l.unitSnapshot?.factor ?? 1),
+                dimensions: l.unitSnapshot?.dimensions,
                 quantity:
-                  l.quantity != null && String(l.quantity).trim() !== ""
-                    ? String(Number(l.quantity))
-                    : "1",
+                  (l.unitSnapshot?.quantity ?? l.quantity) != null &&
+                  String(l.unitSnapshot?.quantity ?? l.quantity).trim() !== ""
+                    ? String(Number(l.unitSnapshot?.quantity ?? l.quantity))
+                    : "",
                 unitPrice: "",
                 item: l.item ? resolveItem(itemId, l.item) : undefined,
               };
@@ -107,9 +118,20 @@ function NewSaleFromMto() {
               ? linesFromInquiry
               : undefined,
           notes: inquiry
-            ? productionOrderId
-              ? `From inquiry ${inquiry.contactName} — ${inquiry.subject} (production)`
-              : `From inquiry ${inquiry.contactName} — ${inquiry.subject}`
+            ? [
+                `From inquiry ${inquiry.contactName} - ${inquiry.subject}${productionOrderId ? " (production)" : ""}`,
+                inquiry.message,
+                inquiry.requestedDeliveryDate
+                  ? `Requested delivery: ${inquiry.requestedDeliveryDate}`
+                  : "",
+                ...(inquiry.lines ?? [])
+                  .filter((l) => l.notes)
+                  .map(
+                    (l) => `${l.item?.description ?? "Product"}: ${l.notes}`,
+                  ),
+              ]
+                .filter(Boolean)
+                .join("\n")
             : order?.orderNumber
               ? `From production ${order.orderNumber}`
               : undefined,

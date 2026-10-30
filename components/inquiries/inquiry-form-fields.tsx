@@ -1,49 +1,43 @@
 "use client";
-
-import { useMemo, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FormField,
   FormGrid,
   PageFormCard,
   PageFormSection,
 } from "@/components/shared/page-form";
-import { EntitySelectField } from "@/components/shared/entity-select-field";
-import { ItemSearchSelect } from "@/components/shared/item-search-select";
-import type { ItemSearchOption } from "@/components/shared/item-search-select";
+import {
+  EntitySelectField,
+  type EntityOption,
+} from "@/components/shared/entity-select-field";
+import {
+  ItemSearchSelect,
+  type ItemSearchOption,
+} from "@/components/shared/item-search-select";
 import { QuickCustomerDialog } from "@/components/customers/quick-customer-dialog";
+import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 import {
   DEFAULT_INQUIRY_ITEM_TYPES,
   InquiryItemTypeFilter,
   normalizeInquiryItemType,
-} from "@/components/inquiries/inquiry-item-type-filter";
+} from "./inquiry-item-type-filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   EMPTY_INQUIRY_LINE,
   INQUIRY_PRIORITIES,
-  INQUIRY_STATUSES,
   inquiryStatusLabel,
   type InquiryFormLine,
   type InquiryFormValues,
 } from "@/lib/inquiries";
-import type {
-  Customer,
-  InquiryPriority,
-  InquiryStatus,
-  ItemType,
-} from "@/lib/types";
-import type { EntityOption } from "@/components/shared/entity-select-field";
-import { PlusIcon, Trash2Icon } from "lucide-react";
-
+import type { Customer, InquiryPriority, ItemType } from "@/lib/types";
+import { PlusIcon, Trash2Icon, PackageIcon } from "lucide-react";
+import { InquiryAttachments } from "./inquiry-attachments";
+import { resolveItemImageUrl } from "@/lib/inventory-media";
 export function InquiryFormFields({
   values,
   onChange,
@@ -54,6 +48,7 @@ export function InquiryFormFields({
   itemOptions,
   itemsLoading,
   onCustomerCreated,
+  customers = [],
 }: {
   values: InquiryFormValues;
   onChange: (patch: Partial<InquiryFormValues>) => void;
@@ -64,346 +59,484 @@ export function InquiryFormFields({
   itemOptions: ItemSearchOption[];
   itemsLoading?: boolean;
   onCustomerCreated: (customer: Customer) => void;
+  customers?: Customer[];
 }) {
   const [itemTypes, setItemTypes] = useState<ItemType[]>(
     DEFAULT_INQUIRY_ITEM_TYPES,
   );
-
-  function set<K extends keyof InquiryFormValues>(
+  const selected = values.lines.filter((l) => l.itemId);
+  const options = itemOptions.filter(
+    (o) =>
+      selected.some((l) => l.itemId === o.itemId) ||
+      itemTypes.includes(normalizeInquiryItemType(o.itemType)),
+  );
+  const latest = useRef(values);
+  useEffect(() => {
+    latest.current = values;
+  }, [values]);
+  const set = <K extends keyof InquiryFormValues>(
     key: K,
     value: InquiryFormValues[K],
-  ) {
+  ) => {
+    latest.current = { ...latest.current, [key]: value };
     onChange({ [key]: value });
-  }
-
+  };
   function updateLine(index: number, patch: Partial<InquiryFormLine>) {
+    const measurementChanged =
+      "quantity" in patch || "unitId" in patch || "dimensions" in patch;
     set(
       "lines",
-      values.lines.map((line, i) =>
-        i === index ? { ...line, ...patch } : line,
+      latest.current.lines.map((l, i) =>
+        i === index
+          ? {
+              ...l,
+              ...patch,
+              ...(measurementChanged ? { preserveSnapshot: undefined } : {}),
+            }
+          : l,
       ),
     );
   }
-
-  const selectedItemIds = useMemo(
-    () => new Set(values.lines.map((l) => l.itemId).filter(Boolean)),
-    [values.lines],
-  );
-
-  const filteredItemOptions = useMemo(() => {
-    const allowed = new Set(itemTypes);
-    return itemOptions.filter((opt) => {
-      if (selectedItemIds.has(opt.itemId)) return true;
-      return allowed.has(normalizeInquiryItemType(opt.itemType));
-    });
-  }, [itemOptions, itemTypes, selectedItemIds]);
-
+  const productsLocked = !!values.convertedSaleId;
   return (
-    <PageFormCard>
-      <PageFormSection
-        title="Contact"
-        description="Who submitted this request — phone or email required for follow-up."
-      >
-        <FormGrid cols={3}>
-          <FormField
-            label="Contact name"
-            required
-            htmlFor={`${idPrefix}-name`}
-            className="sm:col-span-1 lg:col-span-1"
+    <div className="form-layout min-w-0">
+      <div className="form-main">
+        <PageFormCard>
+          <PageFormSection
+            title="Basic information"
+            description="Select the customer and when the products are needed."
           >
-            <Input
-              id={`${idPrefix}-name`}
-              required
-              className="h-10"
-              placeholder="Full name"
-              value={values.contactName}
-              onChange={(e) => set("contactName", e.target.value)}
-            />
-          </FormField>
-          <FormField label="Phone" htmlFor={`${idPrefix}-phone`}>
-            <Input
-              id={`${idPrefix}-phone`}
-              type="tel"
-              className="h-10"
-              placeholder="0911…"
-              value={values.phone}
-              onChange={(e) => set("phone", e.target.value)}
-            />
-          </FormField>
-          <FormField label="Email" htmlFor={`${idPrefix}-email`}>
-            <Input
-              id={`${idPrefix}-email`}
-              type="email"
-              className="h-10"
-              placeholder="name@company.com"
-              value={values.email}
-              onChange={(e) => set("email", e.target.value)}
-            />
-          </FormField>
-        </FormGrid>
-      </PageFormSection>
-
-      <PageFormSection
-        title="Request"
-        description="What they are asking for — used on quotes and production handoff."
-      >
-        <FormGrid cols={1}>
-          <FormField label="Subject" required htmlFor={`${idPrefix}-subject`}>
-            <Input
-              id={`${idPrefix}-subject`}
-              required
-              className="h-10"
-              placeholder="e.g. Quote for dining set"
-              value={values.subject}
-              onChange={(e) => set("subject", e.target.value)}
-            />
-          </FormField>
-          <FormField label="Message" required htmlFor={`${idPrefix}-message`}>
-            <Textarea
-              id={`${idPrefix}-message`}
-              required
-              rows={4}
-              className="min-h-[6.5rem] resize-y"
-              placeholder="Details, dimensions, finish, delivery notes…"
-              value={values.message}
-              onChange={(e) => set("message", e.target.value)}
-            />
-          </FormField>
-        </FormGrid>
-      </PageFormSection>
-
-      <PageFormSection
-        title="Interested items"
-        description="Customer inquiries default to finished goods. Enable Semi / Raw / Other when you need components or special catalog rows."
-      >
-        <InquiryItemTypeFilter
-          selected={itemTypes}
-          onChange={setItemTypes}
-          className="mb-4"
-        />
-
-        <div className="overflow-hidden rounded-lg border border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
-          <div className="hidden grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] gap-3 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-[var(--frappe-text-muted)] sm:grid">
-            <span>Item</span>
-            <span>Qty</span>
-            <span>Line notes</span>
-            <span className="sr-only">Remove</span>
-          </div>
-          <div className="divide-y divide-border/70">
-            {values.lines.map((line, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-2 gap-3 px-3 py-3.5 sm:grid-cols-[minmax(0,1.6fr)_6.5rem_minmax(0,1fr)_2.75rem] sm:items-start sm:px-4"
-              >
-                <div className="col-span-2 min-w-0 space-y-1.5 sm:col-span-1">
-                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
-                    Item
-                  </span>
-                  <ItemSearchSelect
-                    value={line.itemId}
-                    onValueChange={(itemId) => updateLine(index, { itemId })}
-                    options={filteredItemOptions}
-                    loading={itemsLoading}
-                    placeholder="Search finished goods…"
-                    searchPlaceholder="Search name or SKU…"
-                    emptyMessage={
-                      itemTypes.length === 1 && itemTypes[0] === "FINISHED"
-                        ? "No finished goods match — enable Semi/Raw above if needed."
-                        : "No items match the selected types."
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
-                    Qty
-                  </span>
-                  <Input
-                    type="number"
-                    step="any"
-                    min="0"
-                    value={line.quantity}
-                    onChange={(e) =>
-                      updateLine(index, { quantity: e.target.value })
-                    }
-                    className="h-10"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-xs font-medium text-[var(--frappe-text-muted)] sm:hidden">
-                    Notes
-                  </span>
-                  <Input
-                    value={line.notes}
-                    onChange={(e) =>
-                      updateLine(index, { notes: e.target.value })
-                    }
-                    placeholder="Size, color…"
-                    className="h-10"
-                  />
-                </div>
-                <div className="col-span-2 flex justify-end sm:col-span-1 sm:pt-0.5">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-10 text-muted-foreground hover:text-destructive"
-                    disabled={values.lines.length <= 1}
-                    onClick={() =>
-                      set(
-                        "lines",
-                        values.lines.length <= 1
-                          ? values.lines
-                          : values.lines.filter((_, i) => i !== index),
-                      )
-                    }
-                    aria-label="Remove line"
-                  >
-                    <Trash2Icon className="size-4" />
-                  </Button>
-                </div>
+            <FormGrid>
+              <EntitySelectField
+                label="Customer"
+                listHref="/customers"
+                listLabel="Customers"
+                value={values.customerId}
+                onValueChange={(id) => {
+                  const customer = customers.find((c) => c.id === id);
+                  onChange({
+                    customerId: id,
+                    ...(customer
+                      ? {
+                          contactName: customer.name,
+                          phone: customer.phone || "",
+                          email: customer.email || "",
+                        }
+                      : {}),
+                  });
+                }}
+                options={customerOptions}
+                placeholder="Choose a customer (optional)"
+                emptyMessage="No customers"
+                quickCreate={
+                  <QuickCustomerDialog onCreated={onCustomerCreated} />
+                }
+              />
+              <FormField label="Requested delivery date">
+                <Input
+                  aria-label="Requested delivery date"
+                  type="date"
+                  value={values.requestedDeliveryDate}
+                  onChange={(e) => set("requestedDeliveryDate", e.target.value)}
+                />
+              </FormField>
+            </FormGrid>
+          </PageFormSection>
+          <PageFormSection
+            title="Products requested"
+            description="Choose products and enter quantities in the customer's preferred unit."
+          >
+            <details className="mb-4 rounded-lg border px-3 py-2 text-sm">
+              <summary className="cursor-pointer">Product filters</summary>
+              <InquiryItemTypeFilter
+                selected={itemTypes}
+                onChange={setItemTypes}
+                className="mt-3"
+              />
+            </details>
+            <div className="overflow-hidden rounded-xl border">
+              <div className="hidden grid-cols-[minmax(0,1.7fr)_5.5rem_minmax(0,1.3fr)_minmax(0,1fr)_2.75rem] gap-3 border-b bg-muted/40 px-3 py-3 text-xs font-medium text-muted-foreground lg:grid">
+                <span>Product</span>
+                <span>Quantity</span>
+                <span>Unit</span>
+                <span>Notes</span>
+                <span className="sr-only">Actions</span>
               </div>
-            ))}
-          </div>
-          <div className="border-t border-border/70 bg-muted/20 px-3 py-2.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 text-primary"
-              onClick={() =>
-                set("lines", [...values.lines, { ...EMPTY_INQUIRY_LINE }])
-              }
-            >
-              <PlusIcon className="size-4" />
-              Add line
-            </Button>
-          </div>
-        </div>
-      </PageFormSection>
-
-      <PageFormSection
-        title="Assignment"
-        description="Link a customer account and owner so the inquiry can move into production or sale."
-      >
-        <FormGrid className="gap-5">
-          <FormField label="Priority">
-            <Select
-              value={values.priority}
-              onValueChange={(v) => set("priority", v as InquiryPriority)}
-            >
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                {INQUIRY_PRIORITIES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p.charAt(0) + p.slice(1).toLowerCase()}
-                  </SelectItem>
+              <div className="divide-y">
+                {values.lines.map((line, index) => (
+                  <fieldset
+                    key={index}
+                    disabled={productsLocked}
+                    className="grid min-w-0 grid-cols-2 gap-3 p-3 lg:grid-cols-[minmax(0,1.7fr)_5.5rem_minmax(0,1.3fr)_minmax(0,1fr)_2.75rem] lg:items-start"
+                  >
+                    <legend className="sr-only">Product {index + 1}</legend>
+                    <div className="col-span-2 min-w-0 lg:col-span-1">
+                      <FormField
+                        label="Product"
+                        className="lg:[&_label]:sr-only"
+                      >
+                        <ItemSearchSelect
+                          value={line.itemId}
+                          onValueChange={(itemId) =>
+                            updateLine(index, {
+                              itemId,
+                              unitId: undefined,
+                              unitFactor: undefined,
+                              unitSymbol: undefined,
+                              dimensions: undefined,
+                              savedFactor: undefined,
+                            })
+                          }
+                          options={options.filter(
+                            (o) =>
+                              o.itemId === line.itemId ||
+                              !selected.some((l) => l.itemId === o.itemId),
+                          )}
+                          loading={itemsLoading}
+                          placeholder="Search products..."
+                          searchPlaceholder="Search products or SKU..."
+                        />
+                      </FormField>
+                      {itemOptions.find((o) => o.itemId === line.itemId)?.item
+                        ?.sku && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          SKU:{" "}
+                          {
+                            itemOptions.find((o) => o.itemId === line.itemId)
+                              ?.item?.sku
+                          }
+                        </p>
+                      )}
+                    </div>
+                    <FormField
+                      label="Quantity"
+                      className="lg:[&_label]:sr-only"
+                      error={
+                        line.itemId &&
+                        line.quantity !== "" &&
+                        !(Number(line.quantity) > 0)
+                          ? "Enter a positive quantity."
+                          : undefined
+                      }
+                    >
+                      <Input
+                        aria-label={`Quantity for product ${index + 1}`}
+                        type="number"
+                        min={10 ** -(line.unitPrecision ?? 3)}
+                        step={10 ** -(line.unitPrecision ?? 3)}
+                        value={line.quantity}
+                        onChange={(e) =>
+                          updateLine(index, {
+                            quantity: e.target.value,
+                            dimensions: undefined,
+                          })
+                        }
+                      />
+                    </FormField>
+                    <div className="min-w-0 lg:[&_label]:sr-only">
+                      <TransactionUnitField
+                        itemId={line.itemId}
+                        value={line.unitId}
+                        kind="sales"
+                        quantity={line.quantity}
+                        dimensions={line.dimensions}
+                        savedFactor={line.savedFactor}
+                        frozenSnapshot={line.preserveSnapshot}
+                        onResolved={(unitId, unitFactor, meta) => {
+                          const current = latest.current.lines[index];
+                          if (!current || current.unitId !== unitId) return;
+                          if (
+                            current.unitFactor === unitFactor &&
+                            current.unitSymbol === meta.symbol &&
+                            current.unitPrecision === meta.decimalPlaces &&
+                            current.basePrecision === meta.baseDecimalPlaces &&
+                            current.baseSymbol === meta.baseSymbol
+                          )
+                            return;
+                          set(
+                            "lines",
+                            latest.current.lines.map((line, i) =>
+                              i === index
+                                ? {
+                                    ...line,
+                                    unitFactor,
+                                    unitSymbol: meta.symbol,
+                                    unitPrecision: meta.decimalPlaces,
+                                    basePrecision: meta.baseDecimalPlaces,
+                                    baseSymbol: meta.baseSymbol,
+                                  }
+                                : line,
+                            ),
+                          );
+                        }}
+                        onAreaChange={(quantity, dimensions) =>
+                          updateLine(index, { quantity, dimensions })
+                        }
+                        onChange={(unitId, unitFactor, _oldFactor, meta) =>
+                          updateLine(index, {
+                            unitId,
+                            unitFactor,
+                            unitSymbol: meta?.symbol,
+                            unitPrecision: meta?.decimalPlaces,
+                            basePrecision: meta?.baseDecimalPlaces,
+                            baseSymbol: meta?.baseSymbol,
+                            dimensions: undefined,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="col-span-2 min-w-0 lg:col-span-1">
+                      <FormField
+                        label="Line notes"
+                        className="lg:[&_label]:sr-only"
+                      >
+                        <Input
+                          aria-label={`Notes for product ${index + 1}`}
+                          value={line.notes}
+                          onChange={(e) =>
+                            updateLine(index, { notes: e.target.value })
+                          }
+                          placeholder="Size, finish..."
+                        />
+                      </FormField>
+                      {line.dimensions && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {line.dimensions.widthMetres} m x{" "}
+                          {line.dimensions.lengthMetres} m x{" "}
+                          {line.dimensions.count}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="col-span-2 justify-self-end text-muted-foreground hover:text-destructive lg:col-span-1"
+                      aria-label={`Remove product ${index + 1}`}
+                      onClick={() =>
+                        set(
+                          "lines",
+                          values.lines.length === 1
+                            ? [{ ...EMPTY_INQUIRY_LINE }]
+                            : values.lines.filter((_, i) => i !== index),
+                        )
+                      }
+                    >
+                      <Trash2Icon className="size-4" />
+                    </Button>
+                  </fieldset>
                 ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="Follow-up" htmlFor={`${idPrefix}-follow-up`}>
-            <Input
-              id={`${idPrefix}-follow-up`}
-              type="datetime-local"
-              className="h-10"
-              value={values.followUpAt}
-              onChange={(e) => set("followUpAt", e.target.value)}
-            />
-          </FormField>
-          <EntitySelectField
-            label="Customer"
-            fullWidth
-            stackedActions
-            value={values.customerId}
-            onValueChange={(id) => set("customerId", id)}
-            options={customerOptions}
-            listHref="/customers"
-            listLabel="Customers"
-            emptyMessage="No customers"
-            placeholder="Select customer…"
-            quickCreate={
-              <QuickCustomerDialog onCreated={onCustomerCreated} />
-            }
-          />
-          <EntitySelectField
-            label="Assign to"
-            fullWidth
-            stackedActions
-            value={values.assignedToUserId}
-            onValueChange={(id) => set("assignedToUserId", id)}
-            options={userOptions}
-            listHref="/users"
-            listLabel="Users"
-            emptyMessage="No users"
-            placeholder="Select assignee…"
-          />
-          <FormField
-            label="Internal notes"
-            htmlFor={`${idPrefix}-notes`}
-            className="sm:col-span-2"
+              </div>
+              <div className="border-t bg-muted/10 p-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={productsLocked}
+                  onClick={() =>
+                    set("lines", [...values.lines, { ...EMPTY_INQUIRY_LINE }])
+                  }
+                >
+                  <PlusIcon className="size-4" />
+                  Add product
+                </Button>
+              </div>
+            </div>
+            {productsLocked && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Products are read-only after conversion to a sale.
+              </p>
+            )}
+          </PageFormSection>
+          <PageFormSection
+            title="Additional information"
+            description="Add requirements, reference files, or optional team settings."
           >
-            <Textarea
-              id={`${idPrefix}-notes`}
-              rows={3}
-              className="min-h-[5rem] resize-y"
-              placeholder="Visible to your team only"
-              value={values.internalNotes}
-              onChange={(e) => set("internalNotes", e.target.value)}
-            />
-          </FormField>
-        </FormGrid>
-      </PageFormSection>
-
-      {mode === "edit" ? (
-        <PageFormSection
-          title="Workflow"
-          description="Status and linked sale after conversion."
-        >
-          <FormGrid>
-            <FormField label="Status">
-              <Select
-                value={values.status}
-                onValueChange={(v) => set("status", v as InquiryStatus)}
-              >
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {INQUIRY_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {inquiryStatusLabel(s)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
             <FormField
-              label="Converted sale ID"
-              htmlFor={`${idPrefix}-sale`}
+              label="Requirements / remarks"
+              hint="Optional when products are selected. Required for a general inquiry."
             >
-              <Input
-                id={`${idPrefix}-sale`}
-                className="h-10 font-mono text-xs"
-                value={values.convertedSaleId}
-                onChange={(e) => set("convertedSaleId", e.target.value)}
-                placeholder="Sale UUID"
+              <Textarea
+                aria-label="Requirements / remarks"
+                rows={3}
+                maxLength={20000}
+                value={values.message}
+                onChange={(e) => set("message", e.target.value)}
+                placeholder="Dimensions, colors, finishes or delivery instructions..."
               />
             </FormField>
-            {values.convertedSaleId.trim() ? (
-              <div className="sm:col-span-2">
-                <Link
-                  href={`/sales/${values.convertedSaleId.trim()}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Open linked sale →
-                </Link>
+            <InquiryAttachments
+              files={values.files}
+              attachments={values.attachments}
+              inquiryId={values.inquiryId}
+              onFilesChange={(files) => set("files", files)}
+              onAttachmentsChange={(attachments) =>
+                set("attachments", attachments)
+              }
+              idPrefix={idPrefix}
+            />
+            <details className="rounded-lg border p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                Priority, assignment and follow-up
+              </summary>
+              <div className="mt-4">
+                <FormGrid>
+                  <FormField label="Priority" htmlFor={`${idPrefix}-priority`}>
+                    <select
+                      id={`${idPrefix}-priority`}
+                      className="app-control h-11 w-full rounded-md border bg-background px-3"
+                      value={values.priority}
+                      onChange={(e) =>
+                        set("priority", e.target.value as InquiryPriority)
+                      }
+                    >
+                      {INQUIRY_PRIORITIES.map((p) => (
+                        <option key={p} value={p}>
+                          {p.charAt(0) + p.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <EntitySelectField
+                    label="Assign to"
+                    listHref="/users"
+                    listLabel="Users"
+                    value={values.assignedToUserId}
+                    onValueChange={(id) => set("assignedToUserId", id)}
+                    options={userOptions}
+                    placeholder="Unassigned"
+                    emptyMessage="No team members"
+                  />
+                  <FormField label="Follow-up">
+                    <Input
+                      aria-label="Follow-up"
+                      type="datetime-local"
+                      value={values.followUpAt}
+                      onChange={(e) => set("followUpAt", e.target.value)}
+                    />
+                  </FormField>
+                  <FormField label="Internal notes">
+                    <Textarea
+                      aria-label="Internal notes"
+                      rows={2}
+                      value={values.internalNotes}
+                      onChange={(e) => set("internalNotes", e.target.value)}
+                      placeholder="Visible to your team only"
+                    />
+                  </FormField>
+                </FormGrid>
               </div>
-            ) : null}
-          </FormGrid>
-        </PageFormSection>
-      ) : null}
-    </PageFormCard>
+            </details>
+          </PageFormSection>
+        </PageFormCard>
+      </div>
+      <aside className="form-aside min-w-0" aria-label="Inquiry summary">
+        <section className="form-summary">
+          <h2 className="form-summary-title">Inquiry summary</h2>
+          <dl className="form-summary-list">
+            <div>
+              <dt>Products</dt>
+              <dd>{selected.length}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <Badge variant="secondary">
+                  {mode === "create"
+                    ? "Not submitted"
+                    : inquiryStatusLabel(values.status)}
+                </Badge>
+              </dd>
+            </div>
+            <div>
+              <dt>Priority</dt>
+              <dd>
+                {values.priority.charAt(0) +
+                  values.priority.slice(1).toLowerCase()}
+              </dd>
+            </div>
+            <div>
+              <dt>Requested delivery</dt>
+              <dd>{values.requestedDeliveryDate || "Not specified"}</dd>
+            </div>
+          </dl>
+          {values.convertedSaleId && (
+            <Link
+              className="mt-3 block text-sm text-primary underline"
+              href={`/sales/${values.convertedSaleId}`}
+            >
+              Open linked sale
+            </Link>
+          )}
+        </section>
+        <section className="form-summary">
+          <h2 className="form-summary-title">Requested products</h2>
+          {!selected.length && (
+            <p className="text-sm text-muted-foreground">
+              Selected products appear here.
+            </p>
+          )}
+          <div className="divide-y">
+            {selected.map((line, i) => {
+              const option = itemOptions.find((o) => o.itemId === line.itemId),
+                src = resolveItemImageUrl(option?.item?.imageUrl);
+              return (
+                <div
+                  key={`${line.itemId}-${i}`}
+                  className="flex min-w-0 gap-3 py-3"
+                >
+                  <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/20">
+                    {src ? (
+                      <Image
+                        src={src}
+                        alt=""
+                        width={48}
+                        height={48}
+                        className="size-full object-contain"
+                        unoptimized
+                      />
+                    ) : (
+                      <PackageIcon className="size-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-medium">
+                      {option?.item?.description ?? option?.label ?? "Product"}
+                    </p>
+                    {option?.item?.sku && (
+                      <p className="text-xs text-muted-foreground">
+                        {option.item.sku}
+                      </p>
+                    )}
+                    <p className="text-sm">
+                      {line.quantity || "Not specified"}{" "}
+                      {line.unitSymbol ?? option?.item?.unit ?? ""}
+                    </p>
+                    {line.unitFactor && line.unitFactor !== 1 && (
+                      <p className="text-xs text-muted-foreground">
+                        Stock equivalent:{" "}
+                        {Number(
+                          (
+                            Number(line.quantity || 0) * line.unitFactor
+                          ).toPrecision(12),
+                        )}{" "}
+                        {line.baseSymbol}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+        <section className="form-summary">
+          <h2 className="form-summary-title">Next steps</h2>
+          <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
+            <li>Save the customer request.</li>
+            <li>Review and confirm requirements.</li>
+            <li>Sell from stock or plan production.</li>
+          </ol>
+        </section>
+      </aside>
+    </div>
   );
 }

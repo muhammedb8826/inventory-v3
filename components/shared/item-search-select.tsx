@@ -1,9 +1,10 @@
 "use client";
 
 import { SearchSelect } from "@/components/shared/search-select";
-import type { ItemType } from "@/lib/types";
+import type { Item, ItemType } from "@/lib/types";
 
 export interface ItemSearchOption {
+  item?: Item;
   itemId: string;
   label: string;
   itemType?: ItemType | null;

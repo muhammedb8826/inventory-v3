@@ -1,3 +1,4 @@
+import { api } from "@/lib/api";
 import type {
   CreateInquiryBody,
   Inquiry,
@@ -33,12 +34,26 @@ export const INQUIRY_ASSIGNMENT_STATUSES: InquiryAssignmentStatus[] = [
 ];
 
 export interface InquiryFormLine {
+  unitId?: string;
+  unitFactor?: number;
+  unitSymbol?: string;
+  unitPrecision?: number;
+  basePrecision?: number;
+  baseSymbol?: string;
+  dimensions?: import("@/lib/types").AreaDimensions;
+  savedFactor?: number;
+  quantityUnspecified?: boolean;
+  preserveSnapshot?: import("@/lib/types").UnitSnapshot;
   itemId: string;
   quantity: string;
   notes: string;
 }
 
 export interface InquiryFormValues {
+  requestedDeliveryDate: string;
+  files: File[];
+  attachments: import("@/lib/types").InquiryAttachment[];
+  inquiryId?: string;
   contactName: string;
   phone: string;
   email: string;
@@ -61,6 +76,9 @@ export const EMPTY_INQUIRY_LINE: InquiryFormLine = {
 };
 
 export const EMPTY_INQUIRY_FORM: InquiryFormValues = {
+  requestedDeliveryDate: "",
+  files: [],
+  attachments: [],
   contactName: "",
   phone: "",
   email: "",
@@ -81,7 +99,7 @@ export function inquiryStatusLabel(status: InquiryStatus): string {
 }
 
 export function inquiryAssignmentLabel(
-  status?: InquiryAssignmentStatus | null
+  status?: InquiryAssignmentStatus | null,
 ): string {
   if (!status) return "Unassigned";
   return status.replaceAll("_", " ");
@@ -110,10 +128,29 @@ export function inquiryLinesFromRecord(inquiry: Inquiry): InquiryFormLine[] {
   if (apiLines.length > 0) {
     return apiLines.map((line) => ({
       itemId: line.itemId ?? line.item?.id ?? "",
+      unitId:
+        line.quantity == null
+          ? ""
+          : (line.unitSnapshot?.unitId ?? line.item?.unitId ?? ""),
+      quantityUnspecified: line.quantity == null,
+      unitFactor: Number(line.unitSnapshot?.factor ?? 1),
+      savedFactor: Number(line.unitSnapshot?.factor ?? 1),
+      unitSymbol:
+        line.unitSnapshot?.symbol ??
+        line.item?.stockUnit?.symbol ??
+        line.item?.unit ??
+        "",
+      unitPrecision:
+        line.unitSnapshot?.decimalPlaces ?? line.item?.stockUnit?.decimalPlaces,
+      basePrecision: line.item?.stockUnit?.decimalPlaces,
+      baseSymbol: line.item?.stockUnit?.symbol ?? line.item?.unit ?? "",
+      dimensions: line.unitSnapshot?.dimensions,
+      preserveSnapshot: line.unitSnapshot ?? undefined,
       quantity:
-        line.quantity != null && String(line.quantity).trim() !== ""
-          ? String(Number(line.quantity))
-          : "1",
+        (line.unitSnapshot?.quantity ?? line.quantity) != null &&
+        String(line.unitSnapshot?.quantity ?? line.quantity).trim() !== ""
+          ? String(Number(line.unitSnapshot?.quantity ?? line.quantity))
+          : "",
       notes: line.notes ?? "",
     }));
   }
@@ -131,6 +168,10 @@ export function inquiryLinesFromRecord(inquiry: Inquiry): InquiryFormLine[] {
 
 export function inquiryToFormValues(inquiry: Inquiry): InquiryFormValues {
   return {
+    requestedDeliveryDate: inquiry.requestedDeliveryDate ?? "",
+    files: [],
+    attachments: inquiry.attachments ?? [],
+    inquiryId: inquiry.id,
     contactName: inquiry.contactName ?? "",
     phone: inquiry.phone ?? "",
     email: inquiry.email ?? "",
@@ -147,39 +188,68 @@ export function inquiryToFormValues(inquiry: Inquiry): InquiryFormValues {
   };
 }
 
-export function validateInquiryContact(values: InquiryFormValues): string | null {
-  if (!values.phone.trim() && !values.email.trim()) {
-    return "Provide at least a phone number or email";
-  }
+export function validateInquiryContact(
+  values: InquiryFormValues,
+): string | null {
+  if (!values.lines.some((line) => line.itemId) && !values.message.trim())
+    return "Add a product or describe the request.";
   return null;
 }
 
 export function buildInquiryLinePayload(
-  lines: InquiryFormLine[]
+  lines: InquiryFormLine[],
 ): InquiryLineInput[] | undefined {
   const parsed: InquiryLineInput[] = [];
+  const seen = new Set<string>();
   for (const line of lines) {
     const itemId = line.itemId.trim();
     if (!itemId) continue;
-    const qty = parseFloat(line.quantity);
-    const payload: InquiryLineInput = { itemId };
-    if (!Number.isNaN(qty) && qty > 0) payload.quantity = qty;
-    const notes = optionalString(line.notes);
-    if (notes) payload.notes = notes;
-    parsed.push(payload);
+    if (seen.has(itemId))
+      throw new Error("Choose each product once per inquiry.");
+    seen.add(itemId);
+    if (line.unitId === undefined)
+      throw new Error("Wait for the product units to load before saving.");
+    if (line.quantityUnspecified && !line.quantity.trim()) {
+      parsed.push({
+        itemId,
+        ...(line.notes.trim() ? { notes: line.notes.trim() } : {}),
+      });
+      continue;
+    }
+    const qty = Number(line.quantity);
+    if (
+      !line.quantity.trim() ||
+      !Number.isFinite(qty) ||
+      qty <= 0 ||
+      qty >= 1e11
+    )
+      throw new Error("Enter a positive quantity for every selected product.");
+    const fits = (value: number, places: number) =>
+      Math.abs(value - Number(value.toFixed(places))) < 1e-9;
+    if (
+      !fits(qty, line.unitPrecision ?? 3) ||
+      !fits(qty * (line.unitFactor ?? 1), line.basePrecision ?? 3)
+    )
+      throw new Error(
+        "A product quantity does not fit its selected unit or stock precision.",
+      );
+    parsed.push({
+      itemId,
+      quantity: qty,
+      ...(line.unitId ? { unitId: line.unitId } : {}),
+      ...(line.dimensions ? { dimensions: line.dimensions } : {}),
+      ...(line.notes.trim() ? { notes: line.notes.trim() } : {}),
+    });
   }
   return parsed.length > 0 ? parsed : undefined;
 }
 
 export function buildCreateInquiryBody(
-  values: InquiryFormValues
+  values: InquiryFormValues,
 ): CreateInquiryBody {
   const body: CreateInquiryBody = {
-    contactName: values.contactName.trim(),
-    subject: values.subject.trim(),
+    requestedDeliveryDate: optionalString(values.requestedDeliveryDate),
     message: values.message.trim(),
-    phone: optionalString(values.phone),
-    email: optionalString(values.email),
     priority: values.priority,
     customerId: optionalString(values.customerId),
     assignedToUserId: optionalString(values.assignedToUserId),
@@ -194,13 +264,11 @@ export function buildCreateInquiryBody(
 }
 
 export function buildUpdateInquiryBody(
-  values: InquiryFormValues
+  values: InquiryFormValues,
+  original?: Inquiry | null,
 ): UpdateInquiryBody {
-  return {
-    contactName: values.contactName.trim(),
-    phone: emptyToNull(values.phone),
-    email: emptyToNull(values.email),
-    subject: values.subject.trim(),
+  const body: UpdateInquiryBody = {
+    requestedDeliveryDate: emptyToNull(values.requestedDeliveryDate),
     message: values.message.trim(),
     status: values.status,
     priority: values.priority,
@@ -211,8 +279,16 @@ export function buildUpdateInquiryBody(
     followUpAt: values.followUpAt
       ? new Date(values.followUpAt).toISOString()
       : null,
-    convertedSaleId: emptyToNull(values.convertedSaleId),
   };
+  if (
+    original &&
+    JSON.stringify(body.lines) ===
+      JSON.stringify(
+        buildInquiryLinePayload(inquiryLinesFromRecord(original)) ?? [],
+      )
+  )
+    delete body.lines;
+  return body;
 }
 
 export function inquiryItemsSummary(inquiry: Inquiry): string {
@@ -222,8 +298,9 @@ export function inquiryItemsSummary(inquiry: Inquiry): string {
       .map((line) => {
         const name = line.item?.description ?? line.item?.sku ?? "Item";
         const qty =
-          line.quantity != null && String(line.quantity).trim() !== ""
-            ? ` × ${Number(line.quantity)}`
+          (line.unitSnapshot?.quantity ?? line.quantity) != null &&
+          String(line.unitSnapshot?.quantity ?? line.quantity).trim() !== ""
+            ? ` × ${Number(line.unitSnapshot?.quantity ?? line.quantity)} ${line.unitSnapshot?.symbol ?? line.item?.unit ?? ""}`
             : "";
         return `${name}${qty}`;
       })
@@ -231,4 +308,39 @@ export function inquiryItemsSummary(inquiry: Inquiry): string {
   }
   if (inquiry.item?.description) return inquiry.item.description;
   return "—";
+}
+
+export async function uploadInquiryFiles(id: string, files: File[]) {
+  // Keep each request below the same-origin proxy's body limit. Hash deduplication makes retries safe.
+  for (const file of files) {
+    const data = new FormData();
+    data.append("files", file);
+    await api(`/inquiries/${id}/attachments`, { method: "POST", body: data });
+  }
+}
+
+export function inquiryFormFingerprint(values: InquiryFormValues) {
+  return JSON.stringify({
+    contactName: values.contactName,
+    phone: values.phone,
+    email: values.email,
+    subject: values.subject,
+    message: values.message,
+    priority: values.priority,
+    customerId: values.customerId,
+    assignedToUserId: values.assignedToUserId,
+    internalNotes: values.internalNotes,
+    followUpAt: values.followUpAt,
+    requestedDeliveryDate: values.requestedDeliveryDate,
+    lines: values.lines
+      .filter((l) => l.itemId)
+      .map((l) => ({
+        itemId: l.itemId,
+        quantity: l.quantity,
+        unitId: l.unitId,
+        dimensions: l.dimensions,
+        notes: l.notes,
+      })),
+    files: values.files.length,
+  });
 }

@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import { api } from "@/lib/api";
 import { apiList } from "@/lib/list-response";
-import { fetchAllInventory, uniqueItemsFromStock } from "@/lib/inventory-fetch";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
-import type { Customer, UserAdmin } from "@/lib/types";
+import type { Customer, UserAdmin, Item } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import type { ItemSearchOption } from "@/components/shared/item-search-select";
 
@@ -19,17 +19,18 @@ export function useInquiryFormOptions() {
     "inquiries.write",
     "sales.write",
   ]);
-  const canInventory = hasPermission(user, "inventory.read");
+  const canCatalog = hasAnyPermission(user, [
+    "inquiries.read",
+    "inquiries.write",
+  ]);
 
   const {
     data: customers,
     reload: reloadCustomers,
     setData: setCustomers,
-  } = useFetch(
-    () => apiList<Customer>("/customers"),
-    [],
-    { enabled: canCustomers },
-  );
+  } = useFetch(() => apiList<Customer>("/customers"), [], {
+    enabled: canCustomers,
+  });
 
   const { data: assignees } = useFetch(
     () => api<UserAdmin[]>("/users/assignees"),
@@ -37,10 +38,13 @@ export function useInquiryFormOptions() {
     { enabled: canAssignees },
   );
 
-  const { data: stock, loading: itemsLoading } = useFetch(
-    () => fetchAllInventory(),
+  const { data: items, loading: itemsLoading } = useFetch(
+    () =>
+      fetchAllPages<Item>(
+        (page, limit) => `/inquiries/catalog?page=${page}&limit=${limit}`,
+      ),
     [],
-    { enabled: canInventory },
+    { enabled: canCatalog },
   );
 
   const customerOptions = useMemo(
@@ -64,17 +68,19 @@ export function useInquiryFormOptions() {
 
   const itemOptions: ItemSearchOption[] = useMemo(
     () =>
-      uniqueItemsFromStock(stock ?? []).map((item) => ({
+      (items ?? []).map((item) => ({
+        item,
         itemId: item.id,
         label: item.sku
           ? `${item.description} (${item.sku})`
           : item.description,
         itemType: item.itemType ?? null,
       })),
-    [stock],
+    [items],
   );
 
   return {
+    customers: customers ?? [],
     customerOptions,
     userOptions,
     itemOptions,
