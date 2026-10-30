@@ -6,7 +6,7 @@ export function notificationDetailPath(id: string): string {
 /** Deep-link path for a notification entity, or null when not navigable. */
 export function notificationHref(
   entityType?: string | null,
-  entityId?: string | null
+  entityId?: string | null,
 ): string | null {
   if (!entityType || !entityId) return null;
 
@@ -29,7 +29,7 @@ export function notificationHref(
     case "stock":
       return "/inventory";
     case "inquiry":
-      return `/inquiries?id=${encodeURIComponent(entityId)}`;
+      return `/inquiries/${encodeURIComponent(entityId)}`;
     case "production_order":
       return `/production-orders/${entityId}`;
     default:

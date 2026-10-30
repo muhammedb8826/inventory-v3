@@ -64,7 +64,7 @@ export function InquiryForm() {
       setCreatedRecord(created);
       await uploadInquiryFiles(created.id, values.files);
       toast.success("Inquiry created");
-      router.push(`/inquiries?id=${created.id}`);
+      router.push(`/inquiries/${created.id}`);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {

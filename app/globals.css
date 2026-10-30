@@ -338,6 +338,15 @@
   height: 2.75rem;
   border-radius: 0.85rem;
 }
+@media (max-width: 639px) {
+  .metric-card-compact {
+    padding: 0.75rem;
+  }
+  .metric-card-compact .sms-metric-icon,
+  .metric-card-compact .metric-card-hint {
+    display: none;
+  }
+}
 
 /* Shared navigation follows the same indigo action and neutral surface palette. */
 [data-slot="sidebar-inner"] {

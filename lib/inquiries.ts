@@ -95,7 +95,14 @@ export const EMPTY_INQUIRY_FORM: InquiryFormValues = {
 };
 
 export function inquiryStatusLabel(status: InquiryStatus): string {
-  return status.replaceAll("_", " ");
+  return {
+    NEW: "New",
+    IN_PROGRESS: "In progress",
+    QUOTED: "Confirmed",
+    CONVERTED: "Converted to sale",
+    CLOSED: "Closed",
+    CANCELLED: "Cancelled",
+  }[status];
 }
 
 export function inquiryAssignmentLabel(
@@ -270,7 +277,6 @@ export function buildUpdateInquiryBody(
   const body: UpdateInquiryBody = {
     requestedDeliveryDate: emptyToNull(values.requestedDeliveryDate),
     message: values.message.trim(),
-    status: values.status,
     priority: values.priority,
     customerId: emptyToNull(values.customerId),
     assignedToUserId: emptyToNull(values.assignedToUserId),

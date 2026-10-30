@@ -8,16 +8,21 @@ import type {
 } from "@/lib/types";
 
 export function InquiryStatusBadge({ status }: { status: InquiryStatus }) {
-  const variant =
-    status === "NEW"
-      ? "destructive"
-      : status === "CONVERTED" || status === "CLOSED"
-        ? "secondary"
-        : status === "CANCELLED"
-          ? "outline"
-          : "default";
-
-  return <Badge variant={variant}>{inquiryStatusLabel(status)}</Badge>;
+  const tones: Record<InquiryStatus, string> = {
+    NEW: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300",
+    IN_PROGRESS:
+      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+    QUOTED:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    CONVERTED: "border-primary/20 bg-primary/10 text-primary",
+    CLOSED: "border-border bg-muted text-muted-foreground",
+    CANCELLED: "border-destructive/20 bg-destructive/10 text-destructive",
+  };
+  return (
+    <Badge variant="outline" className={tones[status]}>
+      {inquiryStatusLabel(status)}
+    </Badge>
+  );
 }
 
 export function InquiryAssignmentBadge({

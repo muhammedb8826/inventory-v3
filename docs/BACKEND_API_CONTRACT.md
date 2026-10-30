@@ -1000,9 +1000,9 @@ Notifications are created automatically when you record a **sale**, **purchase**
 | Assigned to a user | New assignee (skipped if they assigned themselves) | Inquiry assigned to you |
 | Reassigned / unassigned | Previous assignee (skipped if they are the actor) | Inquiry reassigned / Inquiry unassigned |
 
-Deep-link with `entityType: "inquiry"` + `entityId` → UI `/inquiries?id=:entityId`. Metadata includes `event` (`submitted` \| `assigned` \| `reassigned` \| `unassigned`), `subject`, `contactName`, `source`, `priority`.
+Deep-link with `entityType: "inquiry"` + `entityId` → UI `/inquiries/:entityId`. Metadata includes `event` (`submitted` \| `assigned` \| `reassigned` \| `unassigned`), `subject`, `contactName`, `source`, `priority`.
 
-Use `entityType` + `entityId` to deep-link to the related record from the notification detail page (e.g. `/sales/:entityId`, `/inquiries?id=:entityId`). The UI route for a notification is `/notifications/:id`.
+Use `entityType` + `entityId` to deep-link to the related record from the notification detail page (e.g. `/sales/:entityId`, `/inquiries/:entityId`). The UI route for a notification is `/notifications/:id`.
 
 The frontend polls unread count every 60s and maps entity types in `lib/notification-routes.ts`.
 

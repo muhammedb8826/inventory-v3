@@ -1357,6 +1357,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inquiries/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InquiriesController_close"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/inquiries": {
         parameters: {
             query?: never;
@@ -3083,14 +3099,18 @@ export interface components {
              * @description Legacy clients may echo the unchanged link. It cannot be assigned or cleared here.
              */
             readonly convertedSaleId?: string | null;
+            /**
+             * @deprecated
+             * @description Use the inquiry workflow actions to change status. Unchanged status echoes and legacy closing remain accepted.
+             * @enum {string}
+             */
+            status?: "NEW" | "IN_PROGRESS" | "QUOTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
             contactName?: string;
             phone?: string | null;
             /** Format: email */
             email?: string | null;
             subject?: string;
             message?: string;
-            /** @enum {string} */
-            status?: "NEW" | "IN_PROGRESS" | "QUOTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
             /** @enum {string} */
             priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
             /** Format: uuid */
@@ -5960,7 +5980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6002,7 +6022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6023,7 +6043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6048,7 +6068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6136,7 +6156,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6157,7 +6177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6178,7 +6198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6199,7 +6219,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerInquiry"];
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    InquiriesController_close: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
         };

@@ -499,7 +499,7 @@ export function ProductionOrderDetail({
                 label="Inquiry"
                 value={
                   <Link
-                    href={`/inquiries?id=${order.inquiryId}`}
+                    href={`/inquiries/${order.inquiryId}`}
                     className="font-mono text-xs text-primary hover:underline"
                   >
                     {order.inquiryId.slice(0, 8)}…

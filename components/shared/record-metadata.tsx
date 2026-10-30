@@ -263,7 +263,13 @@ export function withRecordMetadata<T extends { id: string }>(
       "Cancelled",
     ],
     "stocktakes-list": ["Counted", "Completed", "Cancelled"],
-    "inquiries-list": ["Claimed", "Accepted", "Quote confirmed", "Cancelled"],
+    "inquiries-list": [
+      "Claimed",
+      "Accepted",
+      "Requirements confirmed",
+      "Closed",
+      "Cancelled",
+    ],
   };
   for (const action of actionColumns[storageKey] ?? [])
     if (!cols.some((c) => c.key === `${action}By`))

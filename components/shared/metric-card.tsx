@@ -40,6 +40,7 @@ export function MetricCard({
   tone = "violet",
   trend,
   className,
+  compactOnMobile = false,
 }: {
   label: string;
   value: React.ReactNode;
@@ -48,6 +49,7 @@ export function MetricCard({
   tone?: MetricTone;
   trend?: { label: string; positive?: boolean };
   className?: string;
+  compactOnMobile?: boolean;
 }) {
   const styles = TONE_STYLES[tone];
 
@@ -55,6 +57,7 @@ export function MetricCard({
     <div
       className={cn(
         "sms-panel group relative overflow-hidden p-5 transition-transform duration-200 hover:border-primary/20 hover:shadow-md",
+        compactOnMobile && "metric-card-compact",
         className,
       )}
     >
@@ -81,7 +84,7 @@ export function MetricCard({
         </span>
       </div>
       {(hint || trend) && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <div className="metric-card-hint mt-4 flex flex-wrap items-center gap-2 text-xs">
           {trend ? (
             <span
               className={cn(

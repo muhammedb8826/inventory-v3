@@ -976,6 +976,16 @@ export interface InquiryAttachment {
   createdAt: string;
 }
 export interface Inquiry extends RecordMetadata {
+  hasProduction?: boolean;
+  productionOrders?: Pick<
+    ProductionOrder,
+    | "id"
+    | "orderNumber"
+    | "status"
+    | "finishedItemId"
+    | "quantityPlanned"
+    | "createdAt"
+  >[];
   requestedDeliveryDate?: string | null;
   attachments?: InquiryAttachment[];
   id: string;

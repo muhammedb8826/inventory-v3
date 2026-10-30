@@ -73,6 +73,8 @@ async function setup(
     converted?: boolean;
     failUpload?: boolean;
     currentFactor?: number;
+    status?: string;
+    readOnly?: boolean;
   } = {},
 ) {
   let posts = 0,
@@ -86,11 +88,15 @@ async function setup(
     email: null,
     subject: "Dining chairs",
     message: "Blue finish",
-    status: options.converted ? "CONVERTED" : "QUOTED",
+    status: options.status ?? (options.converted ? "CONVERTED" : "QUOTED"),
     priority: "NORMAL",
     source: "INTERNAL",
     customerId: "customer-a",
-    assignmentStatus: "UNASSIGNED",
+    assignmentStatus: "ACCEPTED",
+    assignedToUserId: "test-admin",
+    assignedTo: { id: "test-admin", fullName: "Test operator" },
+    createdBy: { id: "test-admin", fullName: "Test operator" },
+    customer: { id: "customer-a", name: "Acacia Studio" },
     requestedDeliveryDate: "2030-11-15",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -145,6 +151,23 @@ async function setup(
       },
     });
   });
+  if (options.readOnly) {
+    const reader = {
+      id: "reader",
+      fullName: "Inquiry reader",
+      email: "reader@example.test",
+      role: {
+        id: "reader-role",
+        name: "Reader",
+        permissions: ["inquiries.read"],
+      },
+    };
+    await page.route("**/api/backend/auth/me", (route) =>
+      page.url().endsWith("/login")
+        ? route.fallback()
+        : route.fulfill({ json: reader }),
+    );
+  }
   await page.route("**/api/backend/inquiries**", async (route) => {
     const req = route.request(),
       path = new URL(req.url()).pathname;
@@ -155,6 +178,32 @@ async function setup(
           meta: { page: 1, limit: 100, total: 2, totalPages: 1 },
         },
       });
+    const workflowAction = path.match(
+      /\/(claim|accept|decline|confirm|close)$/,
+    )?.[1];
+    if (workflowAction && req.method() === "POST") {
+      if (workflowAction === "claim" || workflowAction === "accept")
+        record = {
+          ...record,
+          status: "IN_PROGRESS",
+          assignmentStatus: "ACCEPTED",
+          assignedToUserId: "test-admin",
+        };
+      if (workflowAction === "decline")
+        record = {
+          ...record,
+          assignmentStatus: "DECLINED",
+          assignedToUserId: null,
+        };
+      if (workflowAction === "confirm")
+        record = { ...record, status: "QUOTED" };
+      if (workflowAction === "close") record = { ...record, status: "CLOSED" };
+      return route.fulfill({ status: 201, json: record });
+    }
+    if (req.method() === "DELETE") {
+      record = { ...record, status: "CANCELLED" };
+      return route.fulfill({ json: record });
+    }
     if (path.endsWith("/attachments")) {
       uploads++;
       if (options.failUpload && uploads === 1)
@@ -212,6 +261,11 @@ async function setup(
     return route.fulfill({
       json: {
         data: options.existing || posts ? [record] : [],
+        totals: {
+          total: options.existing || posts ? 1 : 0,
+          byStatus:
+            options.existing || posts ? { [String(record.status)]: 1 } : {},
+        },
         meta: {
           page: 1,
           limit: 20,
@@ -291,7 +345,7 @@ test("inquiry uses grouped sections, live unit conversion, delivery date and pri
     fullPage: true,
   });
   await page.getByRole("button", { name: "Save inquiry", exact: true }).click();
-  await page.waitForURL(/\/inquiries\?id=/);
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
   expect(state.submitted).toMatchObject({
     requestedDeliveryDate: "2030-11-15",
     lines: [{ itemId: cloth.id, quantity: 2, unitId: roll.id }],
@@ -318,7 +372,7 @@ test("area inquiry records dimensions and calculated quantity", async ({
     page.getByLabel("Quantity for product 1", { exact: true }),
   ).toHaveValue("3");
   await page.getByRole("button", { name: "Save inquiry", exact: true }).click();
-  await page.waitForURL(/\/inquiries\?id=/);
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
   expect(state.submitted).toMatchObject({
     lines: [
       {
@@ -351,7 +405,7 @@ test("upload retry updates the saved inquiry instead of creating a duplicate", a
     page.getByText("Upload interrupted", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
-  await page.waitForURL(/\/inquiries\?id=/);
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
   expect(state.posts).toBe(1);
   expect(state.uploads).toBe(2);
 });
@@ -364,8 +418,8 @@ test("metadata edits preserve the saved measurements and sale links are read-onl
     currentFactor: 40,
   });
   await login(page);
-  await page.goto(`/inquiries?id=${id(100)}`);
-  const dialog = page.getByRole("dialog");
+  await page.goto(`/inquiries/${id(100)}/edit`);
+  const dialog = page.locator("main");
   await expect(dialog.getByLabel("Contact name", { exact: true })).toHaveCount(
     0,
   );
@@ -373,15 +427,17 @@ test("metadata edits preserve the saved measurements and sale links are read-onl
     dialog.getByLabel("Converted sale ID", { exact: true }),
   ).toHaveCount(0);
   await expect(
-    dialog.getByRole("link", { name: "Open linked sale", exact: true }),
-  ).toBeVisible();
+    dialog.getByRole("button", { name: "Create sale", exact: true }),
+  ).toHaveCount(0);
   await expect(
     dialog.getByLabel("Quantity for product 1", { exact: true }),
   ).toBeDisabled();
   await dialog
     .getByLabel("Requirements / remarks", { exact: true })
     .fill("Revised requirements");
-  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Save changes", exact: true })
+    .click();
   await expect(
     page.getByText("Inquiry updated", { exact: true }),
   ).toBeVisible();
@@ -406,41 +462,41 @@ test("inquiry-to-sale prefill retains the original entered quantity and conversi
   ).toBeVisible();
 });
 
-test("unsaved inquiry changes block sales and production handoff until saved", async ({
+test("editing is separate from workflow actions and returns to read-only details", async ({
   page,
 }) => {
   await setup(page, { existing: true });
   await login(page);
-  await page.goto(`/inquiries?id=${id(100)}`);
-  const dialog = page.getByRole("dialog");
-  await expect(
-    dialog.getByRole("button", { name: "Start production", exact: true }),
-  ).toBeEnabled();
-  await dialog
+  await page.goto(`/inquiries/${id(100)}/edit`);
+  await page
     .getByLabel("Requirements / remarks", { exact: true })
     .fill("Updated request");
   await expect(
-    dialog.getByRole("button", { name: "Start production", exact: true }),
-  ).toBeDisabled();
-  await expect(
-    dialog.getByRole("link", { name: "Sell from stock", exact: true }),
+    page.getByRole("button", { name: "Start production", exact: true }),
   ).toHaveCount(0);
   await expect(
-    dialog.getByRole("button", { name: "Sell from stock", exact: true }),
-  ).toBeDisabled();
-  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    page.getByRole("button", { name: "Create sale", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
   await expect(
-    dialog.getByRole("button", { name: "Start production", exact: true }),
-  ).toBeEnabled();
+    page.getByRole("heading", { name: "Products requested" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Requirements / remarks", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Create sale", exact: true }),
+  ).toBeVisible();
 });
 
 for (const existing of [false, true]) {
-  test(`attachment chooser keeps the ${existing ? "inquiry dialog" : "inquiry page"} unclipped`, async ({
+  test(`attachment chooser keeps the ${existing ? "inquiry edit page" : "inquiry page"} unclipped`, async ({
     page,
   }) => {
     await setup(page, { existing });
     await login(page);
-    await page.goto(existing ? `/inquiries?id=${id(100)}` : "/inquiries/new");
+    await page.goto(existing ? `/inquiries/${id(100)}/edit` : "/inquiries/new");
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 });
       const picker = page.getByRole("button", {
@@ -482,7 +538,7 @@ for (const existing of [false, true]) {
       });
       expect(clipped).toEqual([]);
       const save = page.getByRole("button", {
-        name: existing ? "Save" : "Save inquiry",
+        name: existing ? "Save changes" : "Save inquiry",
         exact: true,
       });
       await save.scrollIntoViewIfNeeded();
@@ -492,3 +548,180 @@ for (const existing of [false, true]) {
     }
   });
 }
+
+test("list actions open pages and requirements progress through explicit actions", async ({
+  page,
+}) => {
+  await setup(page, { existing: true, status: "NEW" });
+  await login(page);
+  await page.goto("/inquiries");
+  await expect(
+    page.getByRole("region", { name: "Inquiry overview" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Actions for INQ-20000000", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/inquiry-list-desktop.png",
+    fullPage: true,
+  });
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  const metrics = await page
+    .getByRole("region", { name: "Inquiry overview" })
+    .boundingBox();
+  expect(metrics!.height).toBeLessThan(350);
+  await page.screenshot({
+    path: "test-results/inquiry-list-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page
+    .getByRole("button", { name: "Actions for INQ-20000000", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "View details", exact: true })
+    .click();
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Inquiry progress" }),
+  ).toBeVisible();
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page
+    .getByRole("button", { name: "Confirm requirements", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toBeVisible();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Confirm requirements", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Create sale", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Confirmed/);
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.screenshot({
+    path: "test-results/inquiry-details-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({
+    path: "test-results/inquiry-details-desktop.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Actions for INQ-20000000", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Close inquiry", exact: true })
+    .click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Close inquiry", exact: true })
+    .click();
+  await expect(page.locator('[aria-current="step"]')).toHaveText(/Closed/);
+  await expect(
+    page.getByRole("link", { name: "Edit", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("read-only employees can review details but cannot edit or progress an inquiry", async ({
+  page,
+}) => {
+  await setup(page, { existing: true, readOnly: true });
+  await login(page);
+  await page.goto(`/inquiries/${id(100)}`);
+  await expect(
+    page.getByRole("heading", { name: "Products requested" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Edit", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Create sale", exact: true }),
+  ).toHaveCount(0);
+  await page.goto(`/inquiries/${id(100)}/edit`);
+  await expect(
+    page.getByRole("heading", { name: /have access to this page/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save changes", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("legacy inquiry links redirect to the details page", async ({ page }) => {
+  await setup(page, { existing: true });
+  await login(page);
+  await page.goto(`/inquiries?id=${id(100)}`);
+  await page.waitForURL(new RegExp(`/inquiries/${id(100)}$`));
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("production uses a focused action dialog and preserves the selected inquiry line", async ({
+  page,
+}) => {
+  await setup(page, { existing: true });
+  let payload: Record<string, unknown> | undefined;
+  await page.route(
+    "**/api/backend/production-orders/from-inquiry",
+    async (route) => {
+      payload = route.request().postDataJSON();
+      await route.fulfill({ status: 201, json: { id: id(300) } });
+    },
+  );
+  await page.route(`**/api/backend/production-orders/${id(300)}`, (route) =>
+    route.fulfill({
+      json: { id: id(300), status: "DRAFT", quantityPlanned: "100", lines: [] },
+    }),
+  );
+  await login(page);
+  await page.goto(`/inquiries/${id(100)}`);
+  await page
+    .getByRole("button", { name: "Actions for INQ-20000000", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Start production", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByLabel("Product to produce", { exact: true }),
+  ).toHaveValue(cloth.id);
+  await expect(
+    dialog.getByLabel("Requirements / remarks", { exact: true }),
+  ).toHaveCount(0);
+  await dialog
+    .getByRole("button", { name: "Create production order", exact: true })
+    .click();
+  await page.waitForURL(new RegExp(`/production-orders/${id(300)}$`));
+  expect(payload).toMatchObject({
+    inquiryId: id(100),
+    inquiryLineId: id(111),
+    itemId: cloth.id,
+    locationId: "loc-a",
+    finishedLocationId: "loc-a",
+  });
+});

@@ -14,7 +14,6 @@ import {
   countActiveFilters,
 } from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -24,8 +23,16 @@ import {
 } from "@/components/ui/select";
 import Link from "next/link";
 import { FrappeButtonPrimary } from "@/components/frappe";
-import { InquiryDetailDialog } from "@/components/inquiries/inquiry-detail-dialog";
-import { PlusIcon } from "lucide-react";
+import { InquiryActions } from "@/components/inquiries/inquiry-actions";
+import { inquiryReference } from "@/lib/inquiry-workflow";
+import { MetricCard } from "@/components/shared/metric-card";
+import {
+  PlusIcon,
+  ClipboardListIcon,
+  ClockIcon,
+  CheckCircle2Icon,
+  ShoppingCartIcon,
+} from "lucide-react";
 import {
   InquiryAssignmentBadge,
   InquiryPriorityBadge,
@@ -42,6 +49,7 @@ import {
   INQUIRY_PRIORITIES,
   INQUIRY_STATUSES,
   inquiryItemsSummary,
+  inquiryStatusLabel,
 } from "@/lib/inquiries";
 import { formatDate } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
@@ -73,8 +81,6 @@ export default function InquiriesPage() {
   >("");
   const [customerId, setCustomerId] = useState("");
   const [assignedToUserId, setAssignedToUserId] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search);
   const canRead = hasPermission(user, "inquiries.read");
   const { data: customers } = useFetch(() => fetchCustomers(), [], {
@@ -87,12 +93,18 @@ export default function InquiriesPage() {
   );
   useEffect(() => {
     if (!deepLinkId) return;
-    setSelectedId(deepLinkId);
-    setDetailOpen(true);
-  }, [deepLinkId]);
+    router.replace(`/inquiries/${encodeURIComponent(deepLinkId)}`);
+  }, [deepLinkId, router]);
 
-  const { rows, meta, setPage, setLimit, loading, reload } =
-    usePaginatedList<Inquiry>(
+  const { rows, meta, totals, setPage, setLimit, loading, reload } =
+    usePaginatedList<
+      Inquiry,
+      {
+        total: number;
+        converted?: number;
+        byStatus: Partial<Record<InquiryStatus, number>>;
+      }
+    >(
       (page, limit) =>
         canRead
           ? buildInquiriesListPath(
@@ -124,18 +136,6 @@ export default function InquiriesPage() {
         assignedToUserId,
       ],
     );
-
-  function openInquiry(id: string) {
-    setSelectedId(id);
-    setDetailOpen(true);
-  }
-
-  function handleDetailOpenChange(open: boolean) {
-    setDetailOpen(open);
-    if (!open && deepLinkId) {
-      router.replace("/inquiries");
-    }
-  }
 
   const activeFilterCount = useMemo(
     () =>
@@ -191,7 +191,7 @@ export default function InquiriesPage() {
   return (
     <AppShell
       title="Inquiries"
-      subtitle="Staff CRM for leads, walk-ins, and assigned follow-ups"
+      subtitle="Review customer requests, confirm requirements and track fulfillment."
       breadcrumbs={[
         { label: "Home", href: "/dashboard" },
         { label: "Inquiries" },
@@ -207,7 +207,63 @@ export default function InquiriesPage() {
         </PermissionGate>
       }
     >
-      <>
+      <div className="space-y-5">
+        <section
+          aria-label="Inquiry overview"
+          className="grid grid-cols-2 gap-3 xl:grid-cols-4"
+        >
+          <MetricCard
+            compactOnMobile
+            label="Total inquiries"
+            value={loading ? "\u2014" : meta.total}
+            hint="Matching current filters"
+            icon={ClipboardListIcon}
+          />
+          <MetricCard
+            compactOnMobile
+            label="Open inquiries"
+            value={
+              loading
+                ? "\u2014"
+                : totals
+                  ? (totals.byStatus.NEW ?? 0) +
+                    (totals.byStatus.IN_PROGRESS ?? 0) +
+                    (totals.byStatus.QUOTED ?? 0)
+                  : "\u2014"
+            }
+            hint="New, in progress or confirmed"
+            icon={ClockIcon}
+            tone="amber"
+          />
+          <MetricCard
+            compactOnMobile
+            label="Confirmed"
+            value={
+              loading
+                ? "\u2014"
+                : totals
+                  ? (totals.byStatus.QUOTED ?? 0)
+                  : "\u2014"
+            }
+            hint="Requirements ready for fulfillment"
+            icon={CheckCircle2Icon}
+            tone="teal"
+          />
+          <MetricCard
+            compactOnMobile
+            label="Converted to sale"
+            value={
+              loading
+                ? "\u2014"
+                : totals
+                  ? (totals.converted ?? totals.byStatus.CONVERTED ?? 0)
+                  : "\u2014"
+            }
+            hint="Sales created from inquiries"
+            icon={ShoppingCartIcon}
+            tone="sky"
+          />
+        </section>
         <DataCardTable
           storageKey="inquiries-list"
           rows={rows}
@@ -216,7 +272,7 @@ export default function InquiriesPage() {
             <ListSearchField
               value={search}
               onChange={setSearch}
-              placeholder="Search name, phone, email, subject…"
+              placeholder="Search reference, customer or product..."
             />
           }
           toolbar={
@@ -247,7 +303,7 @@ export default function InquiriesPage() {
                     <SelectItem value="__all__">All statuses</SelectItem>
                     {INQUIRY_STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>
-                        {s.replaceAll("_", " ")}
+                        {inquiryStatusLabel(s)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -336,7 +392,7 @@ export default function InquiriesPage() {
             </TableFiltersSheet>
           }
           emptyTitle="No inquiries"
-          emptyDescription="Public website forms and walk-in leads will show up here."
+          emptyDescription="Create an inquiry to record a customer request and its products."
           pagination={{
             meta,
             onPageChange: setPage,
@@ -345,13 +401,35 @@ export default function InquiriesPage() {
           }}
           columns={[
             {
+              key: "reference",
+              header: "Reference",
+              priority: 10,
+              cell: (r) => (
+                <Link
+                  href={`/inquiries/${r.id}`}
+                  className="whitespace-nowrap font-medium text-primary hover:underline"
+                >
+                  {inquiryReference(r)}
+                </Link>
+              ),
+            },
+            {
+              key: "requestedDeliveryDate",
+              header: "Requested delivery",
+              priority: 60,
+              cell: (r) => r.requestedDeliveryDate ?? "Not specified",
+            },
+            {
               key: "createdAt",
-              header: "Date",
+              header: "Created",
+              defaultVisible: false,
+              priority: 80,
               cell: (r) => formatDate(r.createdAt),
             },
             {
               key: "contact",
               header: "Customer",
+              priority: 30,
               cell: (r) => (
                 <span className="font-medium">
                   {r.customer?.name ??
@@ -364,19 +442,21 @@ export default function InquiriesPage() {
             {
               key: "subject",
               header: "Inquiry",
+              defaultVisible: false,
+              priority: 20,
               cell: (r) => (
-                <button
-                  type="button"
-                  className="max-w-[280px] truncate text-left font-medium text-[var(--frappe-primary)] hover:underline"
-                  onClick={() => openInquiry(r.id)}
+                <Link
+                  href={`/inquiries/${r.id}`}
+                  className="block max-w-[280px] truncate text-left font-medium text-primary hover:underline"
                 >
                   {r.subject}
-                </button>
+                </Link>
               ),
             },
             {
               key: "items",
-              header: "Items",
+              header: "Products",
+              priority: 40,
               cell: (r) => (
                 <span
                   className="line-clamp-2 max-w-[220px] text-sm text-[var(--frappe-text-muted)]"
@@ -389,11 +469,13 @@ export default function InquiriesPage() {
             {
               key: "status",
               header: "Status",
+              priority: 50,
               cell: (r) => <InquiryStatusBadge status={r.status} />,
             },
             {
               key: "assignment",
               header: "Assignment",
+              defaultVisible: false,
               cell: (r) => (
                 <InquiryAssignmentBadge status={r.assignmentStatus} />
               ),
@@ -401,6 +483,7 @@ export default function InquiriesPage() {
             {
               key: "priority",
               header: "Priority",
+              defaultVisible: false,
               cell: (r) => <InquiryPriorityBadge priority={r.priority} />,
             },
             {
@@ -411,34 +494,27 @@ export default function InquiriesPage() {
             },
             {
               key: "assigned",
-              header: "Assigned",
+              header: "Assigned to",
+              priority: 70,
               cell: (r) => r.assignedTo?.fullName || r.assignedTo?.email || "—",
             },
             {
               key: "actions",
-              header: "",
-              className: "w-20 text-right",
+              header: "Actions",
+              hideable: false,
+              priority: 10000,
+              className: "w-14 text-right",
               cell: (r) => (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openInquiry(r.id)}
-                >
-                  Open
-                </Button>
+                <InquiryActions
+                  inquiry={r}
+                  compact
+                  onChanged={() => void reload()}
+                />
               ),
             },
           ]}
         />
-
-        <InquiryDetailDialog
-          inquiryId={selectedId}
-          open={detailOpen}
-          onOpenChange={handleDetailOpenChange}
-          onChanged={reload}
-        />
-      </>
+      </div>
     </AppShell>
   );
 }
