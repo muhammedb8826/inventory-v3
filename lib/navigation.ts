@@ -133,6 +133,8 @@ export const mainNav: NavItem[] = [
 ];
 
 export const masterNav: NavItem[] = [
+  { title: "Product families", href: "/products", icon: Package, permission: "inventory.read" },
+  { title: "Product attributes", href: "/product-attributes", icon: Palette, permission: "inventory.write" },
   {
     title: "Units of measure",
     href: "/units",

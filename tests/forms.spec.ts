@@ -29,7 +29,7 @@ test("product form has a live side summary, connected labels and accessible fiel
   await page
     .getByRole("spinbutton", { name: "Opening quantity", exact: true })
     .fill("12");
-  await page.getByLabel(/Purchase price per/).fill("30");
+  await page.getByLabel(/Opening unit cost per/).fill("30");
   const summary = page.getByRole("region", { name: "Quick summary" });
   await expect(summary).toContainText("Oak dining chair");
   await expect(summary).toContainText("360.00");
@@ -169,7 +169,7 @@ test("product submission preserves its API fields and shows connected validation
   await page
     .getByRole("spinbutton", { name: "Opening quantity", exact: true })
     .fill("5");
-  await page.getByLabel(/Purchase price per/).fill("10");
+  await page.getByLabel(/Opening unit cost per/).fill("10");
   await page.getByRole("button", { name: "Add product", exact: true }).click();
   await expect(sku).toHaveAttribute("aria-invalid", "true");
   const field = page.locator(".form-field").filter({ has: sku });
@@ -186,5 +186,20 @@ test("product submission preserves its API fields and shows connected validation
     purchasePrice: 10,
     unitId: "10000000-0000-4000-8000-000000000001",
   });
+  await page.waitForURL("**/inventory");
+});
+
+
+test("new products can start at zero without entering a purchase price", async ({ page }) => {
+  await login(page);
+  await page.goto("/inventory/new");
+  await page.getByRole("textbox", { name: "Product name", exact: true }).fill("New finished product");
+  await page.getByRole("combobox", { name: "Item type", exact: true }).click();
+  await page.getByRole("option", { name: "Finished good", exact: true }).click();
+  await expect(page.getByText("Final product sold to customers.", { exact: false })).toBeVisible();
+  await expect(page.getByLabel(/Opening unit cost per/)).toBeDisabled();
+  const pending = page.waitForRequest(r => r.url().endsWith("/api/backend/inventory") && r.method() === "POST");
+  await page.getByRole("button", { name: "Add product", exact: true }).click();
+  expect((await pending).postDataJSON()).toMatchObject({ quantity: 0, purchasePrice: 0, itemType: "FINISHED" });
   await page.waitForURL("**/inventory");
 });

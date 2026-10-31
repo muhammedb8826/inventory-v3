@@ -3,6 +3,7 @@ import { ItemUnitSettings } from "./item-unit-settings";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   FormSummary,
   FormField,
@@ -59,6 +60,7 @@ export function StockItemForm({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const isEdit = Boolean(record);
+  const isVariant = !!record?.item.productFamilyId;
   const { data: locations, loading: locationsLoading } = useLocations();
 
   const [locationId, setLocationId] = useState(
@@ -103,14 +105,14 @@ export function StockItemForm({
   const [isPhantom, setIsPhantom] = useState(record?.item.isPhantom === true);
   const [quantity, setQuantity] = useState(record?.quantity ?? "0");
   const [purchasePrice, setPurchasePrice] = useState(
-    record?.purchasePrice ?? "",
+    record?.purchasePrice ?? "0",
   );
   const [reorderPoint, setReorderPoint] = useState(record?.reorderPoint ?? "");
   const [saving, setSaving] = useState(false);
   const [skuError, setSkuError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
+  const [existingImageUrl] = useState<string | null>(
     resolveItemImageUrl(record?.item.imageUrl),
   );
   const [removeExistingImage, setRemoveExistingImage] = useState(false);
@@ -185,7 +187,6 @@ export function StockItemForm({
             unitGroupId: unitGroupId || null,
             itemType: itemType || null,
             isPhantom,
-            purchasePrice: parseFloat(purchasePrice),
             reorderPoint: reorderValue,
           },
         });
@@ -200,7 +201,7 @@ export function StockItemForm({
           description: description.trim(),
           locationId: targetLocationId,
           quantity: parseFloat(quantity),
-          purchasePrice: parseFloat(purchasePrice),
+          purchasePrice: Number(quantity) > 0 ? Number(purchasePrice) : 0,
           sku: optionalStringBodyValue(sku) ?? undefined,
           barcode: optionalStringBodyValue(barcode) ?? undefined,
           unitId: effectiveUnitId,
@@ -381,12 +382,14 @@ export function StockItemForm({
             </FormField>
             <FormField
               label="SKU"
+              required={isVariant}
               error={skuError}
               hint={skuError ? undefined : "Optional · must be unique if set"}
             >
               <Input
                 className="h-10"
                 value={sku}
+                required={isVariant}
                 aria-invalid={Boolean(skuError)}
                 onChange={(e) => {
                   setSku(e.target.value);
@@ -402,9 +405,18 @@ export function StockItemForm({
                 placeholder="Optional"
               />
             </FormField>
-            <FormField label="Item type">
+            <FormField label="Item type" hint={
+              itemType === "FINISHED"
+                ? "Final product sold to customers. Manufacture it using a BOM; production receipts calculate its material cost."
+                : itemType === "SEMI"
+                  ? "Intermediate product manufactured for use in another product."
+                  : itemType === "RAW"
+                    ? "Material purchased and consumed in manufacturing."
+                    : "Choose how your team uses this product."
+            }>
               <Select
                 value={itemType || "__none__"}
+                disabled={isVariant}
                 onValueChange={(v) =>
                   setItemType(v === "__none__" ? "" : (v as ItemType))
                 }
@@ -441,7 +453,7 @@ export function StockItemForm({
                 className="sm:col-span-2"
               >
                 <div className="flex h-10 items-center gap-2">
-                  <Switch checked={isPhantom} onCheckedChange={setIsPhantom} />
+                  <Switch checked={isPhantom} onCheckedChange={setIsPhantom} disabled={isVariant} />
                   <Label className="text-sm font-normal">
                     {isPhantom ? "Phantom (non-stocked in BOMs)" : "Stocked"}
                   </Label>
@@ -452,7 +464,7 @@ export function StockItemForm({
         </PageFormSection>
 
         <PageFormSection
-          title="Inventory and costing"
+          title="Units and stock"
           description={
             isEdit
               ? "Quantity is changed with Adjust on the inventory list."
@@ -488,23 +500,24 @@ export function StockItemForm({
               </FormField>
             ) : null}
             <FormField
-              label="Unit category"
-              hint="Choose once. Purchases, sales and BOMs inherit this category's conversions."
+              label="Unit configuration"
+              hint="Reuse a measurement category or packaging profile. Its reference unit is used for stock balances and costs."
             >
               <Select
                 value={unitGroupId || "individual"}
+                disabled={isVariant}
                 onValueChange={(id) => {
                   const group = unitGroups?.find((g) => g.id === id);
                   setUnitGroupId(group?.id ?? "");
                   if (group) setUnitId(group.baseUnitId);
                 }}
               >
-                <SelectTrigger aria-label="Unit category">
+                <SelectTrigger aria-label="Unit configuration">
                   <SelectValue placeholder="Choose a unit category" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">
-                    Individual unit / existing setup
+                    Stock unit only
                   </SelectItem>
                   {unitGroups
                     ?.filter(
@@ -539,13 +552,13 @@ export function StockItemForm({
                 Manage unit categories
               </a>
             </FormField>
-            <FormField label="Stock unit" required>
+            <FormField label="Base stock unit" required>
               <UnitSelect
                 units={units ?? []}
                 value={effectiveUnitId}
                 onChange={setUnitId}
                 disabled={
-                  !!unitGroupId ||
+                  isVariant || !!unitGroupId ||
                   unitsLoading ||
                   (isEdit && !unitPolicy?.canChangeBaseUnit)
                 }
@@ -583,6 +596,15 @@ export function StockItemForm({
               )}
             </FormField>
 
+          </FormGrid>
+        </PageFormSection>
+        <PageFormSection
+          title={isEdit ? "Stock balance and valuation" : "Opening stock"}
+          description={isEdit
+            ? "Stock balances and valuation are maintained by inventory transactions, not product detail edits."
+            : "Only enter quantities you already hold. Keep zero when this product will be purchased or manufactured later."}
+        >
+          <FormGrid>
             {isEdit ? (
               <FormField label="On hand">
                 <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
@@ -593,6 +615,7 @@ export function StockItemForm({
               <FormField
                 label="Opening quantity"
                 htmlFor="opening-quantity"
+                hint="Leave at zero for a new product. Receive purchases or complete production to add stock later."
                 required
               >
                 <Input
@@ -608,9 +631,14 @@ export function StockItemForm({
               </FormField>
             )}
             <FormField
-              label={`Purchase price per ${selectedUnit?.symbol ?? "stock unit"}`}
+              label={isEdit ? `Current stock cost per ${selectedUnit?.symbol ?? "stock unit"}` : `Opening unit cost per ${selectedUnit?.symbol ?? "stock unit"}`}
               htmlFor="unit-purchase-price"
-              required
+              hint={isEdit
+                ? "Read only here. Receipts and production update the weighted average stock cost."
+                : itemType === "FINISHED" || itemType === "SEMI"
+                  ? "Value of stock already on hand, not a selling price or BOM estimate. New production calculates material cost when completed."
+                  : "Value per base stock unit of stock already on hand. Future receipts update the average cost."}
+              required={!isEdit && Number(quantity) > 0}
             >
               <Input
                 className="h-10"
@@ -618,9 +646,11 @@ export function StockItemForm({
                 step="any"
                 min="0"
                 id="unit-purchase-price"
+                readOnly={isEdit}
+                disabled={!isEdit && Number(quantity) === 0}
                 value={purchasePrice}
                 onChange={(e) => setPurchasePrice(e.target.value)}
-                required
+                required={!isEdit && Number(quantity) > 0}
               />
             </FormField>
             <FormField
@@ -644,9 +674,21 @@ export function StockItemForm({
         </PageFormSection>
       </PageFormCard>
 
+      {(itemType === "FINISHED" || itemType === "SEMI") && (
+        <PageFormCard>
+          <PageFormSection title="Manufacturing cost" description="A BOM estimates material requirements. Completing production posts the issued materials' cost into the manufactured stock; alternative BOMs are not added together.">
+            <p className="text-sm text-muted-foreground">Current stock cost includes materials only. Labour and overhead are not included. Set the selling price separately when making a sale.</p>
+            <Link href="/boms" className="text-sm text-primary underline">Manage bills of materials</Link>
+          </PageFormSection>
+        </PageFormCard>
+      )}
       {record && (
         <PageFormCard>
-          {unitGroupId ? (
+          {isVariant ? (
+            <PageFormSection title="Product variant" description="This variant inherits its item type and unit configuration from its product family. Stock, SKU, image and cost remain specific to this item.">
+              <Link href={`/products/${record.item.productFamilyId}`} className="text-sm text-primary underline">View product family and variants</Link>
+            </PageFormSection>
+          ) : unitGroupId ? (
             <PageFormSection
               title="Category conversions"
               description="This item inherits its category settings. Configure the category once to reuse it across items."

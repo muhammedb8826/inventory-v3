@@ -243,7 +243,7 @@ test("alternative units exclude unrelated physical measurement categories", asyn
   await expect(page.getByRole("option", { name: /Box/ })).toBeVisible();
 });
 
-test("unused items allow base-unit correction with an explicit cost review", async ({
+test("unused items allow base-unit correction without overwriting stock cost", async ({
   page,
 }) => {
   await login(page);
@@ -260,17 +260,16 @@ test("unused items allow base-unit correction with an explicit cost review", asy
       { exact: true },
     ),
   ).toBeVisible();
-  await page.getByLabel(/Purchase price per/).fill("30");
+  await expect(page.getByLabel(/Current stock cost per/)).toHaveAttribute("readonly", "");
   const pending = page.waitForRequest(
     (r) =>
       r.url().endsWith("/api/backend/inventory/stock-unused") &&
       r.method() === "PATCH",
   );
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  expect((await pending).postDataJSON()).toMatchObject({
-    unitId: "10000000-0000-4000-8000-000000000006",
-    purchasePrice: 30,
-  });
+  const body = (await pending).postDataJSON();
+  expect(body).toMatchObject({ unitId: "10000000-0000-4000-8000-000000000006" });
+  expect(body).not.toHaveProperty("purchasePrice");
 });
 
 test("item unit settings do not offer mass units for a count item", async ({

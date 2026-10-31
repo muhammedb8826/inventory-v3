@@ -167,6 +167,9 @@ export interface UnitOfMeasure extends RecordMetadata {
   requiresReview: boolean;
 }
 export interface Item extends RecordMetadata {
+  productFamilyId?: string | null;
+  variantKey?: string | null;
+  variantValues?: { attributeId: string; name: string; value: string }[];
   unitGroupId?: string | null;
   unitGroup?: UnitGroup | null;
   unitConversions?: ItemConversion[];

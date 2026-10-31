@@ -3,6 +3,18 @@
 import { AppShell } from "@/components/app-shell";
 import { BomForm } from "@/components/boms/bom-form";
 import { PermissionGate } from "@/components/permission-gate";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { PageLoading } from "@/components/shared/page-loading";
+
+function NewBomBody() {
+  const params = useSearchParams();
+  return (
+    <BomForm
+      initialFinishedItemId={params.get("finishedItemId") ?? undefined}
+    />
+  );
+}
 
 export default function NewBomPage() {
   return (
@@ -16,7 +28,9 @@ export default function NewBomPage() {
       ]}
     >
       <PermissionGate permission="bom.write">
-        <BomForm />
+        <Suspense fallback={<PageLoading />}>
+          <NewBomBody />
+        </Suspense>
       </PermissionGate>
     </AppShell>
   );

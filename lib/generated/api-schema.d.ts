@@ -555,6 +555,118 @@ export interface paths {
         patch: operations["UnitsController_update"];
         trace?: never;
     };
+    "/api/v1/product-families/attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_attributes"];
+        put?: never;
+        post: operations["ProductsController_createAttribute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-families/attributes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_updateAttribute"];
+        trace?: never;
+    };
+    "/api/v1/product-families/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-families": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_list"];
+        put?: never;
+        post: operations["ProductsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-families/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProductsController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_update"];
+        trace?: never;
+    };
+    "/api/v1/product-families/{id}/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProductsController_variants"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-families/{id}/variants/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_status"];
+        trace?: never;
+    };
     "/api/v1/inventory": {
         parameters: {
             query?: never;
@@ -2126,6 +2238,8 @@ export interface components {
         UnitGroup: {
             name: string;
             category: string;
+            /** @enum {string} */
+            kind: "CATEGORY" | "PACKAGING";
             baseUnitId: string;
             baseUnit: components["schemas"]["UnitOfMeasure"];
             conversions: Record<string, never>[];
@@ -2136,7 +2250,28 @@ export interface components {
             updatedAt: string;
             id: string;
         };
+        ProductFamily: {
+            name: string;
+            description: string;
+            /** @enum {string} */
+            itemType: "RAW" | "SEMI" | "FINISHED" | "OTHER";
+            unitId: string;
+            stockUnit: components["schemas"]["UnitOfMeasure"];
+            unitGroupId: string | null;
+            unitGroup: components["schemas"]["UnitGroup"] | null;
+            attributes: Record<string, never>[];
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
         Item: {
+            productFamilyId: string | null;
+            productFamily: components["schemas"]["ProductFamily"] | null;
+            variantKey: string | null;
+            variantValues: Record<string, never>[];
             /** @description Unique when set (partial unique index `UQ_items_sku_not_null`). */
             sku: string | null;
             /** @description Unique when set (scan / POS lookup). */
@@ -2343,6 +2478,8 @@ export interface components {
             salesDefault?: boolean;
         };
         SaveUnitGroupDto: {
+            /** @enum {string} */
+            kind?: "CATEGORY" | "PACKAGING";
             name: string;
             /** @enum {string} */
             category: "COUNT" | "LENGTH" | "AREA" | "VOLUME" | "MASS" | "TIME" | "OTHER";
@@ -2366,6 +2503,58 @@ export interface components {
         };
         UpdateUnitDto: {
             confirmLegacyReview?: boolean;
+        };
+        ProductAttribute: {
+            name: string;
+            values: string[];
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
+        SaveAttributeDto: {
+            name: string;
+            values: string[];
+            isActive?: boolean;
+        };
+        FamilyAttributeDto: {
+            /** Format: uuid */
+            attributeId: string;
+            values: string[];
+        };
+        SaveFamilyDto: {
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            itemType: "RAW" | "SEMI" | "FINISHED" | "OTHER";
+            /** Format: uuid */
+            unitId: string;
+            /** Format: uuid */
+            unitGroupId?: string | null;
+            attributes: components["schemas"]["FamilyAttributeDto"][];
+            isActive?: boolean;
+        };
+        VariantSelectionDto: {
+            /** Format: uuid */
+            attributeId: string;
+            value: string;
+        };
+        CreateVariantDto: {
+            values: components["schemas"]["VariantSelectionDto"][];
+            sku?: string;
+            barcode?: string;
+            /** Format: uuid */
+            existingItemId?: string;
+        };
+        CreateVariantsDto: {
+            /** Format: uuid */
+            locationId: string;
+            variants: components["schemas"]["CreateVariantDto"][];
+        };
+        VariantStatusDto: {
+            isActive: boolean;
         };
         CreateStockAdjustmentDto: {
             /** Format: uuid */
@@ -4482,7 +4671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitGroup"][];
+                    "application/json": Record<string, never>[];
                 };
             };
         };
@@ -4598,6 +4787,227 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnitOfMeasure"];
+                };
+            };
+        };
+    };
+    ProductsController_attributes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAttribute"][];
+                };
+            };
+        };
+    };
+    ProductsController_createAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAttributeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAttribute"];
+                };
+            };
+        };
+    };
+    ProductsController_updateAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAttributeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAttribute"];
+                };
+            };
+        };
+    };
+    ProductsController_catalog: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"][];
+                };
+            };
+        };
+    };
+    ProductsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProductsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveFamilyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductFamily"];
+                };
+            };
+        };
+    };
+    ProductsController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProductsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveFamilyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductFamily"];
+                };
+            };
+        };
+    };
+    ProductsController_variants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVariantsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProductsController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VariantStatusDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
                 };
             };
         };

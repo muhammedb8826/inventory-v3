@@ -93,7 +93,7 @@ test("configure a reusable group once and select it on a new item", async ({
   ).toBeVisible();
   await page.goto("/inventory/new");
   await page
-    .getByRole("combobox", { name: "Unit category", exact: true })
+    .getByRole("combobox", { name: "Unit configuration", exact: true })
     .click();
   await page.getByRole("option", { name: /Boxes of ten/ }).click();
   await expect(
@@ -301,7 +301,7 @@ test("invalid existing standard ratios require explicit review before saving", a
   await page.waitForURL("**/dashboard");
   await page.goto("/units");
   await expect(
-    page.getByText("Review required", { exact: true }),
+    page.getByText("Review required", { exact: true }).filter({ visible: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Legacy length", exact: true })

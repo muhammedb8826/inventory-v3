@@ -293,7 +293,7 @@ export function SaleForm({
     const idx = emptyIdx >= 0 ? emptyIdx : 0;
     updateLine(idx, {
       itemId: productItemId(record),
-      unitPrice: record.purchasePrice,
+      unitPrice: "",
       item: resolveItem(productItemId(record), record.item),
     });
   }
@@ -771,7 +771,13 @@ export function SaleForm({
                         required
                       />
                     </FormField>
-                    <FormField label="Unit price" className="form-line-field">
+                    <FormField label="Unit price" className="form-line-field" hint={(() => {
+                      const source = stockItems.find((record) => productItemId(record) === line.itemId);
+                      if (!source) return undefined;
+                      const cost = Number(source.purchasePrice) * (line.unitFactor ?? 1);
+                      const price = Number(line.unitPrice);
+                      return `Current cost: ${formatMoney(cost)} per selected unit${line.unitPrice && price > 0 ? ` ? Margin: ${(((price - cost) / price) * 100).toFixed(1)}%` : ""}. Final cost is recorded when posted.`;
+                    })()}>
                       <Input
                         type="number"
                         min="0"

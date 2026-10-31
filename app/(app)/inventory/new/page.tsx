@@ -6,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
 import { StockItemForm } from "@/components/inventory/stock-item-form";
 import { PageLoading } from "@/components/shared/page-loading";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 function NewInventoryBody() {
   const searchParams = useSearchParams();
@@ -31,6 +33,11 @@ export default function NewInventoryPage() {
       title="Add product"
       subtitle="Create a product, choose its stock unit, and set opening inventory."
       variant="form"
+      actions={
+        <Button variant="outline" asChild>
+          <Link href="/products">Configure product variants</Link>
+        </Button>
+      }
       breadcrumbs={[
         { label: "Operations", href: "/dashboard" },
         { label: "Inventory", href: "/inventory" },

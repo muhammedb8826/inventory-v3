@@ -61,11 +61,11 @@ function linesFromBom(bom: Bom): BomLineRow[] {
       ];
 }
 
-export function BomForm({ bom }: { bom?: Bom }) {
+export function BomForm({ bom, initialFinishedItemId }: { bom?: Bom; initialFinishedItemId?: string }) {
   const router = useRouter();
   const isEdit = !!bom?.id;
   const [finishedItemId, setFinishedItemId] = useState(
-    bom?.finishedItemId ?? "",
+    bom?.finishedItemId ?? initialFinishedItemId ?? "",
   );
   const [name, setName] = useState(bom?.name ?? "");
   const [version, setVersion] = useState(bom?.version ?? "1.0");
