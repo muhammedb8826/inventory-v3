@@ -43,7 +43,8 @@ import { PencilIcon, PlusIcon } from "lucide-react";
 export interface MasterField {
   name: string;
   label: string;
-  type?: "text" | "email" | "textarea" | "select";
+  type?: "text" | "email" | "tel" | "textarea" | "select";
+  hint?: string;
   required?: boolean;
   options?: { value: string; label: string }[];
 }
@@ -63,6 +64,7 @@ export function MasterDataPage<
   filterExtras,
   filterActiveCount = 0,
   onResetFilters,
+  resetOnCreate = false,
 }: {
   title: string;
   endpoint: string;
@@ -76,6 +78,7 @@ export function MasterDataPage<
   filterExtras?: React.ReactNode;
   filterActiveCount?: number;
   onResetFilters?: () => void;
+  resetOnCreate?: boolean;
 }) {
   const { user, loading: authLoading } = useAuth();
   const canRead = hasPermission(user, readPermission);
@@ -158,7 +161,13 @@ export function MasterDataPage<
             title={title}
             endpoint={endpoint}
             fields={fields}
-            onSuccess={reload}
+            onSuccess={() => {
+              if (resetOnCreate) {
+                setSearch("");
+                setPage(1);
+              }
+              void reload();
+            }}
           />
         </PermissionGate>
       }
@@ -221,6 +230,7 @@ function MasterFieldsForm({
           label={f.label}
           required={f.required}
           htmlFor={f.name}
+          hint={f.hint}
         >
           {f.type === "textarea" ? (
             <Textarea
@@ -251,7 +261,9 @@ function MasterFieldsForm({
           ) : (
             <Input
               id={f.name}
-              type={f.type === "email" ? "email" : "text"}
+              type={f.type === "email" || f.type === "tel" ? f.type : "text"}
+              autoComplete={f.type === "tel" ? "tel" : undefined}
+              maxLength={f.type === "tel" ? 50 : undefined}
               required={f.required}
               value={(values[f.name] as string) ?? ""}
               onChange={(e) =>

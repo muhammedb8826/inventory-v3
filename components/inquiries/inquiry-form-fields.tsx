@@ -49,6 +49,7 @@ export function InquiryFormFields({
   itemsLoading,
   onCustomerCreated,
   customers = [],
+  customersLoading = false,
 }: {
   values: InquiryFormValues;
   onChange: (patch: Partial<InquiryFormValues>) => void;
@@ -60,6 +61,7 @@ export function InquiryFormFields({
   itemsLoading?: boolean;
   onCustomerCreated: (customer: Customer) => void;
   customers?: Customer[];
+  customersLoading?: boolean;
 }) {
   const [itemTypes, setItemTypes] = useState<ItemType[]>(
     DEFAULT_INQUIRY_ITEM_TYPES,
@@ -126,6 +128,7 @@ export function InquiryFormFields({
                   });
                 }}
                 options={customerOptions}
+                loading={customersLoading}
                 placeholder="Choose a customer (optional)"
                 emptyMessage="No customers"
                 quickCreate={

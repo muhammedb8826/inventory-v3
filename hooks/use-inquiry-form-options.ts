@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import { api } from "@/lib/api";
-import { apiList } from "@/lib/list-response";
+import { fetchCustomers, formatPartyLabel } from "@/lib/party-fetch";
 import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
-import type { Customer, UserAdmin, Item } from "@/lib/types";
+import type { UserAdmin, Item } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
 import type { ItemSearchOption } from "@/components/shared/item-search-select";
 
@@ -26,9 +26,10 @@ export function useInquiryFormOptions() {
 
   const {
     data: customers,
+    loading: customersLoading,
     reload: reloadCustomers,
     setData: setCustomers,
-  } = useFetch(() => apiList<Customer>("/customers"), [], {
+  } = useFetch(() => fetchCustomers(), [], {
     enabled: canCustomers,
   });
 
@@ -51,7 +52,8 @@ export function useInquiryFormOptions() {
     () =>
       (customers ?? [])
         .filter((c) => c.isActive !== false)
-        .map((c) => ({ id: c.id, label: c.name })),
+        .map((c) => ({ id: c.id, label: formatPartyLabel(c) }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [customers],
   );
 
@@ -81,6 +83,7 @@ export function useInquiryFormOptions() {
 
   return {
     customers: customers ?? [],
+    customersLoading,
     customerOptions,
     userOptions,
     itemOptions,

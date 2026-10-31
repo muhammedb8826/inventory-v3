@@ -1,6 +1,23 @@
 # cPanel deployment
 
-The `deploy` job in `.github/workflows/ci.yml` uploads the exact build that passed quality checks on pushes to `main` or `master`. Pull requests never deploy. To redeploy, run CI (API) or Quality (web) manually on the production branch. The SSH release workflow remains an optional alternative.
+## Upgrade error: unit_groups.created_at does not exist
+
+Migration `1749170000000-ReusableUnitGroups` created quoted `createdAt` and `updatedAt` columns on existing installations. The current entity uses `created_at` and `updated_at`. Fresh databases already used the canonical names, masking this difference during fresh-schema testing. Because Item eagerly loads its unit group, the mismatch also breaks inventory and dashboard queries.
+
+Deploy and build the backend source containing `1749220000000-UnitGroupTimestampColumns`, run `npm run migration:run`, and restart the API. This repair migration renames the legacy columns, retaining their original values and types. It is safe on already-correct databases and after the manual recovery below. It does not rewrite stock, costs, conversions or item associations. Do not edit the migration-history table or enable schema synchronization.
+
+For immediate recovery before the code deployment, connect to the application's PostgreSQL database and execute this transaction against the confirmed legacy layout:
+
+```sql
+BEGIN;
+ALTER TABLE unit_groups RENAME COLUMN "createdAt" TO created_at;
+ALTER TABLE unit_groups RENAME COLUMN "updatedAt" TO updated_at;
+COMMIT;
+```
+
+Use `psql -v ON_ERROR_STOP=1` so any error stops execution; an unsuccessful transaction is rolled back when the connection closes. If either column is already renamed, use the repair migration rather than manually modifying additional columns. Apply the new migration after deploying the fix even if the manual repair has already restored service.
+
+The `deploy` job in `.github/workflows/ci.yml` uploads backend source and build configuration after quality checks pass on pushes to `main` or `master`. Pull requests never deploy. To redeploy, run CI (API) or Quality (web) manually on the production branch. The SSH release workflow remains an optional alternative.
 
 ## GitHub settings in each repository
 
@@ -15,7 +32,7 @@ Repository variables:
 - `FTP_PROTOCOL`: defaults to `ftps` (explicit TLS on port 21 with certificate verification). Set `ftp` only if your hosting account requires unencrypted FTP. SFTP is a different protocol and is not used here.
 - `FTP_PORT`: defaults to `21`.
 - `API_URL` (web): full public backend base URL, including `/api/v1`, used for build-time values. Set the runtime API_URL in cPanel as well.
-- `CPANEL_AUTO_RESTART`: defaults to disabled. Set `true` only when dependencies and database migrations are already ready on the host; the upload then writes Passenger's `tmp/restart.txt` last.
+- `CPANEL_AUTO_RESTART`: the backend source-upload workflow always disables automatic restart. Build on the server before manually restarting.
 
 The workflow uses repository secrets, not the separate SSH production environment. If you stored these secrets only under a GitHub environment, move/add them at repository level or explicitly configure that environment on the deploy job.
 
@@ -23,16 +40,20 @@ The workflow uses repository secrets, not the separate SSH production environmen
 
 Use Node 22 or later. Point Setup Node.js App at the existing FTP application directory. API startup file: `dist/main.js`. Web startup file: `server.js`. Keep production environment settings on the host: `.env` or cPanel environment variables. Never commit secrets. For the API use `DB_SYNCHRONIZE=false` and `DB_SEED=false`.
 
-FTP transfers files only. It cannot execute commands, install dependencies, back up the database, apply migrations, or verify application readiness. After the first deployment, and whenever dependencies change, use cPanel's Run NPM Install. If API schema changes are included, back up the database and run from the application directory in cPanel Terminal with the application's Node environment activated:
+The backend workflow uploads source rather than `dist`. With dependencies already installed and the application's Node environment activated, use the same two commands for every deployment:
 
 ```sh
-NODE_ENV=production npm run backup
-NODE_ENV=production DB_SYNCHRONIZE=false npm run migration:run:prod
+npm run build
+npm run migration:run
 ```
 
-Then restart the application in cPanel and verify the API readiness endpoint (`/api/v1/health/ready`) and web login. Leave automatic restart disabled for releases requiring these manual steps. Backups need PostgreSQL client tools and the application's database credentials.
+`build` only compiles the application. `migration:run` only applies pending source migrations from `src/database/migrations/`, independently of compiled files in `dist`. No separate production migration command or combined deploy command is needed.
 
-The uploader overwrites only staged release files; it does not delete remote files. `.env`, `node_modules`, user uploads, logs, and host configuration are not included in the payload. API payload: `dist`, `scripts`, package manifests. Web payload: production `.next` (without cache/dev output), `public`, `server.js`, `next.config.mjs`, package manifests. Hidden production build files are explicitly retained in the GitHub artifact.
+Dependencies, including development build tools and the TypeScript migration runner, must already be installed. Use cPanel's dependency installation when first setting up the app or when the package manifests change; include development dependencies even in production. The Nest compiler clears the output directory, so complete the build successfully before restarting.
+
+After both commands succeed, use cPanel's Restart button and verify the application. Keep `NODE_ENV=production`, `DB_SYNCHRONIZE=false`, and `DB_SEED=false` in the existing server environment. Database backups remain a separate maintenance operation, not an additional deployment command.
+
+The uploader overwrites only staged release files; it does not delete remote files. `.env`, `node_modules`, user uploads, logs, and host configuration are not included in the payload. API payload: `src` (excluding unit test files), `scripts`, `nest-cli.json`, `tsconfig.json`, `tsconfig.build.json`, and package manifests. Existing server `dist` is preserved during upload and replaced by the server build. Web payload: production `.next` (without cache/dev output), `public`, `server.js`, `next.config.mjs`, package manifests. Hidden production build files are explicitly retained in the GitHub artifact.
 
 An FTP upload is not atomic and has no automatic rollback. Deploy during a maintenance window when needed; retain a known-good backup. Obsolete remote files are intentionally preserved and may require a separate reviewed cleanup. Green upload status confirms file transfer, not successful application startup.
 
@@ -56,25 +77,3 @@ Certificate trust uses Python's [SSL context API](https://docs.python.org/3/libr
 The certificate-verification warning is informational. Earlier script versions produced no progress output between that warning and upload completion. The uploader now flushes connection, authentication, application-directory and individual file progress immediately; the workflow also runs Python unbuffered. Large files report transferred bytes at least every ten seconds while data is moving. Socket operations time out after 90 seconds without activity; a healthy complete upload can take longer, subject to the deploy job's 30-minute limit.
 
 The final visible stage identifies what to inspect. Connection/authentication failures can involve host access restrictions. An upload timeout after login can involve blocked passive FTP data ports or FTPS data-channel requirements on the hosting firewall. Ask the provider to check those settings if that is the logged failure stage. The script does not fall back to plaintext FTP. The payload summary shows the number of files and size; uploading a Next.js build may involve many small files.
-
-## Login returns 403: Invalid request origin
-
-Set this runtime variable on the **frontend** Node.js app in cPanel (or its root `.env`), then restart:
-
-```env
-APP_ORIGIN=https://factory.vgatefurnishing.com
-```
-
-Use the frontend's public origin only, without `/api`, `/api/v1` or any other path. `API_URL` still points to the backend base URL including `/api/v1`; these settings serve different purposes. `CORS_ORIGIN` on the backend does not configure the frontend proxy's origin check.
-
-cPanel can terminate HTTPS and forward an internal HTTP request to Node. Without APP_ORIGIN, the browser origin and internal URL can differ. The proxy uses the explicit APP_ORIGIN to validate writes and continues rejecting cross-site, missing and invalid Origin headers. It does not trust arbitrary X-Forwarded-Host/Proto values. APP_ORIGIN is server-only, is read at runtime and does not need a GitHub build variable. Deploy the updated proxy code before applying this setting; the older code does not read it. If cPanel defines the same variable and a `.env` does too, keep both consistent (the process environment takes precedence).
-
-## Faster frontend transfers
-
-The frontend stages only production runtime files. Source maps, cache, development output, generated types, diagnostics and build tooling output are excluded. A smoke check boots this reduced payload and requests the login page plus JavaScript and CSS before deployment.
-
-The Python uploader compares SHA-256 checksums against `.inventory-deploy-manifest.json` in the remote application directory and skips unchanged files. The first optimized deployment uploads the complete reduced payload. Later builds can still change many generated chunks; skipping does not guarantee a fixed deployment time. The manifest is saved only after every payload file uploads successfully. Remote files are never deleted.
-
-If runtime files were manually changed/deleted on the host, set repository variable `FTP_FORCE_UPLOAD=true` for a repair deployment, then remove it. The manifest assumes the last uploaded files remain intact. Do not share the application directory with another deployment tool. Existing remote source maps and obsolete chunks are preserved; excluding them prevents future transfer but does not remove old copies.
-
-Commit and push the workflow, staging/smoke scripts and uploader together. Rerunning an older commit continues to use the old deployment behavior. No new secrets are required.

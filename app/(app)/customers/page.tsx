@@ -12,9 +12,10 @@ export default function CustomersPage() {
       readPermission="customers.read"
       writePermission="customers.write"
       supportsActive
+      resetOnCreate
       fields={[
         { name: "name", label: "Name", required: true },
-        { name: "phone", label: "Phone" },
+        { name: "phone", label: "Phone", type: "tel" },
         { name: "email", label: "Email", type: "email" },
         { name: "address", label: "Address", type: "textarea" },
       ]}

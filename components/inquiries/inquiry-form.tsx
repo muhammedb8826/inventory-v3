@@ -33,6 +33,7 @@ export function InquiryForm() {
 
   const {
     customers,
+    customersLoading,
     customerOptions,
     userOptions,
     itemOptions,
@@ -86,6 +87,7 @@ export function InquiryForm() {
         values={values}
         onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
         customers={customers}
+        customersLoading={customersLoading}
         customerOptions={customerOptions}
         userOptions={userOptions}
         itemOptions={itemOptions}
