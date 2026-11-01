@@ -112,9 +112,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             label: "Daily operations",
             paths: [
+              "/items",
               "/inventory",
-              "/sales",
-              "/purchases",
+              "/sales-orders",
+              "/purchase-orders",
               "/stock-transfers",
               "/inquiries",
             ],

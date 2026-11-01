@@ -27,6 +27,7 @@ export function isProductItemId(value: string | undefined | null): boolean {
 export function resolveItem(itemId: string, item?: Partial<Item> | null): Item {
   const id = productItemId({ itemId, item }) || itemId;
   return {
+    ...item,
     id,
     description: item?.description ?? id,
     sku: item?.sku,

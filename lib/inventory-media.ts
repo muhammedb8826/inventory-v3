@@ -6,9 +6,11 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export function resolveItemImageUrl(
-  url: string | null | undefined
+  url: string | null | undefined,
 ): string | null {
   if (!url?.trim()) return null;
+  const match = url.trim().match(/\/uploads\/items\/([^/?#]+)(?:[?#].*)?$/);
+  if (match) return `/api/item-media/${encodeURIComponent(match[1])}`;
   return resolveBrandingAssetUrl(url, url);
 }
 
@@ -24,7 +26,7 @@ export function validateItemImageFile(file: File): string | null {
 
 export async function uploadStockItemImage(
   stockId: string,
-  file: File
+  file: File,
 ): Promise<StockRecord> {
   const form = new FormData();
   form.append("file", file);
@@ -35,7 +37,7 @@ export async function uploadStockItemImage(
 }
 
 export async function clearStockItemImage(
-  stockId: string
+  stockId: string,
 ): Promise<StockRecord> {
   return api<StockRecord>(`/inventory/${stockId}/image`, {
     method: "DELETE",

@@ -91,12 +91,19 @@ export function SaleDetail({ sale }: { sale: Sale }) {
           {isVoided ? (
             <Badge variant="secondary">Voided</Badge>
           ) : (
-            <Badge variant="outline">{paymentLabel}</Badge>
+            <>
+              <Badge variant="secondary">Delivered ? invoice posted</Badge>
+              <Badge variant="outline">{paymentLabel}</Badge>
+            </>
           )}
           {canWrite && !isVoided ? (
             <SaleReturnDialog sale={sale} onSuccess={() => router.refresh()} />
           ) : null}
-          <SaleDocumentActions saleId={sale.id} status={sale.status} />
+          <SaleDocumentActions
+            saleId={sale.id}
+            status={sale.status}
+            commercialLocked={sale.commercialLocked}
+          />
         </div>
       </div>
 
@@ -148,10 +155,12 @@ export function SaleDetail({ sale }: { sale: Sale }) {
             ) ? (
               <DetailField
                 label="Commission rate"
-                value={formatCommissionRate(
-                  sale.commissionPercent,
-                  sale.commissionBasis,
-                )!}
+                value={
+                  formatCommissionRate(
+                    sale.commissionPercent,
+                    sale.commissionBasis,
+                  )!
+                }
               />
             ) : null}
             {sale.commissionAmount ? (

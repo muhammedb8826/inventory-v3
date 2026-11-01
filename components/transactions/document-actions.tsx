@@ -13,10 +13,12 @@ export function PurchaseDocumentActions({
   purchaseId,
   status,
   canEdit = true,
+  commercialLocked = false,
 }: {
   purchaseId: string;
   status?: string;
   canEdit?: boolean;
+  commercialLocked?: boolean;
 }) {
   const router = useRouter();
   const [voiding, setVoiding] = useState(false);
@@ -25,7 +27,7 @@ export function PurchaseDocumentActions({
   async function handleVoid() {
     if (
       !confirm(
-        "Void this purchase? Stock and bank entries will be reversed. This cannot be undone."
+        "Void this purchase? Stock and bank entries will be reversed. This cannot be undone.",
       )
     ) {
       return;
@@ -50,19 +52,21 @@ export function PurchaseDocumentActions({
       <div className="flex flex-wrap items-center gap-2">
         {canEdit ? (
           <FrappeButtonLink href={`/purchases/${purchaseId}/edit`}>
-            Edit
+            {commercialLocked ? "Edit notes" : "Edit"}
           </FrappeButtonLink>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs text-destructive"
-          disabled={voiding}
-          onClick={handleVoid}
-        >
-          {voiding ? "Voiding…" : "Void"}
-        </Button>
+        {!commercialLocked && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs text-destructive"
+            disabled={voiding || commercialLocked}
+            onClick={handleVoid}
+          >
+            {voiding ? "Voiding…" : "Void"}
+          </Button>
+        )}
       </div>
     </PermissionGate>
   );
@@ -72,10 +76,12 @@ export function SaleDocumentActions({
   saleId,
   status,
   canEdit = true,
+  commercialLocked = false,
 }: {
   saleId: string;
   status?: string;
   canEdit?: boolean;
+  commercialLocked?: boolean;
 }) {
   const router = useRouter();
   const [voiding, setVoiding] = useState(false);
@@ -84,7 +90,7 @@ export function SaleDocumentActions({
   async function handleVoid() {
     if (
       !confirm(
-        "Void this sale? Stock and bank entries will be reversed. This cannot be undone."
+        "Void this sale? Stock and bank entries will be reversed. This cannot be undone.",
       )
     ) {
       return;
@@ -108,18 +114,22 @@ export function SaleDocumentActions({
     <PermissionGate permission="sales.write">
       <div className="flex flex-wrap items-center gap-2">
         {canEdit ? (
-          <FrappeButtonLink href={`/sales/${saleId}/edit`}>Edit</FrappeButtonLink>
+          <FrappeButtonLink href={`/sales/${saleId}/edit`}>
+            {commercialLocked ? "Edit notes" : "Edit"}
+          </FrappeButtonLink>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs text-destructive"
-          disabled={voiding}
-          onClick={handleVoid}
-        >
-          {voiding ? "Voiding…" : "Void"}
-        </Button>
+        {!commercialLocked && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs text-destructive"
+            disabled={voiding || commercialLocked}
+            onClick={handleVoid}
+          >
+            {voiding ? "Voiding…" : "Void"}
+          </Button>
+        )}
       </div>
     </PermissionGate>
   );

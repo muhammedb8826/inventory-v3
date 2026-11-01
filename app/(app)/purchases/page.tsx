@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -34,11 +35,7 @@ import {
 } from "@/components/ui/select";
 import { PlusIcon, ShoppingCartIcon, WalletIcon } from "lucide-react";
 
-import type {
-  PaymentMethod,
-  Purchase,
-  PurchaseListTotals,
-} from "@/lib/types";
+import type { PaymentMethod, Purchase, PurchaseListTotals } from "@/lib/types";
 
 type PurchaseRow = Pick<
   Purchase,
@@ -80,7 +77,7 @@ export default function PurchasesPage() {
           paymentMethod: paymentMethod || undefined,
         },
         page,
-        limit
+        limit,
       ),
     [
       from,
@@ -90,7 +87,7 @@ export default function PurchasesPage() {
       supplierId,
       locationId,
       paymentMethod,
-    ]
+    ],
   );
 
   const activeFilterCount = useMemo(
@@ -103,7 +100,7 @@ export default function PurchasesPage() {
         locationId,
         paymentMethod,
       ]),
-    [from, to, includeVoided, supplierId, locationId, paymentMethod]
+    [from, to, includeVoided, supplierId, locationId, paymentMethod],
   );
 
   function resetFilters() {
@@ -190,9 +187,7 @@ export default function PurchasesPage() {
               <FilterField label="Supplier">
                 <Select
                   value={supplierId || "__all__"}
-                  onValueChange={(v) =>
-                    setSupplierId(v === "__all__" ? "" : v)
-                  }
+                  onValueChange={(v) => setSupplierId(v === "__all__" ? "" : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All suppliers" />
@@ -210,9 +205,7 @@ export default function PurchasesPage() {
               <FilterField label="Location">
                 <Select
                   value={locationId || "__all__"}
-                  onValueChange={(v) =>
-                    setLocationId(v === "__all__" ? "" : v)
-                  }
+                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All locations" />
@@ -232,7 +225,7 @@ export default function PurchasesPage() {
                   value={paymentMethod || "__all__"}
                   onValueChange={(v) =>
                     setPaymentMethod(
-                      v === "__all__" ? "" : (v as PaymentMethod)
+                      v === "__all__" ? "" : (v as PaymentMethod),
                     )
                   }
                 >

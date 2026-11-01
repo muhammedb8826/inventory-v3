@@ -1,4 +1,5 @@
 "use client";
+import type { SalesOrder } from "@/lib/sales-orders";
 import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useState } from "react";
@@ -27,6 +28,7 @@ import {
 } from "@/components/shared/page-form";
 import { api } from "@/lib/api";
 import { PlusIcon, Trash2Icon } from "lucide-react";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { apiList } from "@/lib/list-response";
 import { creditHasPayments, needsBankAccount } from "@/lib/document-utils";
 import {
@@ -110,10 +112,12 @@ function linesFromSale(sale: Sale): LineRow[] {
 }
 
 export function SaleForm({
+  quotation,
   sale,
   initial,
 }: {
   sale?: Sale;
+  quotation?: SalesOrder;
   /** Prefill for MTO: sale from inquiry / completed production. */
   initial?: {
     inquiryId?: string;
@@ -127,41 +131,66 @@ export function SaleForm({
   const router = useRouter();
   const { user } = useAuth();
   const isEdit = !!sale?.id;
-  const notesOnly = isEdit && creditHasPayments(sale?.customerCredit);
+  const notesOnly =
+    isEdit &&
+    (sale?.commercialLocked || creditHasPayments(sale?.customerCredit));
 
-  const mtoInquiryId = initial?.inquiryId ?? sale?.inquiryId ?? "";
+  const mtoInquiryId =
+    quotation?.payload.inquiryId ?? initial?.inquiryId ?? sale?.inquiryId ?? "";
   const mtoProductionOrderId =
-    initial?.productionOrderId ?? sale?.productionOrderId ?? "";
+    quotation?.payload.productionOrderId ??
+    initial?.productionOrderId ??
+    sale?.productionOrderId ??
+    "";
 
   const [customerId, setCustomerId] = useState(
-    sale?.customerId ?? initial?.customerId ?? "",
+    quotation?.payload.customerId ??
+      sale?.customerId ??
+      initial?.customerId ??
+      "",
   );
   const [locationId, setLocationId] = useState(
-    sale?.locationId ?? initial?.locationId ?? "",
+    quotation?.locationId ?? sale?.locationId ?? initial?.locationId ?? "",
   );
   const [itemQuery, setItemQuery] = useState("");
   const debouncedItemQuery = useDebouncedValue(itemQuery, 300);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    sale?.paymentMethod ?? "CASH",
+    quotation?.payload.paymentMethod ?? sale?.paymentMethod ?? "CASH",
   );
-  const [bankAccountId, setBankAccountId] = useState(sale?.bankAccountId ?? "");
+  const [bankAccountId, setBankAccountId] = useState(
+    quotation?.payload.bankAccountId ?? sale?.bankAccountId ?? "",
+  );
   const [creditDueDate, setCreditDueDate] = useState(
-    sale?.creditDueDate?.slice(0, 10) ?? "",
+    quotation?.payload.creditDueDate?.slice(0, 10) ??
+      sale?.creditDueDate?.slice(0, 10) ??
+      "",
   );
   const [allowNegativeStock, setAllowNegativeStock] = useState(false);
   const [soldByUserId, setSoldByUserId] = useState(
-    () => sale?.soldByUserId ?? saleRepUser(sale ?? {})?.id ?? "",
+    () =>
+      quotation?.payload.soldByUserId ??
+      sale?.soldByUserId ??
+      saleRepUser(sale ?? {})?.id ??
+      "",
   );
   const [commissionPercent, setCommissionPercent] = useState(() => {
-    if (sale?.commissionPercent != null && sale.commissionPercent !== "") {
-      return String(sale.commissionPercent);
+    if (
+      quotation?.payload.commissionPercent != null ||
+      (sale?.commissionPercent != null && sale.commissionPercent !== "")
+    ) {
+      return String(
+        quotation?.payload.commissionPercent ?? sale?.commissionPercent,
+      );
     }
     return sale ? "" : "10";
   });
   const [commissionBasis, setCommissionBasis] = useState<CommissionBasis>(
-    () => sale?.commissionBasis ?? "PROFIT",
+    () =>
+      quotation?.payload.commissionBasis ?? sale?.commissionBasis ?? "PROFIT",
   );
-  const [notes, setNotes] = useState(sale?.notes ?? initial?.notes ?? "");
+  const [notes, setNotes] = useState(
+    quotation?.payload.notes ?? sale?.notes ?? initial?.notes ?? "",
+  );
   const canOnBehalf = hasPermission(user, "sales.on_behalf");
 
   /** Rep for API/UI: explicit pick, or logged-in user on new sales once auth loads. */
@@ -169,6 +198,12 @@ export function SaleForm({
     soldByUserId || (!isEdit && !notesOnly && user?.id ? user.id : "");
 
   const [lines, setLines] = useState<LineRow[]>(() => {
+    if (quotation)
+      return quotation.payload.lines.map((l) => ({
+        ...l,
+        quantity: String(l.quantity),
+        unitPrice: String(l.unitPrice),
+      }));
     if (sale) return linesFromSale(sale);
     if (initial?.lines?.length)
       return initial.lines.map((line) => ({
@@ -227,10 +262,23 @@ export function SaleForm({
     [locationId, debouncedItemQuery],
   );
 
+  const { data: catalogItems, loading: catalogLoading } = useFetch(
+    () =>
+      !isEdit
+        ? fetchAllPages<Item>(
+            (page, limit) =>
+              `/items?search=${encodeURIComponent(debouncedItemQuery)}&page=${page}&limit=${limit}`,
+          )
+        : Promise.resolve([]),
+    [isEdit, debouncedItemQuery],
+  );
   const stockItems = stock ?? [];
   const itemMap = buildItemOptionMap(stockItems, [
     ...lines,
     ...(sale?.lines ?? []),
+    ...(catalogItems ?? [])
+      .filter((i) => i.isActive !== false)
+      .map((item) => ({ itemId: item.id, item })),
   ]);
   const itemOptions = itemOptionsFromMap(itemMap);
 
@@ -261,7 +309,8 @@ export function SaleForm({
     (customers === null && customersLoading) ||
     (locations === null && locationsLoading) ||
     (banks === null && banksLoading);
-  const canNegativeStock = hasPermission(user, "sales.negative_stock");
+  const canNegativeStock =
+    isEdit && hasPermission(user, "sales.negative_stock");
 
   function onCustomerCreated(customer: Customer) {
     setCustomers((prev) => [...(prev ?? []), customer]);
@@ -293,7 +342,8 @@ export function SaleForm({
     const idx = emptyIdx >= 0 ? emptyIdx : 0;
     updateLine(idx, {
       itemId: productItemId(record),
-      unitPrice: "",
+      unitPrice:
+        record.item?.effectiveSalesPrice ?? record.item?.salesPrice ?? "",
       item: resolveItem(productItemId(record), record.item),
     });
   }
@@ -392,7 +442,11 @@ export function SaleForm({
     }
     setSaving(true);
     try {
-      if (isEdit && sale) {
+      if (quotation) {
+        await api(`/sales-orders/${quotation.id}`, { method: "PATCH", body });
+        toast.success("Quotation revised; approval reset");
+        router.push(`/sales-orders/${quotation.id}`);
+      } else if (isEdit && sale) {
         const updated = await api<Sale & { stockWarnings?: string[] }>(
           `/sales/${sale.id}`,
           { method: "PATCH", body },
@@ -404,18 +458,23 @@ export function SaleForm({
         }
         router.push(`/sales/${sale.id}`);
       } else {
-        const res = await api<Sale & { stockWarnings?: string[] }>("/sales", {
-          method: "POST",
-          body,
-          idempotent: true,
-        });
+        const res = await api<Sale & { stockWarnings?: string[] }>(
+          "/sales-orders",
+          {
+            method: "POST",
+            body,
+            idempotent: true,
+          },
+        );
         if (res.stockWarnings?.length) {
           toast.warning(res.stockWarnings.join("; "));
         } else {
-          toast.success("Sale recorded");
+          toast.success(
+            "Quotation saved ? submit it for validation or approval",
+          );
         }
         requestNotificationsRefresh();
-        router.push(`/sales/${res.id}`);
+        router.push(`/sales-orders/${res.id}`);
       }
     } catch (err) {
       toast.error(errorMessage(err));
@@ -665,7 +724,7 @@ export function SaleForm({
               locationId
                 ? stockLoading
                   ? "Loading stock at location…"
-                  : `${itemOptions.length} item(s) available`
+                  : `${itemOptions.length} catalog item(s). Stock is checked when confirming the order.`
                 : "Select a location first"
             }
           >
@@ -719,11 +778,15 @@ export function SaleForm({
                             item,
                             unitId: undefined,
                             unitFactor: 1,
+                            unitPrice:
+                              item?.effectiveSalesPrice ??
+                              item?.salesPrice ??
+                              "",
                           });
                         }}
                         options={itemOptions}
                         disabled={!locationId}
-                        loading={stockLoading}
+                        loading={stockLoading || catalogLoading}
                         filterLocally={false}
                         onQueryChange={setItemQuery}
                         placeholder="Item"
@@ -771,13 +834,20 @@ export function SaleForm({
                         required
                       />
                     </FormField>
-                    <FormField label="Unit price" className="form-line-field" hint={(() => {
-                      const source = stockItems.find((record) => productItemId(record) === line.itemId);
-                      if (!source) return undefined;
-                      const cost = Number(source.purchasePrice) * (line.unitFactor ?? 1);
-                      const price = Number(line.unitPrice);
-                      return `Current cost: ${formatMoney(cost)} per selected unit${line.unitPrice && price > 0 ? ` ? Margin: ${(((price - cost) / price) * 100).toFixed(1)}%` : ""}. Final cost is recorded when posted.`;
-                    })()}>
+                    <FormField
+                      label="Unit price"
+                      className="form-line-field"
+                      hint={(() => {
+                        const source = stockItems.find(
+                          (record) => productItemId(record) === line.itemId,
+                        );
+                        if (!source) return undefined;
+                        const cost =
+                          Number(source.purchasePrice) * (line.unitFactor ?? 1);
+                        const price = Number(line.unitPrice);
+                        return `Current cost: ${formatMoney(cost)} per selected unit${line.unitPrice && price > 0 ? ` ? Margin: ${(((price - cost) / price) * 100).toFixed(1)}%` : ""}. Final cost is recorded when posted.`;
+                      })()}
+                    >
                       <Input
                         type="number"
                         min="0"
@@ -831,7 +901,13 @@ export function SaleForm({
       <PageFormActions>
         <PageFormCancel href={cancelHref} />
         <Button type="submit" disabled={saving} className="min-w-28">
-          {saving ? <Spinner className="size-4" /> : "Save"}
+          {saving ? (
+            <Spinner className="size-4" />
+          ) : isEdit ? (
+            "Save changes"
+          ) : (
+            "Save quotation"
+          )}
         </Button>
       </PageFormActions>
     </PageForm>

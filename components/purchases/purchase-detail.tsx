@@ -78,10 +78,14 @@ export function PurchaseDetail({ purchase }: { purchase: Purchase }) {
           {isVoided ? (
             <Badge variant="secondary">Voided</Badge>
           ) : (
-            <Badge variant="outline">{paymentLabel}</Badge>
+            <>
+              <Badge variant="secondary">Received ? purchase posted</Badge>
+              <Badge variant="outline">{paymentLabel}</Badge>
+            </>
           )}
           <PurchaseDocumentActions
             purchaseId={purchase.id}
+            commercialLocked={purchase.commercialLocked}
             status={purchase.status}
           />
         </div>

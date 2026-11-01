@@ -41,6 +41,12 @@ export const mainNav: NavItem[] = [
     permission: "dashboard.read",
   },
   {
+    title: "Item catalog",
+    href: "/items",
+    icon: Package,
+    permission: "inventory.read",
+  },
+  {
     title: "Inventory",
     href: "/inventory",
     icon: Package,
@@ -77,14 +83,14 @@ export const mainNav: NavItem[] = [
     permission: "inventory.write",
   },
   {
-    title: "Purchases",
-    href: "/purchases",
+    title: "Purchase orders",
+    href: "/purchase-orders",
     icon: ShoppingCart,
     permission: "purchase.read",
   },
   {
-    title: "Sales",
-    href: "/sales",
+    title: "Sales orders",
+    href: "/sales-orders",
     icon: Receipt,
     permission: "sales.read",
   },
@@ -133,8 +139,18 @@ export const mainNav: NavItem[] = [
 ];
 
 export const masterNav: NavItem[] = [
-  { title: "Product families", href: "/products", icon: Package, permission: "inventory.read" },
-  { title: "Product attributes", href: "/product-attributes", icon: Palette, permission: "inventory.write" },
+  {
+    title: "Product families",
+    href: "/products",
+    icon: Package,
+    permission: "inventory.read",
+  },
+  {
+    title: "Product attributes",
+    href: "/product-attributes",
+    icon: Palette,
+    permission: "inventory.write",
+  },
   {
     title: "Units of measure",
     href: "/units",

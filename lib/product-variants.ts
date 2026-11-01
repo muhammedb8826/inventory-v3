@@ -28,6 +28,10 @@ export interface ProductVariant extends Item {
   }[];
 }
 export interface ProductFamily extends RecordMetadata {
+  priceRules?: {
+    basePrice: string | null;
+    extras: { attributeId: string; value: string; extra: string }[];
+  };
   id: string;
   name: string;
   description: string;

@@ -1,6 +1,7 @@
 "use client";
+import { FamilyPricing } from "@/components/inventory/family-pricing";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
 import { DataCardTable } from "@/components/shared/data-card-table";
@@ -23,6 +24,7 @@ import type {
 } from "@/lib/product-variants";
 
 export default function ProductFamilyDetailPage() {
+  const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const canWrite = hasPermission(user, "inventory.write");
@@ -90,6 +92,12 @@ export default function ProductFamilyDetailPage() {
                     : "Stock unit only; standard conversions stay within its measurement category."}
                 </p>
               </section>
+              <FamilyPricing
+                key={`${id}:${data.updatedAt}`}
+                family={data}
+                definitions={attributes ?? []}
+                onSaved={reload}
+              />
               <DataCardTable<ProductVariant>
                 rows={data.variants}
                 storageKey="product-variants"
@@ -157,6 +165,11 @@ export default function ProductFamilyDetailPage() {
                       ),
                   },
                   {
+                    key: "price",
+                    header: "Sales price",
+                    cell: (v) => v.effectiveSalesPrice ?? "Approval required",
+                  },
+                  {
                     key: "barcode",
                     header: "Barcode",
                     defaultVisible: false,
@@ -178,6 +191,10 @@ export default function ProductFamilyDetailPage() {
                       <RowActionsMenu
                         label={v.sku ?? v.description}
                         actions={[
+                          {
+                            label: "View / edit variant",
+                            onSelect: () => router.push(`/items/${v.id}`),
+                          },
                           ...(canWrite
                             ? v.stocks.map((s) => ({
                                 label: `Edit inventory (${s.locationName ?? s.locationId.slice(0, 8)})`,

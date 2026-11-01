@@ -635,6 +635,22 @@ export interface paths {
         patch: operations["ProductsController_update"];
         trace?: never;
     };
+    "/api/v1/product-families/{id}/pricing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ProductsController_pricing"];
+        trace?: never;
+    };
     "/api/v1/product-families/{id}/variants": {
         parameters: {
             query?: never;
@@ -843,6 +859,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ItemCatalogController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ItemCatalogController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ItemCatalogController_edit"];
+        trace?: never;
+    };
+    "/api/v1/items/{id}/price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ItemCatalogController_price"];
+        trace?: never;
+    };
+    "/api/v1/items/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ItemCatalogController_image"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boms": {
         parameters: {
             query?: never;
@@ -1046,6 +1126,22 @@ export interface paths {
         put?: never;
         /** Warehouse issue — production.write or dedicated production.issue. */
         post: operations["ProductionController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/production-orders/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProductionController_start"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1550,6 +1646,86 @@ export interface paths {
         patch: operations["PurchasesController_update"];
         trace?: never;
     };
+    "/api/v1/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PurchaseOrdersController_list"];
+        put?: never;
+        post: operations["PurchaseOrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PurchaseOrdersController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["PurchaseOrdersController_edit"];
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PurchaseOrdersController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PurchaseOrdersController_receive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PurchaseOrdersController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banks/accounts": {
         parameters: {
             query?: never;
@@ -1720,6 +1896,134 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["SalesController_createReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SalesOrdersController_list"];
+        put?: never;
+        post: operations["SalesOrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SalesOrdersController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["SalesOrdersController_edit"];
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_deliver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales-orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SalesOrdersController_cancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2251,6 +2555,7 @@ export interface components {
             id: string;
         };
         ProductFamily: {
+            priceRules: Record<string, never>;
             name: string;
             description: string;
             /** @enum {string} */
@@ -2268,6 +2573,8 @@ export interface components {
             id: string;
         };
         Item: {
+            /** @description Approved standard sales price per base stock unit; null requires approval. */
+            salesPrice: string | null;
             productFamilyId: string | null;
             productFamily: components["schemas"]["ProductFamily"] | null;
             variantKey: string | null;
@@ -2536,6 +2843,16 @@ export interface components {
             attributes: components["schemas"]["FamilyAttributeDto"][];
             isActive?: boolean;
         };
+        FamilyPriceExtraDto: {
+            /** Format: uuid */
+            attributeId: string;
+            value: string;
+            extra: number;
+        };
+        FamilyPricingDto: {
+            basePrice: number | null;
+            extras: components["schemas"]["FamilyPriceExtraDto"][];
+        };
         VariantSelectionDto: {
             /** Format: uuid */
             attributeId: string;
@@ -2550,7 +2867,7 @@ export interface components {
         };
         CreateVariantsDto: {
             /** Format: uuid */
-            locationId: string;
+            locationId?: string;
             variants: components["schemas"]["CreateVariantDto"][];
         };
         VariantStatusDto: {
@@ -2630,6 +2947,8 @@ export interface components {
             purchasePrice?: number;
             reorderPoint?: number | null;
         };
+        EditCatalogItemDto: Record<string, never>;
+        PriceDto: Record<string, never>;
         BomLine: {
             id: string;
             bomId: string;
@@ -2763,241 +3082,6 @@ export interface components {
             explodeBom?: boolean;
             notes?: string;
         };
-        InquiryAttachment: {
-            inquiryId: string;
-            name: string;
-            mime: string;
-            size: number;
-            /** Format: date-time */
-            createdAt: string;
-            id: string;
-        };
-        ProductionOrderLine: {
-            id: string;
-            productionOrderId: string;
-            componentItemId: string;
-            quantityRequired: string;
-            quantityIssued: string;
-            /** @description Cumulative inventory value of issued qty (for actual FG costing). */
-            issuedValue: string;
-            productionOrder: components["schemas"]["ProductionOrder"];
-            componentItem: components["schemas"]["Item"];
-        };
-        ProductionOrder: {
-            orderNumber: string | null;
-            bomId: string;
-            finishedItemId: string;
-            /** @description Originating customer inquiry (MTO spine). */
-            inquiryId: string | null;
-            /** @description Optional sales order / sale this production fulfills. */
-            saleId: string | null;
-            /** @description Component issue location. */
-            locationId: string;
-            /** @description Finished-goods receipt location (defaults to component location). */
-            finishedLocationId: string | null;
-            quantityPlanned: string;
-            unitSnapshot: Record<string, never> | null;
-            quantityCompleted: string;
-            quantityScrapped: string;
-            /** @enum {string} */
-            status: "DRAFT" | "RELEASED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-            /** @description True after release reserved component qty. */
-            materialsReserved: boolean;
-            notes: string | null;
-            createdById: string | null;
-            /** Format: date-time */
-            releasedAt: string | null;
-            /** Format: date-time */
-            completedAt: string | null;
-            bom: components["schemas"]["Bom"];
-            finishedItem: components["schemas"]["Item"];
-            inquiry: components["schemas"]["CustomerInquiry"] | null;
-            sale: components["schemas"]["Sale"] | null;
-            location: components["schemas"]["Location"];
-            finishedLocation: components["schemas"]["Location"] | null;
-            createdBy: components["schemas"]["User"] | null;
-            lines: components["schemas"]["ProductionOrderLine"][];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            id: string;
-        };
-        BankTransaction: {
-            bankAccountId: string;
-            /** @enum {string} */
-            type: "SALE" | "PURCHASE" | "EXPENSE" | "CREDIT_PAYMENT" | "CREDIT_RECEIPT" | "ADJUSTMENT" | "OPENING";
-            /** @enum {string} */
-            direction: "in" | "out";
-            amount: string;
-            balanceAfter: string;
-            description: string | null;
-            refType: string | null;
-            refId: string | null;
-            createdById: string | null;
-            bankAccount: components["schemas"]["BankAccount"];
-            createdBy: components["schemas"]["User"] | null;
-            /** Format: date-time */
-            createdAt: string;
-            id: string;
-        };
-        BankAccount: {
-            /** @description Short label for dropdowns (e.g. "Main Bank", "Cash"). */
-            name: string;
-            /** @description Financial institution / provider (e.g. "Commercial Bank of Ethiopia"). */
-            bankName: string | null;
-            /** @description Name on the account (business or person). */
-            accountHolderName: string | null;
-            accountNumber: string | null;
-            /** @enum {string} */
-            accountType: "CASH" | "BANK";
-            balance: string;
-            isActive: boolean;
-            transactions: components["schemas"]["BankTransaction"][];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            id: string;
-        };
-        SaleLine: {
-            saleId: string;
-            itemId: string;
-            quantity: string;
-            unitSnapshot: Record<string, never> | null;
-            unitPrice: string;
-            purchaseCost: string;
-            lineTotal: string;
-            sale: components["schemas"]["Sale"];
-            item: components["schemas"]["Item"];
-            id: string;
-        };
-        CustomerCredit: {
-            customerId: string;
-            saleId: string | null;
-            /** @enum {string} */
-            source: "SALE" | "PURCHASE" | "OPENING";
-            reference: string | null;
-            notes: string | null;
-            amount: string;
-            paidAmount: string;
-            balance: string;
-            /** @enum {string} */
-            status: "OPEN" | "PARTIAL" | "PAID";
-            dueDate: string | null;
-            customer: components["schemas"]["Customer"];
-            sale: components["schemas"]["Sale"] | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            id: string;
-        };
-        Sale: {
-            customerId: string | null;
-            inquiryId: string | null;
-            productionOrderId: string | null;
-            locationId: string;
-            /** @enum {string} */
-            paymentMethod: "CASH" | "BANK" | "CREDIT";
-            bankAccountId: string | null;
-            allowNegativeStock: boolean;
-            subtotal: string;
-            total: string;
-            notes: string | null;
-            stockWarnings: string[] | null;
-            /** @enum {string} */
-            status: "ACTIVE" | "VOIDED";
-            /** Format: date-time */
-            voidedAt: string | null;
-            createdById: string | null;
-            soldByUserId: string | null;
-            commissionPercent: string;
-            /** @enum {string} */
-            commissionBasis: "PROFIT" | "SALES";
-            commissionAmount: string;
-            customer: components["schemas"]["Customer"] | null;
-            inquiry: components["schemas"]["CustomerInquiry"] | null;
-            productionOrder: components["schemas"]["ProductionOrder"] | null;
-            location: components["schemas"]["Location"];
-            bankAccount: components["schemas"]["BankAccount"] | null;
-            createdBy: components["schemas"]["User"] | null;
-            soldByUser: components["schemas"]["User"] | null;
-            lines: components["schemas"]["SaleLine"][];
-            credit: components["schemas"]["CustomerCredit"] | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            id: string;
-        };
-        Customer: {
-            name: string;
-            phone: string | null;
-            email: string | null;
-            address: string | null;
-            isActive: boolean;
-            sales: components["schemas"]["Sale"][];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            id: string;
-        };
-        CustomerInquiryLine: {
-            id: string;
-            inquiryId: string;
-            itemId: string;
-            unitSnapshot: Record<string, never> | null;
-            /** @description Requested quantity (optional interest qty). */
-            quantity: string | null;
-            notes: string | null;
-            inquiry: components["schemas"]["CustomerInquiry"];
-            item: components["schemas"]["Item"];
-        };
-        CustomerInquiry: {
-            contactName: string;
-            phone: string | null;
-            email: string | null;
-            subject: string;
-            message: string;
-            /** @enum {string} */
-            status: "NEW" | "IN_PROGRESS" | "QUOTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
-            /** @enum {string} */
-            priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
-            /** @enum {string} */
-            source: "PUBLIC" | "INTERNAL";
-            customerId: string | null;
-            assignedToUserId: string | null;
-            /** @enum {string} */
-            assignmentStatus: "UNASSIGNED" | "PENDING" | "ACCEPTED" | "DECLINED";
-            /** Format: date-time */
-            assignedAt: string | null;
-            /** Format: date-time */
-            acceptedAt: string | null;
-            createdById: string | null;
-            internalNotes: string | null;
-            requestedDeliveryDate: string | null;
-            attachments: components["schemas"]["InquiryAttachment"][];
-            /** Format: date-time */
-            followUpAt: string | null;
-            convertedSaleId: string | null;
-            /**
-             * Format: date-time
-             * @description Set when linked production completes — FG ready to sell/deliver.
-             */
-            readyForSaleAt: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            customer: components["schemas"]["Customer"] | null;
-            lines: components["schemas"]["CustomerInquiryLine"][];
-            assignedTo: components["schemas"]["User"] | null;
-            createdBy: components["schemas"]["User"] | null;
-            convertedSale: components["schemas"]["Sale"] | null;
-            id: string;
-        };
         CreateProductionOrderDto: {
             /** Format: uuid */
             unitId?: string;
@@ -3043,7 +3127,7 @@ export interface components {
         };
         CompleteProductionDto: {
             quantity: number;
-            /** @description If true, auto-issue any missing materials needed for this completion qty. Default true. */
+            /** @description Deprecated compatibility flag. Must be false; warehouse material handover is required. */
             autoIssue?: boolean;
         };
         UnbuildProductionDto: {
@@ -3155,6 +3239,43 @@ export interface components {
             updatedAt: string;
             id: string;
         };
+        BankTransaction: {
+            bankAccountId: string;
+            /** @enum {string} */
+            type: "SALE" | "PURCHASE" | "EXPENSE" | "CREDIT_PAYMENT" | "CREDIT_RECEIPT" | "ADJUSTMENT" | "OPENING";
+            /** @enum {string} */
+            direction: "in" | "out";
+            amount: string;
+            balanceAfter: string;
+            description: string | null;
+            refType: string | null;
+            refId: string | null;
+            createdById: string | null;
+            bankAccount: components["schemas"]["BankAccount"];
+            createdBy: components["schemas"]["User"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            id: string;
+        };
+        BankAccount: {
+            /** @description Short label for dropdowns (e.g. "Main Bank", "Cash"). */
+            name: string;
+            /** @description Financial institution / provider (e.g. "Commercial Bank of Ethiopia"). */
+            bankName: string | null;
+            /** @description Name on the account (business or person). */
+            accountHolderName: string | null;
+            accountNumber: string | null;
+            /** @enum {string} */
+            accountType: "CASH" | "BANK";
+            balance: string;
+            isActive: boolean;
+            transactions: components["schemas"]["BankTransaction"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
         PurchaseLine: {
             purchaseId: string;
             itemId: string;
@@ -3227,6 +3348,218 @@ export interface components {
             email?: string;
             address?: string;
             isActive?: boolean;
+        };
+        Customer: {
+            name: string;
+            phone: string | null;
+            email: string | null;
+            address: string | null;
+            isActive: boolean;
+            sales: components["schemas"]["Sale"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
+        InquiryAttachment: {
+            inquiryId: string;
+            name: string;
+            mime: string;
+            size: number;
+            /** Format: date-time */
+            createdAt: string;
+            id: string;
+        };
+        CustomerInquiryLine: {
+            id: string;
+            inquiryId: string;
+            itemId: string;
+            unitSnapshot: Record<string, never> | null;
+            /** @description Requested quantity (optional interest qty). */
+            quantity: string | null;
+            notes: string | null;
+            inquiry: components["schemas"]["CustomerInquiry"];
+            item: components["schemas"]["Item"];
+        };
+        CustomerInquiry: {
+            contactName: string;
+            phone: string | null;
+            email: string | null;
+            subject: string;
+            message: string;
+            /** @enum {string} */
+            status: "NEW" | "IN_PROGRESS" | "QUOTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
+            /** @enum {string} */
+            priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+            /** @enum {string} */
+            source: "PUBLIC" | "INTERNAL";
+            customerId: string | null;
+            assignedToUserId: string | null;
+            /** @enum {string} */
+            assignmentStatus: "UNASSIGNED" | "PENDING" | "ACCEPTED" | "DECLINED";
+            /** Format: date-time */
+            assignedAt: string | null;
+            /** Format: date-time */
+            acceptedAt: string | null;
+            createdById: string | null;
+            internalNotes: string | null;
+            requestedDeliveryDate: string | null;
+            attachments: components["schemas"]["InquiryAttachment"][];
+            /** Format: date-time */
+            followUpAt: string | null;
+            convertedSaleId: string | null;
+            /**
+             * Format: date-time
+             * @description Set when linked production completes — FG ready to sell/deliver.
+             */
+            readyForSaleAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            customer: components["schemas"]["Customer"] | null;
+            lines: components["schemas"]["CustomerInquiryLine"][];
+            assignedTo: components["schemas"]["User"] | null;
+            createdBy: components["schemas"]["User"] | null;
+            convertedSale: components["schemas"]["Sale"] | null;
+            id: string;
+        };
+        ProductionOrderLine: {
+            id: string;
+            productionOrderId: string;
+            componentItemId: string;
+            quantityRequired: string;
+            quantityIssued: string;
+            /** @description Cumulative inventory value of issued qty (for actual FG costing). */
+            issuedValue: string;
+            productionOrder: components["schemas"]["ProductionOrder"];
+            componentItem: components["schemas"]["Item"];
+        };
+        ProductionOrder: {
+            workflowHistory: {
+                action: string;
+                actorId: string | null;
+                at: string;
+            }[];
+            /** Format: date-time */
+            materialsRequestedAt: string | null;
+            materialsRequestedById: string | null;
+            /** Format: date-time */
+            handedOverAt: string | null;
+            handedOverById: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            startedById: string | null;
+            orderNumber: string | null;
+            bomId: string;
+            finishedItemId: string;
+            /** @description Originating customer inquiry (MTO spine). */
+            inquiryId: string | null;
+            /** @description Optional sales order / sale this production fulfills. */
+            saleId: string | null;
+            /** @description Component issue location. */
+            locationId: string;
+            /** @description Finished-goods receipt location (defaults to component location). */
+            finishedLocationId: string | null;
+            quantityPlanned: string;
+            unitSnapshot: Record<string, never> | null;
+            quantityCompleted: string;
+            quantityScrapped: string;
+            /** @enum {string} */
+            status: "DRAFT" | "RELEASED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+            /** @description True after release reserved component qty. */
+            materialsReserved: boolean;
+            notes: string | null;
+            createdById: string | null;
+            /** Format: date-time */
+            releasedAt: string | null;
+            /** Format: date-time */
+            completedAt: string | null;
+            bom: components["schemas"]["Bom"];
+            finishedItem: components["schemas"]["Item"];
+            inquiry: components["schemas"]["CustomerInquiry"] | null;
+            sale: components["schemas"]["Sale"] | null;
+            location: components["schemas"]["Location"];
+            finishedLocation: components["schemas"]["Location"] | null;
+            createdBy: components["schemas"]["User"] | null;
+            lines: components["schemas"]["ProductionOrderLine"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
+        SaleLine: {
+            saleId: string;
+            itemId: string;
+            quantity: string;
+            unitSnapshot: Record<string, never> | null;
+            unitPrice: string;
+            purchaseCost: string;
+            lineTotal: string;
+            sale: components["schemas"]["Sale"];
+            item: components["schemas"]["Item"];
+            id: string;
+        };
+        CustomerCredit: {
+            customerId: string;
+            saleId: string | null;
+            /** @enum {string} */
+            source: "SALE" | "PURCHASE" | "OPENING";
+            reference: string | null;
+            notes: string | null;
+            amount: string;
+            paidAmount: string;
+            balance: string;
+            /** @enum {string} */
+            status: "OPEN" | "PARTIAL" | "PAID";
+            dueDate: string | null;
+            customer: components["schemas"]["Customer"];
+            sale: components["schemas"]["Sale"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
+        Sale: {
+            customerId: string | null;
+            inquiryId: string | null;
+            productionOrderId: string | null;
+            locationId: string;
+            /** @enum {string} */
+            paymentMethod: "CASH" | "BANK" | "CREDIT";
+            bankAccountId: string | null;
+            allowNegativeStock: boolean;
+            subtotal: string;
+            total: string;
+            notes: string | null;
+            stockWarnings: string[] | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "VOIDED";
+            /** Format: date-time */
+            voidedAt: string | null;
+            createdById: string | null;
+            soldByUserId: string | null;
+            commissionPercent: string;
+            /** @enum {string} */
+            commissionBasis: "PROFIT" | "SALES";
+            commissionAmount: string;
+            customer: components["schemas"]["Customer"] | null;
+            inquiry: components["schemas"]["CustomerInquiry"] | null;
+            productionOrder: components["schemas"]["ProductionOrder"] | null;
+            location: components["schemas"]["Location"];
+            bankAccount: components["schemas"]["BankAccount"] | null;
+            createdBy: components["schemas"]["User"] | null;
+            soldByUser: components["schemas"]["User"] | null;
+            lines: components["schemas"]["SaleLine"][];
+            credit: components["schemas"]["CustomerCredit"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
         };
         CreateCustomerDto: {
             name: string;
@@ -3372,6 +3705,29 @@ export interface components {
             creditDueDate?: string;
             lines?: components["schemas"]["PurchaseLineDto"][];
         };
+        PurchaseOrder: {
+            location: components["schemas"]["Location"];
+            purchase: components["schemas"]["Purchase"] | null;
+            createdBy: components["schemas"]["User"] | null;
+            /** @enum {string} */
+            state: "DRAFT" | "CANCELLED" | "CONFIRMED" | "RECEIVED";
+            locationId: string;
+            payload: components["schemas"]["CreatePurchaseDto"];
+            normalizedLines: Record<string, never>[];
+            total: string;
+            purchaseId: string | null;
+            createdById: string | null;
+            history: {
+                action: string;
+                actorId: string;
+                at: string;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
         CreateBankAccountDto: {
             /** @description Short label shown in lists and payment dropdowns. */
             name: string;
@@ -3465,6 +3821,37 @@ export interface components {
             commissionBasis?: "PROFIT" | "SALES";
             lines?: components["schemas"]["SaleLineDto"][];
         };
+        SalesOrder: {
+            location: components["schemas"]["Location"];
+            sale: components["schemas"]["Sale"] | null;
+            createdBy: components["schemas"]["User"] | null;
+            approvedBy: components["schemas"]["User"] | null;
+            /** @enum {string} */
+            state: "DRAFT" | "CANCELLED" | "PENDING_APPROVAL" | "APPROVED" | "CONFIRMED" | "DELIVERED";
+            locationId: string;
+            payload: components["schemas"]["CreateSaleDto"];
+            normalizedLines: Record<string, never>[];
+            priceExceptions: string[];
+            total: string;
+            saleId: string | null;
+            createdById: string | null;
+            approvedById: string | null;
+            /** Format: date-time */
+            approvedAt: string | null;
+            approvalNote: string | null;
+            history: {
+                action: string;
+                actorId: string;
+                at: string;
+                note?: string;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            id: string;
+        };
+        DecisionDto: Record<string, never>;
         CreateOpeningCustomerCreditDto: {
             /** Format: uuid */
             customerId: string;
@@ -4963,6 +5350,31 @@ export interface operations {
             };
         };
     };
+    ProductsController_pricing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyPricingDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductFamily"];
+                };
+            };
+        };
+    };
     ProductsController_variants: {
         parameters: {
             query?: never;
@@ -5372,6 +5784,107 @@ export interface operations {
             };
         };
     };
+    ItemCatalogController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ItemCatalogController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ItemCatalogController_edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditCatalogItemDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ItemCatalogController_price: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ItemCatalogController_image: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     BomsController_findAll: {
         parameters: {
             query?: {
@@ -5641,9 +6154,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5664,9 +6175,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5704,9 +6213,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5725,9 +6232,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5750,9 +6255,26 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
+                content?: never;
+            };
+        };
+    };
+    ProductionController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
         };
     };
@@ -5775,9 +6297,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5800,9 +6320,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5825,9 +6343,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -5846,9 +6362,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ProductionOrder"];
-                };
+                content?: never;
             };
         };
     };
@@ -6742,7 +7256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Purchase"];
+                    "application/json": Record<string, never>;
                 };
             };
         };
@@ -6762,9 +7276,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Purchase"];
-                };
+                content?: never;
             };
         };
     };
@@ -6783,9 +7295,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Purchase"];
-                };
+                content?: never;
             };
         };
     };
@@ -6808,9 +7318,152 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Purchase"];
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                search?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrder"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_receive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PurchaseOrdersController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -7074,7 +7727,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>;
+                };
             };
         };
     };
@@ -7116,9 +7771,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Sale"];
-                };
+                content?: never;
             };
         };
     };
@@ -7137,9 +7790,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["Sale"];
-                };
+                content?: never;
             };
         };
     };
@@ -7162,9 +7813,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": Record<string, never>;
-                };
+                content?: never;
             };
         };
     };
@@ -7190,6 +7839,216 @@ export interface operations {
                 content: {
                     "application/json": Record<string, never>;
                 };
+            };
+        };
+    };
+    SalesOrdersController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                search?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSaleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesOrder"];
+                };
+            };
+        };
+    };
+    SalesOrdersController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSaleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_deliver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SalesOrdersController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -1,4 +1,7 @@
 "use client";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { PurchaseOrder } from "@/lib/purchase-orders";
 import { TransactionUnitField } from "@/components/inventory/transaction-unit-field";
 
 import { useEffect, useState } from "react";
@@ -111,41 +114,63 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
 }
 
 export function PurchaseForm({
+  purchaseOrder,
   purchase,
   productionOrderId,
 }: {
   purchase?: Purchase;
+  purchaseOrder?: PurchaseOrder;
   /** Prefill short BOM lines from a production work order (shortage → buy). */
   productionOrderId?: string;
 }) {
   const router = useRouter();
   const isEdit = !!purchase?.id;
-  const notesOnly = isEdit && creditHasPayments(purchase?.supplierCredit);
+  const [itemQuery, setItemQuery] = useState("");
+  const debouncedItemQuery = useDebouncedValue(itemQuery, 300);
+  const notesOnly =
+    isEdit &&
+    (purchase?.commercialLocked || creditHasPayments(purchase?.supplierCredit));
 
-  const [supplierId, setSupplierId] = useState(purchase?.supplierId ?? "");
-  const [locationId, setLocationId] = useState(purchase?.locationId ?? "");
+  const [supplierId, setSupplierId] = useState(
+    purchaseOrder?.payload.supplierId ?? purchase?.supplierId ?? "",
+  );
+  const [locationId, setLocationId] = useState(
+    purchaseOrder?.locationId ?? purchase?.locationId ?? "",
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    purchase?.paymentMethod ?? "CASH",
+    purchaseOrder?.payload.paymentMethod ?? purchase?.paymentMethod ?? "CASH",
   );
   const [bankAccountId, setBankAccountId] = useState(
-    purchase?.bankAccountId ?? "",
+    purchaseOrder?.payload.bankAccountId ?? purchase?.bankAccountId ?? "",
   );
   const [creditDueDate, setCreditDueDate] = useState(
-    purchase?.creditDueDate?.slice(0, 10) ?? "",
+    purchaseOrder?.payload.creditDueDate?.slice(0, 10) ??
+      purchase?.creditDueDate?.slice(0, 10) ??
+      "",
   );
-  const [notes, setNotes] = useState(purchase?.notes ?? "");
+  const [notes, setNotes] = useState(
+    purchaseOrder?.payload.notes ?? purchase?.notes ?? "",
+  );
   const [lines, setLines] = useState<LineRow[]>(() =>
-    purchase
-      ? linesFromPurchase(purchase)
-      : [
-          {
-            itemId: "",
-            quantity: "1",
-            unitPrice: "",
-            lotNumber: "",
-            expiryDate: "",
-          },
-        ],
+    purchaseOrder
+      ? purchaseOrder.payload.lines.map((l) => ({
+          ...l,
+          quantity: String(l.quantity),
+          unitPrice: String(l.unitPrice),
+          lotNumber: l.lotNumber ?? "",
+          expiryDate: l.expiryDate ?? "",
+        }))
+      : purchase
+        ? linesFromPurchase(purchase)
+        : [
+            {
+              itemId: "",
+              quantity: "1",
+              unitPrice: "",
+              lotNumber: "",
+              expiryDate: "",
+            },
+          ],
   );
   const [saving, setSaving] = useState(false);
   const [mtoPrefillDone, setMtoPrefillDone] = useState(false);
@@ -238,14 +263,29 @@ export function PurchaseForm({
     setData: setStock,
   } = useFetch(
     () =>
-      locationId ? fetchInventoryForLocation(locationId) : Promise.resolve([]),
-    [locationId],
+      locationId
+        ? fetchInventoryForLocation(locationId, debouncedItemQuery || undefined)
+        : Promise.resolve([]),
+    [locationId, debouncedItemQuery],
   );
 
+  const { data: catalogItems, loading: catalogLoading } = useFetch(
+    () =>
+      !isEdit
+        ? fetchAllPages<Item>(
+            (page, limit) =>
+              `/items?search=${encodeURIComponent(debouncedItemQuery)}&page=${page}&limit=${limit}`,
+          )
+        : Promise.resolve([]),
+    [isEdit, debouncedItemQuery],
+  );
   const stockItems = stock ?? [];
   const itemMap = buildItemOptionMap(stockItems, [
     ...lines,
     ...(purchase?.lines ?? []),
+    ...(catalogItems ?? [])
+      .filter((i) => i.isActive !== false)
+      .map((item) => ({ itemId: item.id, item })),
   ]);
   const itemOptions = itemOptionsFromMap(itemMap);
 
@@ -393,7 +433,14 @@ export function PurchaseForm({
     }
     setSaving(true);
     try {
-      if (isEdit && purchase) {
+      if (purchaseOrder) {
+        await api(`/purchase-orders/${purchaseOrder.id}`, {
+          method: "PATCH",
+          body,
+        });
+        toast.success("Purchase request updated");
+        router.push(`/purchase-orders/${purchaseOrder.id}`);
+      } else if (isEdit && purchase) {
         await api<Purchase>(`/purchases/${purchase.id}`, {
           method: "PATCH",
           body,
@@ -401,14 +448,16 @@ export function PurchaseForm({
         toast.success("Purchase updated");
         router.push(`/purchases/${purchase.id}`);
       } else {
-        const created = await api<Purchase>("/purchases", {
+        const created = await api<Purchase>("/purchase-orders", {
           method: "POST",
           body,
           idempotent: true,
         });
-        toast.success("Purchase recorded");
+        toast.success(
+          "Purchase request saved ? confirm it before warehouse receipt",
+        );
         requestNotificationsRefresh();
-        router.push(`/purchases/${created.id}`);
+        router.push(`/purchase-orders/${created.id}`);
       }
     } catch (err) {
       toast.error(errorMessage(err));
@@ -676,7 +725,10 @@ export function PurchaseForm({
                           });
                         }}
                         options={itemOptions}
-                        disabled={!locationId || stockLoading}
+                        onQueryChange={setItemQuery}
+                        filterLocally={false}
+                        loading={stockLoading || catalogLoading}
+                        disabled={!locationId}
                         placeholder="Item"
                       />
                     </FormField>
@@ -801,7 +853,13 @@ export function PurchaseForm({
       <PageFormActions>
         <PageFormCancel href={cancelHref} />
         <Button type="submit" disabled={saving} className="min-w-28">
-          {saving ? <Spinner className="size-4" /> : "Save"}
+          {saving ? (
+            <Spinner className="size-4" />
+          ) : isEdit ? (
+            "Save changes"
+          ) : (
+            "Save purchase request"
+          )}
         </Button>
       </PageFormActions>
     </PageForm>

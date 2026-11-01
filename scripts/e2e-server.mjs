@@ -9,7 +9,12 @@ const user = {
     name: "Administrator",
     permissions: [
       "sales.write",
+      "pricing.write",
+      "sales.approve",
+      "sales.deliver",
+      "production.issue",
       "purchase.write",
+      "purchase.receive",
       "locations.all",
       "inventory.write",
       "inventory.adjust",
@@ -217,6 +222,16 @@ const server = createServer(async (req, res) => {
     "/api/v1",
     "",
   );
+  if (path === "/uploads/items/item-proxy-test.png") {
+    res.setHeader("content-type", "image/png");
+    res.end(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    );
+    return;
+  }
   res.setHeader("content-type", "application/json");
   let result = {
     data: [],

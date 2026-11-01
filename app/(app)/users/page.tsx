@@ -1,4 +1,5 @@
 "use client";
+import { fetchAllPages } from "@/lib/fetch-all-pages";
 import { RowActionsMenu } from "@/components/shared/row-actions-menu";
 import { ConfirmRecordAction } from "@/components/shared/confirm-record-action";
 
@@ -36,7 +37,6 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { apiList } from "@/lib/list-response";
 import { errorMessage } from "@/lib/format";
 import { buildUsersListPath } from "@/lib/list-query";
 import { hasPermission } from "@/lib/permissions";
@@ -86,9 +86,16 @@ function UsersPageContent() {
   const [roleId, setRoleId] = useState("");
   const [activeFilter, setActiveFilter] = useState<"" | "true" | "false">("");
   const debouncedSearch = useDebouncedValue(search);
-  const { data: roles } = useFetch(() => apiList<Role>("/roles"), [], {
-    enabled: canLoadRoles,
-  });
+  const { data: roles } = useFetch(
+    () =>
+      fetchAllPages<Role>(
+        (page, limit) => `/roles?page=${page}&limit=${limit}`,
+      ),
+    [],
+    {
+      enabled: canLoadRoles,
+    },
+  );
   const { rows, meta, setPage, setLimit, loading, reload } =
     usePaginatedList<UserAdmin>(
       (page, limit) =>
@@ -252,9 +259,16 @@ function UserDialog({
     user?.locationIds ?? [],
   );
   const [saving, setSaving] = useState(false);
-  const { data: roles } = useFetch(() => apiList<Role>("/roles"), [], {
-    enabled: open && canLoadRoles,
-  });
+  const { data: roles } = useFetch(
+    () =>
+      fetchAllPages<Role>(
+        (page, limit) => `/roles?page=${page}&limit=${limit}`,
+      ),
+    [],
+    {
+      enabled: open && canLoadRoles,
+    },
+  );
   const { data: locations } = useLocations();
   const { data: detail } = useFetch(
     () =>

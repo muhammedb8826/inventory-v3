@@ -212,6 +212,9 @@ export default function InventoryPage() {
       ]}
       actions={
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/items">Item catalog</Link>
+          </Button>
           <PermissionGate permission="inventory.write">
             <FrappeButtonPrimary asChild>
               <Link
@@ -227,6 +230,16 @@ export default function InventoryPage() {
             </FrappeButtonPrimary>
           </PermissionGate>
           <PermissionGate permission="inventory.read">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Looking for an item without a stock balance?{" "}
+              <Link
+                className="font-medium text-primary underline"
+                href="/items"
+              >
+                Open the item catalog
+              </Link>{" "}
+              to view or edit every SKU.
+            </p>
             <ExportInventoryButton
               filters={exportFilters}
               locationLabel={locationLabel}

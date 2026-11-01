@@ -29,7 +29,7 @@ function NewPurchaseBody() {
 export default function NewPurchasePage() {
   return (
     <AppShell
-      title="New Purchase"
+      title="New purchase request"
       subtitle="Choose a supplier, record received items, and confirm unit costs."
       variant="form"
       breadcrumbs={[

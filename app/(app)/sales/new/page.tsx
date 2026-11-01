@@ -162,8 +162,8 @@ function NewSaleFromMto() {
 export default function NewSalePage() {
   return (
     <AppShell
-      title="New Sales Invoice"
-      subtitle="Choose a customer, add items, and confirm payment details."
+      title="New quotation"
+      subtitle="Prepare prices and quantities. Submit for approval, confirm the order, then validate warehouse delivery."
       variant="form"
       breadcrumbs={[
         { label: "Stock", href: "/dashboard" },

@@ -191,7 +191,7 @@ test("configure reusable attributes, preview selected combinations and create st
       ],
     });
   await expect(
-    page.getByText("Variants created with zero opening stock", { exact: true }),
+    page.getByText("Variants created in the catalog", { exact: true }),
   ).toBeVisible();
   const actions = page.getByRole("button", {
     name: "Actions for CHAIR-BLACK",
@@ -268,23 +268,63 @@ test("variant configuration stays usable on narrow mobile screens", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    const submit = page.getByRole('button', { name: 'Create selected variants', exact: true });
+    const submit = page.getByRole("button", {
+      name: "Create selected variants",
+      exact: true,
+    });
     await submit.scrollIntoViewIfNeeded();
     const buttonBox = await submit.boundingBox();
-    const navigationBox = await page.getByRole('navigation', { name: 'Primary', exact: true }).boundingBox();
+    const navigationBox = await page
+      .getByRole("navigation", { name: "Primary", exact: true })
+      .boundingBox();
     expect(buttonBox).not.toBeNull();
     expect(navigationBox).not.toBeNull();
-    expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(navigationBox!.y);
-    if (width === 390) await page.screenshot({ path: 'test-results/product-variants-mobile.png', fullPage: true });
+    expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(
+      navigationBox!.y,
+    );
+    if (width === 390)
+      await page.screenshot({
+        path: "test-results/product-variants-mobile.png",
+        fullPage: true,
+      });
   }
 });
 
-test('variant BOM creation opens with the exact item selected', async ({ page }) => {
+test("variant BOM creation opens with the exact item selected", async ({
+  page,
+}) => {
   await fixture(page, true);
-  await page.route('**/api/backend/inventory?*', async route => {
-    await route.fulfill({ json: { data: [{ id: 'variant-stock', itemId: 'variant-bom-item', locationId: 'loc-a', quantity: '0', purchasePrice: '0', item: { id: 'variant-bom-item', description: 'Dining chair - Black', sku: 'CHAIR-BLACK', itemType: 'FINISHED', unitId: PCS, stockUnit: unit }, location: { id: 'loc-a', name: 'Main warehouse' } }], page: 1, limit: 200, total: 1, totalPages: 1 } });
+  await page.route("**/api/backend/inventory?*", async (route) => {
+    await route.fulfill({
+      json: {
+        data: [
+          {
+            id: "variant-stock",
+            itemId: "variant-bom-item",
+            locationId: "loc-a",
+            quantity: "0",
+            purchasePrice: "0",
+            item: {
+              id: "variant-bom-item",
+              description: "Dining chair - Black",
+              sku: "CHAIR-BLACK",
+              itemType: "FINISHED",
+              unitId: PCS,
+              stockUnit: unit,
+            },
+            location: { id: "loc-a", name: "Main warehouse" },
+          },
+        ],
+        page: 1,
+        limit: 200,
+        total: 1,
+        totalPages: 1,
+      },
+    });
   });
   await login(page);
-  await page.goto('/boms/new?finishedItemId=variant-bom-item');
-  await expect(page.getByRole('combobox', { name: 'Finished item', exact: true })).toContainText('Dining chair - Black');
+  await page.goto("/boms/new?finishedItemId=variant-bom-item");
+  await expect(
+    page.getByRole("combobox", { name: "Finished item", exact: true }),
+  ).toContainText("Dining chair - Black");
 });

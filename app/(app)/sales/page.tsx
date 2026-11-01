@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -88,14 +89,14 @@ export default function SalesPage() {
 
   const { data: users } = useFetch(
     () => (canOnBehalf ? apiList<UserAdmin>("/users") : Promise.resolve([])),
-    [canOnBehalf]
+    [canOnBehalf],
   );
   const { data: customers } = useFetch(() => fetchCustomers(), []);
   const { data: locations } = useLocations();
 
   const activeUsers = useMemo(
     () => (users ?? []).filter((u) => u.isActive !== false),
-    [users]
+    [users],
   );
 
   const { rows, meta, totals, setPage, setLimit, loading } = usePaginatedList<
@@ -115,7 +116,7 @@ export default function SalesPage() {
           search: debouncedSearch || undefined,
         },
         page,
-        limit
+        limit,
       ),
     [
       from,
@@ -126,7 +127,7 @@ export default function SalesPage() {
       locationId,
       paymentMethod,
       debouncedSearch,
-    ]
+    ],
   );
 
   const activeFilterCount = useMemo(
@@ -148,7 +149,7 @@ export default function SalesPage() {
       locationId,
       paymentMethod,
       soldByUserId,
-    ]
+    ],
   );
 
   function resetFilters() {
@@ -172,7 +173,16 @@ export default function SalesPage() {
       actions={
         <div className="flex flex-wrap gap-2">
           <PermissionGate permission="sales.read">
-            <FrappeButtonLink href="/sales/commissions">Commissions</FrappeButtonLink>
+            <div className="mb-4">
+              <Button variant="outline" asChild>
+                <Link href="/sales-orders">
+                  Quotations, approvals & deliveries
+                </Link>
+              </Button>
+            </div>
+            <FrappeButtonLink href="/sales/commissions">
+              Commissions
+            </FrappeButtonLink>
           </PermissionGate>
           <PermissionGate permission="sales.write">
             <FrappeButtonPrimary asChild>
@@ -186,251 +196,247 @@ export default function SalesPage() {
       }
     >
       <PermissionGate permission="sales.read" showDenied>
-          <ListSummaryCards
-            items={[
-              {
-                label: "Sales",
-                value: meta.total.toLocaleString(),
-                icon: ReceiptIcon,
-                tone: "slate",
-                badge: { label: "Invoices", tone: "muted" },
-              },
-              {
-                label: "Subtotal",
-                value: formatMoney(totals?.subtotal ?? 0),
-                icon: WalletIcon,
-                tone: "sky",
-                badge: { label: "Before tax", tone: "info" },
-              },
-              {
-                label: "Total",
-                value: formatMoney(totals?.total ?? 0),
-                icon: WalletIcon,
-                tone: "teal",
-                badge: { label: "Collected", tone: "success" },
-              },
-              {
-                label: "Commission",
-                value: formatMoney(totals?.commission ?? 0),
-                icon: BadgePercentIcon,
-                tone: "violet",
-                badge: { label: "Reps", tone: "info" },
-              },
-            ]}
-          />
-          <DataCardTable
-            storageKey="sales-list"
-            rows={rows}
-            loading={loading}
-            emptyTitle="Nothing to show"
-            emptyDescription="Create your first sale invoice."
-            filters={
-              <ListSearchField
-                value={search}
-                onChange={setSearch}
-                placeholder="Search sales..."
-              />
-            }
-            toolbar={
-              <TableFiltersSheet
-                activeCount={activeFilterCount}
-                onReset={resetFilters}
-              >
-                <FilterField label="Date range">
-                  <DateRangeFilter
-                    from={from}
-                    to={to}
-                    onFromChange={setFrom}
-                    onToChange={setTo}
-                    compact={false}
-                  />
-                </FilterField>
-                <FilterField label="Customer">
+        <ListSummaryCards
+          items={[
+            {
+              label: "Sales",
+              value: meta.total.toLocaleString(),
+              icon: ReceiptIcon,
+              tone: "slate",
+              badge: { label: "Invoices", tone: "muted" },
+            },
+            {
+              label: "Subtotal",
+              value: formatMoney(totals?.subtotal ?? 0),
+              icon: WalletIcon,
+              tone: "sky",
+              badge: { label: "Before tax", tone: "info" },
+            },
+            {
+              label: "Total",
+              value: formatMoney(totals?.total ?? 0),
+              icon: WalletIcon,
+              tone: "teal",
+              badge: { label: "Collected", tone: "success" },
+            },
+            {
+              label: "Commission",
+              value: formatMoney(totals?.commission ?? 0),
+              icon: BadgePercentIcon,
+              tone: "violet",
+              badge: { label: "Reps", tone: "info" },
+            },
+          ]}
+        />
+        <DataCardTable
+          storageKey="sales-list"
+          rows={rows}
+          loading={loading}
+          emptyTitle="Nothing to show"
+          emptyDescription="Create your first sale invoice."
+          filters={
+            <ListSearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search sales..."
+            />
+          }
+          toolbar={
+            <TableFiltersSheet
+              activeCount={activeFilterCount}
+              onReset={resetFilters}
+            >
+              <FilterField label="Date range">
+                <DateRangeFilter
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  compact={false}
+                />
+              </FilterField>
+              <FilterField label="Customer">
+                <Select
+                  value={customerId || "__all__"}
+                  onValueChange={(v) => setCustomerId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All customers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All customers</SelectItem>
+                    {(customers ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Location">
+                <Select
+                  value={locationId || "__all__"}
+                  onValueChange={(v) => setLocationId(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All locations</SelectItem>
+                    {(locations ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              <FilterField label="Payment method">
+                <Select
+                  value={paymentMethod || "__all__"}
+                  onValueChange={(v) =>
+                    setPaymentMethod(
+                      v === "__all__" ? "" : (v as PaymentMethod),
+                    )
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All payments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All payments</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="BANK">Bank</SelectItem>
+                    <SelectItem value="CREDIT">Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterField>
+              {canOnBehalf ? (
+                <FilterField label="Sales rep">
                   <Select
-                    value={customerId || "__all__"}
+                    value={soldByUserId || "__all__"}
                     onValueChange={(v) =>
-                      setCustomerId(v === "__all__" ? "" : v)
+                      setSoldByUserId(v === "__all__" ? "" : v)
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All customers" />
+                      <SelectValue placeholder="All reps" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__all__">All customers</SelectItem>
-                      {(customers ?? []).map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
+                      <SelectItem value="__all__">All reps</SelectItem>
+                      {activeUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.fullName}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </FilterField>
-                <FilterField label="Location">
-                  <Select
-                    value={locationId || "__all__"}
-                    onValueChange={(v) =>
-                      setLocationId(v === "__all__" ? "" : v)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All locations" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All locations</SelectItem>
-                      {(locations ?? []).map((l) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          {l.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Payment method">
-                  <Select
-                    value={paymentMethod || "__all__"}
-                    onValueChange={(v) =>
-                      setPaymentMethod(
-                        v === "__all__" ? "" : (v as PaymentMethod)
-                      )
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All payments" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">All payments</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="BANK">Bank</SelectItem>
-                      <SelectItem value="CREDIT">Credit</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                {canOnBehalf ? (
-                  <FilterField label="Sales rep">
-                    <Select
-                      value={soldByUserId || "__all__"}
-                      onValueChange={(v) =>
-                        setSoldByUserId(v === "__all__" ? "" : v)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All reps" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">All reps</SelectItem>
-                        {activeUsers.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.fullName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FilterField>
-                ) : null}
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
-                  <Label htmlFor="include-voided" className="text-sm font-medium">
-                    Include voided
-                  </Label>
-                  <Switch
-                    id="include-voided"
-                    checked={includeVoided}
-                    onCheckedChange={setIncludeVoided}
-                  />
-                </div>
-              </TableFiltersSheet>
-            }
-            pagination={{
-              meta,
-              onPageChange: setPage,
-              onLimitChange: setLimit,
-              disabled: loading,
-            }}
-            columns={[
-              {
-                key: "id",
-                header: "ID",
-                hideable: false,
-                mobilePriority: 4,
-                cell: (r) => (
+              ) : null}
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <Label htmlFor="include-voided" className="text-sm font-medium">
+                  Include voided
+                </Label>
+                <Switch
+                  id="include-voided"
+                  checked={includeVoided}
+                  onCheckedChange={setIncludeVoided}
+                />
+              </div>
+            </TableFiltersSheet>
+          }
+          pagination={{
+            meta,
+            onPageChange: setPage,
+            onLimitChange: setLimit,
+            disabled: loading,
+          }}
+          columns={[
+            {
+              key: "id",
+              header: "ID",
+              hideable: false,
+              mobilePriority: 4,
+              cell: (r) => (
+                <Link
+                  href={`/sales/${r.id}`}
+                  className="font-medium text-[var(--frappe-primary)] hover:underline"
+                >
+                  {r.id.slice(0, 8)}…
+                </Link>
+              ),
+            },
+            {
+              key: "date",
+              header: "Date",
+              mobilePriority: 3,
+              cell: (r) => formatDate(r.createdAt),
+            },
+            {
+              key: "customer",
+              header: "Customer",
+              hideable: false,
+              mobilePriority: 1,
+              cell: (r) =>
+                r.customer?.name ? (
                   <Link
                     href={`/sales/${r.id}`}
-                    className="font-medium text-[var(--frappe-primary)] hover:underline"
+                    className="hover:text-[var(--frappe-primary)] hover:underline"
                   >
-                    {r.id.slice(0, 8)}…
+                    {r.customer.name}
                   </Link>
+                ) : (
+                  "—"
                 ),
-              },
-              {
-                key: "date",
-                header: "Date",
-                mobilePriority: 3,
-                cell: (r) => formatDate(r.createdAt),
-              },
-              {
-                key: "customer",
-                header: "Customer",
-                hideable: false,
-                mobilePriority: 1,
-                cell: (r) =>
-                  r.customer?.name ? (
-                    <Link
-                      href={`/sales/${r.id}`}
-                      className="hover:text-[var(--frappe-primary)] hover:underline"
-                    >
-                      {r.customer.name}
-                    </Link>
-                  ) : (
-                    "—"
-                  ),
-              },
-              {
-                key: "soldBy",
-                header: "Sales rep",
-                defaultVisible: false,
-                cell: (r) => saleRepName(r) ?? "—",
-              },
-              {
-                key: "location",
-                header: "Location",
-                cell: (r) => r.location?.name ?? "—",
-              },
-              {
-                key: "payment",
-                header: "Payment",
-                cell: (r) => r.paymentMethod,
-              },
-              {
-                key: "status",
-                header: "Status",
-                cell: (r) =>
-                  r.status === "VOIDED" ? (
-                    <Badge variant="secondary">Voided</Badge>
-                  ) : (
-                    "Posted"
-                  ),
-              },
-              {
-                key: "commission",
-                header: "Commission",
-                className: "text-right tabular-nums",
-                defaultVisible: false,
-                cell: (r) =>
-                  r.commissionAmount
-                    ? formatMoney(r.commissionAmount)
-                    : formatCommissionRate(
-                        r.commissionPercent,
-                        r.commissionBasis
-                      ) ?? "—",
-              },
-              {
-                key: "total",
-                header: "Amount",
-                className: "text-right",
-                mobilePriority: 2,
-                cell: (r) => formatMoney(documentTotal(r)),
-              },
-            ]}
-          />
+            },
+            {
+              key: "soldBy",
+              header: "Sales rep",
+              defaultVisible: false,
+              cell: (r) => saleRepName(r) ?? "—",
+            },
+            {
+              key: "location",
+              header: "Location",
+              cell: (r) => r.location?.name ?? "—",
+            },
+            {
+              key: "payment",
+              header: "Payment",
+              cell: (r) => r.paymentMethod,
+            },
+            {
+              key: "status",
+              header: "Status",
+              cell: (r) =>
+                r.status === "VOIDED" ? (
+                  <Badge variant="secondary">Voided</Badge>
+                ) : (
+                  "Posted"
+                ),
+            },
+            {
+              key: "commission",
+              header: "Commission",
+              className: "text-right tabular-nums",
+              defaultVisible: false,
+              cell: (r) =>
+                r.commissionAmount
+                  ? formatMoney(r.commissionAmount)
+                  : (formatCommissionRate(
+                      r.commissionPercent,
+                      r.commissionBasis,
+                    ) ?? "—"),
+            },
+            {
+              key: "total",
+              header: "Amount",
+              className: "text-right",
+              mobilePriority: 2,
+              cell: (r) => formatMoney(documentTotal(r)),
+            },
+          ]}
+        />
       </PermissionGate>
     </AppShell>
   );

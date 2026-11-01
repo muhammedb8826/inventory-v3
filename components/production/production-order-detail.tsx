@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -47,20 +46,22 @@ function DetailField({
 
 const FLOW_STEPS = [
   { key: "DRAFT", label: "Draft" },
-  { key: "RELEASED", label: "Released" },
-  { key: "ISSUE", label: "Issue" },
-  { key: "COMPLETE", label: "Complete" },
+  { key: "RELEASED", label: "Materials requested" },
+  { key: "ISSUE", label: "Storekeeper handover" },
+  { key: "COMPLETE", label: "Production started" },
   { key: "SALE", label: "Ready for sale" },
 ] as const;
 
 function flowStepIndex(order: ProductionOrder): number {
   const status = order.status;
-  const issued = (order.lines ?? []).some(
-    (l) => parseFloat(l.quantityIssued ?? "0") > 0,
-  );
   if (order.saleId || status === "COMPLETED") return 4;
-  if (status === "IN_PROGRESS" || (status === "RELEASED" && issued)) return 3;
-  if (status === "RELEASED") return 2;
+  if (status === "IN_PROGRESS") return 3;
+  if (status === "RELEASED")
+    return (order.lines ?? []).every(
+      (l) => Number(l.quantityIssued) >= Number(l.quantityRequired),
+    )
+      ? 2
+      : 1;
   if (status === "DRAFT") return 0;
   if (status === "CANCELLED") return -1;
   return 0;
@@ -88,7 +89,6 @@ export function ProductionOrderDetail({
   const [completeQty, setCompleteQty] = useState(String(remaining || 1));
   const [unbuildQty, setUnbuildQty] = useState(order.quantityCompleted ?? "1");
   const [scrapQty, setScrapQty] = useState("1");
-  const [autoIssue, setAutoIssue] = useState(true);
 
   const lines = order.lines ?? [];
   const status = order.status;
@@ -143,7 +143,7 @@ export function ProductionOrderDetail({
     try {
       await api(`/production-orders/${order.id}/complete`, {
         method: "POST",
-        body: { quantity, autoIssue },
+        body: { quantity, autoIssue: false },
       });
       toast.success("Production completed");
       requestNotificationsRefresh();
@@ -275,11 +275,11 @@ export function ProductionOrderDetail({
                 )
               }
             >
-              Release &amp; reserve
+              Request materials
             </Button>
           ) : null}
         </PermissionGate>
-        <PermissionGate permissions={["production.issue", "production.write"]}>
+        <PermissionGate permission="production.issue">
           {status === "RELEASED" || status === "IN_PROGRESS" ? (
             <Button
               size="sm"
@@ -293,12 +293,29 @@ export function ProductionOrderDetail({
                 )
               }
             >
-              Issue remaining
+              Hand over remaining materials
             </Button>
           ) : null}
         </PermissionGate>
         <PermissionGate permission="production.write">
-          {status === "RELEASED" || status === "IN_PROGRESS" ? (
+          {status === "RELEASED" &&
+          lines.every(
+            (l) => Number(l.quantityIssued) >= Number(l.quantityRequired),
+          ) ? (
+            <Button
+              disabled={busy}
+              onClick={() =>
+                runAction(
+                  `/production-orders/${order.id}/start`,
+                  {},
+                  "Production started",
+                )
+              }
+            >
+              Accept handover & start production
+            </Button>
+          ) : null}
+          {status === "IN_PROGRESS" ? (
             <Button
               size="sm"
               disabled={busy || remaining <= 0}
@@ -427,6 +444,27 @@ export function ProductionOrderDetail({
       ) : null}
 
       <RecordActivity record={order} />
+      {!!order.workflowHistory?.length && (
+        <PageFormCard>
+          <PageFormSection title="Operation history">
+            <ol className="space-y-3">
+              {order.workflowHistory.map((h, i) => (
+                <li
+                  key={i}
+                  className="flex flex-wrap justify-between gap-2 border-b pb-2 text-sm"
+                >
+                  <span>
+                    {h.action} ? {h.actorName ?? h.actorId ?? "Legacy record"}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {formatDate(h.at)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </PageFormSection>
+        </PageFormCard>
+      )}
       <PageFormCard>
         <PageFormSection
           title={order.orderNumber ?? "Order"}
@@ -665,16 +703,10 @@ export function ProductionOrderDetail({
                   required
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={autoIssue}
-                  onCheckedChange={setAutoIssue}
-                  id="auto-issue"
-                />
-                <Label htmlFor="auto-issue" className="font-normal">
-                  Auto-issue remaining materials
-                </Label>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Record finished goods only after the stock keeper has handed
+                over the required materials.
+              </p>
             </div>
             <DialogFooter>
               <Button type="submit" disabled={busy}>

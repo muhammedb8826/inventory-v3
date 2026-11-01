@@ -6,7 +6,7 @@ import {
 
 export function formatMoney(
   value: string | number | undefined,
-  currency: Currency = getCurrencyConfig()
+  currency: Currency = getCurrencyConfig(),
 ): string {
   if (value === undefined || value === null || value === "") return "—";
   const n = typeof value === "string" ? parseFloat(value) : value;
@@ -18,9 +18,19 @@ export function formatMoney(
   return `${currency.symbol} ${amount}`;
 }
 
+/** Unit rates retain small UOM prices; document totals still round to cents. */
+export function formatUnitPrice(
+  value: string | number | undefined | null,
+): string {
+  if (value == null || value === "") return "—";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return `${getCurrencyConfig().symbol} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 10 })}`;
+}
+
 /** ISO code label, e.g. "ETB" — for form hints and column headers. */
 export function formatCurrencyCode(
-  currency: Currency = getCurrencyConfig()
+  currency: Currency = getCurrencyConfig(),
 ): string {
   return currency.code;
 }

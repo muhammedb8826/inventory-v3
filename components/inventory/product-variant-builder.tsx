@@ -105,10 +105,6 @@ export function ProductVariantBuilder({
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!effectiveLocation) {
-      toast.error("Choose a location");
-      return;
-    }
     const selected = rows.filter((r) => r.selected);
     if (
       mode === "new" &&
@@ -126,7 +122,7 @@ export function ProductVariantBuilder({
       await api(`/product-families/${family.id}/variants`, {
         method: "POST",
         body: {
-          locationId: effectiveLocation,
+          locationId: effectiveLocation || undefined,
           variants:
             mode === "new"
               ? selected.map((r) => ({
@@ -139,7 +135,7 @@ export function ProductVariantBuilder({
       });
       toast.success(
         mode === "new"
-          ? "Variants created with zero opening stock"
+          ? "Variants created in the catalog"
           : "Existing item linked; stock and costing preserved",
       );
       setRows([]);
@@ -200,8 +196,7 @@ export function ProductVariantBuilder({
           </div>
           <FormGrid>
             <FormField
-              label="Stock location"
-              required
+              label="Stock location (optional)"
               hint={
                 mode === "existing"
                   ? "Existing balances stay unchanged. A zero balance is added here only if needed."
@@ -212,9 +207,8 @@ export function ProductVariantBuilder({
                 value={effectiveLocation}
                 onChange={(e) => setLocationId(e.target.value)}
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                required
               >
-                <option value="">Select location</option>
+                <option value="">Catalog only ? choose a location later</option>
                 {locations
                   ?.filter((l) => l.isActive !== false)
                   .map((l) => (
