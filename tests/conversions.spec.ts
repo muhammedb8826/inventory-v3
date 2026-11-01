@@ -160,7 +160,7 @@ test("fabric area calculator fills quantity and retains dimensions in the purcha
       },
     }),
   );
-  await page.route("**/api/backend/purchases", (route) =>
+  await page.route("**/api/backend/purchase-orders", (route) =>
     route.fulfill({ status: 201, json: { id: "area-test" } }),
   );
   await page.goto("/purchases/new");
@@ -190,11 +190,18 @@ test("fabric area calculator fills quantity and retains dimensions in the purcha
     .getByRole("combobox", { name: "Payment method", exact: true })
     .click();
   await page.getByRole("button", { name: "Credit", exact: true }).click();
-  const pending = page.waitForRequest(
-    (r) => r.url().endsWith("/api/backend/purchases") && r.method() === "POST",
-  );
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  expect((await pending).postDataJSON().lines[0]).toMatchObject({
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().endsWith("/api/backend/purchase-orders") &&
+        r.request().method() === "POST",
+    ),
+    page
+      .getByRole("button", { name: "Save purchase request", exact: true })
+      .click(),
+  ]);
+  expect(response.status()).toBe(201);
+  expect(response.request().postDataJSON().lines[0]).toMatchObject({
     itemId,
     unitId: unit.id,
     quantity: 6,
@@ -260,7 +267,10 @@ test("unused items allow base-unit correction without overwriting stock cost", a
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(page.getByLabel(/Current stock cost per/)).toHaveAttribute("readonly", "");
+  await expect(page.getByLabel(/Current stock cost per/)).toHaveAttribute(
+    "readonly",
+    "",
+  );
   const pending = page.waitForRequest(
     (r) =>
       r.url().endsWith("/api/backend/inventory/stock-unused") &&
@@ -268,7 +278,9 @@ test("unused items allow base-unit correction without overwriting stock cost", a
   );
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   const body = (await pending).postDataJSON();
-  expect(body).toMatchObject({ unitId: "10000000-0000-4000-8000-000000000006" });
+  expect(body).toMatchObject({
+    unitId: "10000000-0000-4000-8000-000000000006",
+  });
   expect(body).not.toHaveProperty("purchasePrice");
 });
 
