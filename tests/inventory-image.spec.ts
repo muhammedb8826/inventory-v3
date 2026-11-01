@@ -24,7 +24,7 @@ for (const viewport of [
         );
       await route.fulfill({ response, json: body });
     });
-    await page.goto("/inventory", { waitUntil: "domcontentloaded" });
+    await page.goto("/inventory?tab=stock", { waitUntil: "domcontentloaded" });
     for (const size of [
       { width: 400, height: 1000 },
       { width: 1200, height: 400 },

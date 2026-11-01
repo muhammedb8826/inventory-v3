@@ -20,9 +20,8 @@ import {
   Factory,
   MessageSquare,
   MessagesSquare,
-  Palette,
   Warehouse,
-  Ruler,
+  Palette,
 } from "lucide-react";
 
 export interface NavItem {
@@ -39,12 +38,6 @@ export const mainNav: NavItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     permission: "dashboard.read",
-  },
-  {
-    title: "Item catalog",
-    href: "/items",
-    icon: Package,
-    permission: "inventory.read",
   },
   {
     title: "Inventory",
@@ -140,24 +133,6 @@ export const mainNav: NavItem[] = [
 
 export const masterNav: NavItem[] = [
   {
-    title: "Product families",
-    href: "/products",
-    icon: Package,
-    permission: "inventory.read",
-  },
-  {
-    title: "Product attributes",
-    href: "/product-attributes",
-    icon: Palette,
-    permission: "inventory.write",
-  },
-  {
-    title: "Units of measure",
-    href: "/units",
-    icon: Ruler,
-    permission: "inventory.write",
-  },
-  {
     title: "Locations",
     href: "/locations",
     icon: MapPin,
@@ -203,3 +178,12 @@ export const adminNav: NavItem[] = [
     permissions: ["roles.read", "roles.write"],
   },
 ];
+
+/** Product records and configuration belong to the Inventory workspace. */
+export function navigationPath(path: string): string {
+  return ["/items", "/products", "/product-attributes", "/units"].some(
+    (root) => path === root || path.startsWith(`${root}/`),
+  )
+    ? "/inventory"
+    : path;
+}

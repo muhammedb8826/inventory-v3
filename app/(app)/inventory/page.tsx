@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { InventoryProducts } from "@/components/inventory/inventory-products";
+import { InventoryNavigation } from "@/components/inventory/inventory-navigation";
 import { AppShell } from "@/components/app-shell";
 import { RowActionsMenu } from "@/components/shared/row-actions-menu";
 import { RecordTimestamp } from "@/components/shared/record-metadata";
@@ -66,7 +68,6 @@ import { ListSummaryCards } from "@/components/shared/list-summary-cards";
 import { useLocations } from "@/hooks/use-locations";
 import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BoxesIcon, PackageIcon, WalletIcon } from "lucide-react";
 import { ExportInventoryButton } from "@/components/inventory/export-inventory-button";
 import { InventoryAdjustmentsPanel } from "@/components/inventory/inventory-adjustments-panel";
@@ -94,7 +95,16 @@ const VIEW_LOW_STOCK = "low-stock";
 type InventoryTab = "stock" | "adjustments" | "movements";
 
 export default function InventoryPage() {
-  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+  return tab === "stock" || tab === "adjustments" || tab === "movements" ? (
+    <InventoryOperations />
+  ) : (
+    <InventoryProducts />
+  );
+}
+
+function InventoryOperations() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -111,30 +121,6 @@ export default function InventoryPage() {
     [searchParams],
   );
 
-  const setInventoryTab = useCallback(
-    (tab: string) => {
-      const next = new URLSearchParams(searchParams.toString());
-      if (tab === "stock") {
-        next.delete("tab");
-        next.delete("refType");
-        next.delete("refId");
-        next.delete("itemId");
-        next.delete("locationId");
-      } else {
-        next.set("tab", tab);
-        if (tab !== "movements") {
-          next.delete("refType");
-          next.delete("refId");
-          next.delete("itemId");
-          next.delete("locationId");
-        }
-      }
-      const qs = next.toString();
-      router.replace(qs ? `/inventory?${qs}` : "/inventory", { scroll: false });
-    },
-    [router, searchParams],
-  );
-
   const clearMovementLockedFilters = useCallback(() => {
     const next = new URLSearchParams(searchParams.toString());
     next.set("tab", "movements");
@@ -149,7 +135,7 @@ export default function InventoryPage() {
   const [viewMode, setViewMode] = useState<
     typeof VIEW_ALL | typeof VIEW_LOW_STOCK
   >(VIEW_ALL);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const debouncedSearch = useDebouncedValue(search);
@@ -212,9 +198,6 @@ export default function InventoryPage() {
       ]}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/items">Item catalog</Link>
-          </Button>
           <PermissionGate permission="inventory.write">
             <FrappeButtonPrimary asChild>
               <Link
@@ -230,16 +213,6 @@ export default function InventoryPage() {
             </FrappeButtonPrimary>
           </PermissionGate>
           <PermissionGate permission="inventory.read">
-            <p className="mb-4 text-sm text-muted-foreground">
-              Looking for an item without a stock balance?{" "}
-              <Link
-                className="font-medium text-primary underline"
-                href="/items"
-              >
-                Open the item catalog
-              </Link>{" "}
-              to view or edit every SKU.
-            </p>
             <ExportInventoryButton
               filters={exportFilters}
               locationLabel={locationLabel}
@@ -257,392 +230,386 @@ export default function InventoryPage() {
       }
     >
       <PermissionGate permission="inventory.read" showDenied>
-        <Tabs
-          value={activeTab}
-          onValueChange={setInventoryTab}
-          className="gap-4"
-        >
-          <TabsList className="mb-1 h-11 rounded-full bg-muted/60 p-1 shadow-none">
-            <TabsTrigger value="stock" className="rounded-full px-4">
-              All products
-            </TabsTrigger>
-            <TabsTrigger value="adjustments" className="rounded-full px-4">
-              Adjustments
-            </TabsTrigger>
-            <TabsTrigger value="movements" className="rounded-full px-4">
-              Movements
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="stock" className="mt-0 space-y-0">
-            {!isLowStockView ? (
-              <ListSummaryCards
-                items={[
-                  {
-                    label: "Items",
-                    value: meta.total.toLocaleString(),
-                    icon: PackageIcon,
-                    tone: "slate",
-                    badge: { label: "Catalog", tone: "muted" },
-                  },
-                  {
-                    label: "Total qty",
-                    value: formatQty(totals?.quantity ?? 0),
-                    icon: BoxesIcon,
-                    tone: "sky",
-                    badge: { label: "On hand", tone: "info" },
-                  },
-                  {
-                    label: "Stock value",
-                    value: formatMoney(totals?.inventoryValue ?? 0),
-                    icon: WalletIcon,
-                    tone: "teal",
-                    badge: { label: "Healthy", tone: "success" },
-                  },
-                ]}
-              />
-            ) : (
-              <ListSummaryCards
-                items={[
-                  {
-                    label: "Low-stock items",
-                    value: meta.total.toLocaleString(),
-                    icon: PackageIcon,
-                    tone: "amber",
-                    badge: { label: "Urgent", tone: "danger" },
-                  },
-                ]}
-              />
-            )}
-            <DataCardTable
-              storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
-              rows={rows}
-              loading={loading}
-              emptyTitle={
-                isLowStockView
-                  ? "No low-stock items"
-                  : isAllLocations
-                    ? "No stock found"
-                    : "No stock at this location"
-              }
-              emptyDescription={
-                isLowStockView
-                  ? "Items at or below their reorder point will appear here."
-                  : undefined
-              }
-              filters={
-                <ListSearchField
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search stock..."
-                  disabled={isLowStockView}
-                  className={isLowStockView ? "opacity-60" : undefined}
+        <div className="space-y-4">
+          <InventoryNavigation active={activeTab} />
+          {activeTab === "stock" && (
+            <div className="space-y-0">
+              {!isLowStockView ? (
+                <ListSummaryCards
+                  items={[
+                    {
+                      label: "Stock records",
+                      value: meta.total.toLocaleString(),
+                      icon: PackageIcon,
+                      tone: "slate",
+                      badge: { label: "By location", tone: "muted" },
+                    },
+                    {
+                      label: "Total qty",
+                      value: formatQty(totals?.quantity ?? 0),
+                      icon: BoxesIcon,
+                      tone: "sky",
+                      badge: { label: "On hand", tone: "info" },
+                    },
+                    {
+                      label: "Stock value",
+                      value: formatMoney(totals?.inventoryValue ?? 0),
+                      icon: WalletIcon,
+                      tone: "teal",
+                      badge: { label: "Healthy", tone: "success" },
+                    },
+                  ]}
                 />
-              }
-              toolbar={
-                <TableFiltersSheet
-                  activeCount={countActiveFilters([
-                    locationFilter !== ALL_LOCATIONS ? locationFilter : "",
-                    viewMode !== VIEW_ALL ? viewMode : "",
-                    from,
-                    to,
-                  ])}
-                  onReset={() => {
-                    setLocationFilter(ALL_LOCATIONS);
-                    setViewMode(VIEW_ALL);
-                    setFrom("");
-                    setTo("");
-                  }}
-                >
-                  <FilterField label="Location">
-                    <Select
-                      value={locationFilter}
-                      onValueChange={setLocationFilter}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All locations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ALL_LOCATIONS}>
-                          All locations
-                        </SelectItem>
-                        {(locations ?? []).map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name} ({loc.type})
+              ) : (
+                <ListSummaryCards
+                  items={[
+                    {
+                      label: "Low-stock items",
+                      value: meta.total.toLocaleString(),
+                      icon: PackageIcon,
+                      tone: "amber",
+                      badge: { label: "Urgent", tone: "danger" },
+                    },
+                  ]}
+                />
+              )}
+              <DataCardTable
+                storageKey={`inventory-${isLowStockView ? "low" : "all"}`}
+                rows={rows}
+                loading={loading}
+                emptyTitle={
+                  isLowStockView
+                    ? "No low-stock items"
+                    : isAllLocations
+                      ? "No stock found"
+                      : "No stock at this location"
+                }
+                emptyDescription={
+                  isLowStockView
+                    ? "Items at or below their reorder point will appear here."
+                    : undefined
+                }
+                filters={
+                  <ListSearchField
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search stock..."
+                    disabled={isLowStockView}
+                    className={isLowStockView ? "opacity-60" : undefined}
+                  />
+                }
+                toolbar={
+                  <TableFiltersSheet
+                    activeCount={countActiveFilters([
+                      locationFilter !== ALL_LOCATIONS ? locationFilter : "",
+                      viewMode !== VIEW_ALL ? viewMode : "",
+                      from,
+                      to,
+                    ])}
+                    onReset={() => {
+                      setLocationFilter(ALL_LOCATIONS);
+                      setViewMode(VIEW_ALL);
+                      setFrom("");
+                      setTo("");
+                    }}
+                  >
+                    <FilterField label="Location">
+                      <Select
+                        value={locationFilter}
+                        onValueChange={setLocationFilter}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="All locations" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL_LOCATIONS}>
+                            All locations
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FilterField>
-                  <FilterField label="Stock view">
-                    <Select
-                      value={viewMode}
-                      onValueChange={(v) =>
-                        setViewMode(
-                          v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK,
-                        )
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={VIEW_ALL}>All stock</SelectItem>
-                        <SelectItem value={VIEW_LOW_STOCK}>
-                          Low stock only
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FilterField>
-                  <FilterField label="Date range">
-                    <DateRangeFilter
-                      from={from}
-                      to={to}
-                      onFromChange={setFrom}
-                      onToChange={setTo}
-                      disabled={isLowStockView}
-                      compact={false}
-                      className={isLowStockView ? "opacity-60" : undefined}
-                    />
-                  </FilterField>
-                </TableFiltersSheet>
-              }
-              pagination={{
-                meta,
-                onPageChange: setPage,
-                onLimitChange: setLimit,
-                disabled: loading,
-              }}
-              columns={[
-                ...(isAllLocations
-                  ? [
-                      {
-                        key: "location",
-                        header: "Location",
-                        priority: 40,
-                        sortValue: (r: StockRecord) => r.location?.name ?? "",
-                        mobilePriority: 2,
-                        cell: (r: StockRecord) => r.location?.name ?? "—",
-                      },
-                    ]
-                  : []),
-                {
-                  key: "item",
-                  header: "Item",
-                  priority: 10,
-                  sortValue: (r) => r.item.description,
-                  exportValue: (r) => r.item.description,
-                  className: "min-w-[15rem] max-w-[22rem]",
-                  hideable: false,
-                  mobilePriority: 1,
-                  cell: (r) => {
-                    const imageSrc = resolveItemImageUrl(
-                      r.item.imageUrl ?? r.item.imagePath,
-                    );
-                    return (
-                      <StockDetailDialog
-                        record={r}
-                        trigger={
-                          <button
-                            type="button"
-                            className="flex max-w-full items-center gap-3 text-left"
-                          >
-                            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)] shadow-sm">
-                              {imageSrc ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={imageSrc}
-                                  alt=""
-                                  className="size-full object-cover"
-                                />
-                              ) : (
-                                <ImageIcon className="size-4 text-[var(--frappe-text-muted)]" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-[var(--frappe-text)] transition-colors hover:text-[var(--frappe-primary)]">
-                                {r.item.description}
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                {r.item.sku ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="rounded-md px-1.5 py-0 font-mono text-[10px] font-normal"
-                                  >
-                                    {r.item.sku}
-                                  </Badge>
-                                ) : null}
-                                {r.item.itemType ? (
-                                  <Badge
-                                    variant="secondary"
-                                    className="rounded-md px-1.5 py-0 text-[10px] font-normal"
-                                  >
-                                    {itemTypeLabel(r.item.itemType)}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                            </div>
-                          </button>
+                          {(locations ?? []).map((loc) => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.name} ({loc.type})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FilterField>
+                    <FilterField label="Stock view">
+                      <Select
+                        value={viewMode}
+                        onValueChange={(v) =>
+                          setViewMode(
+                            v as typeof VIEW_ALL | typeof VIEW_LOW_STOCK,
+                          )
                         }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={VIEW_ALL}>All stock</SelectItem>
+                          <SelectItem value={VIEW_LOW_STOCK}>
+                            Low stock only
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FilterField>
+                    <FilterField label="Date range">
+                      <DateRangeFilter
+                        from={from}
+                        to={to}
+                        onFromChange={setFrom}
+                        onToChange={setTo}
+                        disabled={isLowStockView}
+                        compact={false}
+                        className={isLowStockView ? "opacity-60" : undefined}
                       />
-                    );
+                    </FilterField>
+                  </TableFiltersSheet>
+                }
+                pagination={{
+                  meta,
+                  onPageChange: setPage,
+                  onLimitChange: setLimit,
+                  disabled: loading,
+                }}
+                columns={[
+                  ...(isAllLocations
+                    ? [
+                        {
+                          key: "location",
+                          header: "Location",
+                          priority: 40,
+                          sortValue: (r: StockRecord) => r.location?.name ?? "",
+                          mobilePriority: 2,
+                          cell: (r: StockRecord) => r.location?.name ?? "—",
+                        },
+                      ]
+                    : []),
+                  {
+                    key: "item",
+                    header: "Item",
+                    priority: 10,
+                    sortValue: (r) => r.item.description,
+                    exportValue: (r) => r.item.description,
+                    className: "min-w-[15rem] max-w-[22rem]",
+                    hideable: false,
+                    mobilePriority: 1,
+                    cell: (r) => {
+                      const imageSrc = resolveItemImageUrl(
+                        r.item.imageUrl ?? r.item.imagePath,
+                      );
+                      return (
+                        <StockDetailDialog
+                          record={r}
+                          trigger={
+                            <button
+                              type="button"
+                              className="flex max-w-full items-center gap-3 text-left"
+                            >
+                              <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--frappe-border)] bg-[var(--frappe-section-head)] shadow-sm">
+                                {imageSrc ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={imageSrc}
+                                    alt=""
+                                    className="size-full object-cover"
+                                  />
+                                ) : (
+                                  <ImageIcon className="size-4 text-[var(--frappe-text-muted)]" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[var(--frappe-text)] transition-colors hover:text-[var(--frappe-primary)]">
+                                  {r.item.description}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                  {r.item.sku ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="rounded-md px-1.5 py-0 font-mono text-[10px] font-normal"
+                                    >
+                                      {r.item.sku}
+                                    </Badge>
+                                  ) : null}
+                                  {r.item.itemType ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="rounded-md px-1.5 py-0 text-[10px] font-normal"
+                                    >
+                                      {itemTypeLabel(r.item.itemType)}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </button>
+                          }
+                        />
+                      );
+                    },
                   },
-                },
-                {
-                  key: "qty",
-                  header: "On hand",
-                  priority: 20,
-                  sortValue: (r) => Number(r.quantity),
-                  exportValue: (r) => r.quantity,
-                  className: "min-w-[9rem]",
-                  hideable: false,
-                  mobilePriority: 2,
-                  cell: (r) => (
-                    <StockLevelBar
-                      quantity={r.quantity}
-                      reorderPoint={r.reorderPoint}
-                      unit={r.item.unit}
-                    />
-                  ),
-                },
-                {
-                  key: "unit",
-                  header: "Unit",
-                  className: "w-20",
-                  defaultVisible: false,
-                  cell: (r) => r.item.unit || "—",
-                },
-                {
-                  key: "sku",
-                  header: "SKU",
-                  className: "w-28 font-mono text-xs",
-                  defaultVisible: false,
-                  cell: (r) => r.item.sku || "—",
-                },
-                {
-                  key: "reorder",
-                  header: "Reorder at",
-                  defaultVisible: false,
-                  priority: 55,
-                  sortValue: (r) => Number(r.reorderPoint ?? 0),
-                  className: "w-28 text-right tabular-nums",
-                  mobilePriority: 4,
-                  cell: (r) =>
-                    r.reorderPoint != null && r.reorderPoint !== ""
-                      ? formatQty(r.reorderPoint)
-                      : "—",
-                },
-                ...(isLowStockView
-                  ? [
-                      {
-                        key: "shortage",
-                        header: "Shortage",
-                        className: "w-28 text-right tabular-nums",
-                        mobilePriority: 3,
-                        cell: (r: StockRecord | LowStockRecord) =>
-                          formatQty((r as LowStockRecord).shortage),
-                      },
-                    ]
-                  : []),
-                {
-                  key: "price",
-                  header: "Unit cost",
-                  defaultVisible: false,
-                  priority: 60,
-                  sortValue: (r) => Number(r.purchasePrice),
-                  className: "w-36 text-right tabular-nums",
-                  mobilePriority: 3,
-                  cell: (r) => formatMoney(r.purchasePrice),
-                },
-                {
-                  key: "value",
-                  header: "Stock value",
-                  priority: 65,
-                  sortValue: (r) =>
-                    Number(r.quantity) * Number(r.purchasePrice),
-                  className: "w-36 text-right tabular-nums",
-                  cell: (r) =>
-                    formatMoney(
-                      parseFloat(r.quantity) * parseFloat(r.purchasePrice),
+                  {
+                    key: "qty",
+                    header: "On hand",
+                    priority: 20,
+                    sortValue: (r) => Number(r.quantity),
+                    exportValue: (r) => r.quantity,
+                    className: "min-w-[9rem]",
+                    hideable: false,
+                    mobilePriority: 2,
+                    cell: (r) => (
+                      <StockLevelBar
+                        quantity={r.quantity}
+                        reorderPoint={r.reorderPoint}
+                        unit={r.item.unit}
+                      />
                     ),
-                },
-                {
-                  key: "available",
-                  header: "Available",
-                  priority: 25,
-                  mobilePriority: 3,
-                  sortValue: (r) =>
-                    Number(
-                      r.available ??
-                        Number(r.quantity) - Number(r.reserved ?? 0),
-                    ),
-                  cell: (r) => (
-                    <span className="font-semibold tabular-nums">
-                      {formatQty(
+                  },
+                  {
+                    key: "unit",
+                    header: "Unit",
+                    className: "w-20",
+                    defaultVisible: false,
+                    cell: (r) => r.item.unit || "—",
+                  },
+                  {
+                    key: "sku",
+                    header: "SKU",
+                    className: "w-28 font-mono text-xs",
+                    defaultVisible: false,
+                    cell: (r) => r.item.sku || "—",
+                  },
+                  {
+                    key: "reorder",
+                    header: "Reorder at",
+                    defaultVisible: false,
+                    priority: 55,
+                    sortValue: (r) => Number(r.reorderPoint ?? 0),
+                    className: "w-28 text-right tabular-nums",
+                    mobilePriority: 4,
+                    cell: (r) =>
+                      r.reorderPoint != null && r.reorderPoint !== ""
+                        ? formatQty(r.reorderPoint)
+                        : "—",
+                  },
+                  ...(isLowStockView
+                    ? [
+                        {
+                          key: "shortage",
+                          header: "Shortage",
+                          className: "w-28 text-right tabular-nums",
+                          mobilePriority: 3,
+                          cell: (r: StockRecord | LowStockRecord) =>
+                            formatQty((r as LowStockRecord).shortage),
+                        },
+                      ]
+                    : []),
+                  {
+                    key: "price",
+                    header: "Unit cost",
+                    defaultVisible: false,
+                    priority: 60,
+                    sortValue: (r) => Number(r.purchasePrice),
+                    className: "w-36 text-right tabular-nums",
+                    mobilePriority: 3,
+                    cell: (r) => formatMoney(r.purchasePrice),
+                  },
+                  {
+                    key: "value",
+                    header: "Stock value",
+                    priority: 65,
+                    sortValue: (r) =>
+                      Number(r.quantity) * Number(r.purchasePrice),
+                    className: "w-36 text-right tabular-nums",
+                    cell: (r) =>
+                      formatMoney(
+                        parseFloat(r.quantity) * parseFloat(r.purchasePrice),
+                      ),
+                  },
+                  {
+                    key: "available",
+                    header: "Available",
+                    priority: 25,
+                    mobilePriority: 3,
+                    sortValue: (r) =>
+                      Number(
                         r.available ??
-                          String(Number(r.quantity) - Number(r.reserved ?? 0)),
-                      )}
-                    </span>
-                  ),
-                },
-                {
-                  key: "reserved",
-                  header: "Reserved",
-                  priority: 26,
-                  defaultVisible: false,
-                  sortValue: (r) => Number(r.reserved ?? 0),
-                  cell: (r) => formatQty(r.reserved ?? "0"),
-                },
-                {
-                  key: "barcode",
-                  header: "Barcode",
-                  priority: 75,
-                  defaultVisible: false,
-                  cell: (r) => (
-                    <span className="font-mono text-xs">
-                      {r.item.barcode ?? "\u2014"}
-                    </span>
-                  ),
-                },
-                {
-                  key: "itemType",
-                  header: "Item type",
-                  priority: 76,
-                  defaultVisible: false,
-                  cell: (r) => itemTypeLabel(r.item.itemType),
-                },
-                {
-                  key: "updatedAt",
-                  header: "Updated at",
-                  priority: 80,
-                  defaultVisible: true,
-                  mobilePriority: 6,
-                  sortValue: (r) => r.updatedAt ?? "",
-                  exportValue: (r) => r.updatedAt ?? "",
-                  cell: (r) => <RecordTimestamp value={r.updatedAt} />,
-                },
-                {
-                  key: "actions",
-                  header: "Actions",
-                  className: "w-14 text-right",
-                  hideable: false,
-                  mobilePriority: 5,
-                  cell: (r) => (
-                    <InventoryRowActions record={r} onSuccess={reload} />
-                  ),
-                },
-              ]}
-            />
-          </TabsContent>
-          <TabsContent value="adjustments" className="mt-0">
-            <InventoryAdjustmentsPanel />
-          </TabsContent>
-          <TabsContent value="movements" className="mt-0">
-            <InventoryMovementsPanel
-              lockedFilters={movementLockedFilters}
-              onClearLockedFilters={clearMovementLockedFilters}
-            />
-          </TabsContent>
-        </Tabs>
+                          Number(r.quantity) - Number(r.reserved ?? 0),
+                      ),
+                    cell: (r) => (
+                      <span className="font-semibold tabular-nums">
+                        {formatQty(
+                          r.available ??
+                            String(
+                              Number(r.quantity) - Number(r.reserved ?? 0),
+                            ),
+                        )}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "reserved",
+                    header: "Reserved",
+                    priority: 26,
+                    defaultVisible: false,
+                    sortValue: (r) => Number(r.reserved ?? 0),
+                    cell: (r) => formatQty(r.reserved ?? "0"),
+                  },
+                  {
+                    key: "barcode",
+                    header: "Barcode",
+                    priority: 75,
+                    defaultVisible: false,
+                    cell: (r) => (
+                      <span className="font-mono text-xs">
+                        {r.item.barcode ?? "\u2014"}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "itemType",
+                    header: "Item type",
+                    priority: 76,
+                    defaultVisible: false,
+                    cell: (r) => itemTypeLabel(r.item.itemType),
+                  },
+                  {
+                    key: "updatedAt",
+                    header: "Updated at",
+                    priority: 80,
+                    defaultVisible: true,
+                    mobilePriority: 6,
+                    sortValue: (r) => r.updatedAt ?? "",
+                    exportValue: (r) => r.updatedAt ?? "",
+                    cell: (r) => <RecordTimestamp value={r.updatedAt} />,
+                  },
+                  {
+                    key: "actions",
+                    header: "Actions",
+                    className: "w-14 text-right",
+                    hideable: false,
+                    mobilePriority: 5,
+                    cell: (r) => (
+                      <InventoryRowActions record={r} onSuccess={reload} />
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          )}
+          {activeTab === "adjustments" && (
+            <div>
+              <InventoryAdjustmentsPanel />
+            </div>
+          )}
+          {activeTab === "movements" && (
+            <div>
+              <InventoryMovementsPanel
+                lockedFilters={movementLockedFilters}
+                onClearLockedFilters={clearMovementLockedFilters}
+              />
+            </div>
+          )}
+        </div>
       </PermissionGate>
     </AppShell>
   );
@@ -678,7 +645,7 @@ function InventoryRowActions({
                 {
                   label: "Edit item",
                   icon: PencilIcon,
-                  href: `/inventory/${record.id}/edit`,
+                  href: `/items/${record.itemId}`,
                 },
               ]
             : []),

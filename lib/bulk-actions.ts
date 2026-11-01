@@ -46,6 +46,28 @@ export function recordBulkActions<T extends { id: string }>(
         }),
     });
   }
+  if (key === "item-catalog") {
+    add(
+      "archive",
+      "Archive selected",
+      "inventory.write",
+      "/items",
+      "PATCH",
+      "",
+      { isActive: false },
+      (row) => row.isActive === true,
+    );
+    add(
+      "restore",
+      "Restore selected",
+      "inventory.write",
+      "/items",
+      "PATCH",
+      "",
+      { isActive: true },
+      (row) => row.isActive === false,
+    );
+  }
   if (key === "sales-list" || key === "purchases-list") {
     const endpoint = key === "sales-list" ? "/sales" : "/purchases";
     add(

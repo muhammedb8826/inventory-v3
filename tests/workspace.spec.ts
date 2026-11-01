@@ -86,7 +86,7 @@ test("inventory prioritizes stock, exposes metadata and opens actions outside th
   page,
 }) => {
   await login(page);
-  await page.goto("/inventory", { waitUntil: "domcontentloaded" });
+  await page.goto("/inventory?tab=stock", { waitUntil: "domcontentloaded" });
   await expect(
     page
       .getByText("Oak writing desk", { exact: true })
@@ -141,7 +141,7 @@ test("mobile inventory cards and navigation remain readable at narrow widths", a
 }) => {
   await login(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/inventory", { waitUntil: "domcontentloaded" });
+  await page.goto("/inventory?tab=stock", { waitUntil: "domcontentloaded" });
   await expect(
     page
       .getByText("Oak writing desk", { exact: true })
@@ -164,7 +164,7 @@ test("mobile inventory cards and navigation remain readable at narrow widths", a
   await expect(
     page.getByRole("heading", { name: "Customers", exact: true }),
   ).toBeVisible();
-  await page.goto("/inventory", { waitUntil: "domcontentloaded" });
+  await page.goto("/inventory?tab=stock", { waitUntil: "domcontentloaded" });
   await expect(
     page
       .getByText("Oak writing desk", { exact: true })

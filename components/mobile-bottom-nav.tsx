@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
+import { navigationPath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -31,7 +32,7 @@ const ITEMS: NavItem[] = [
   },
   {
     href: "/inventory",
-    label: "Items",
+    label: "Inventory",
     icon: Package,
     permission: "inventory.read",
   },
@@ -57,7 +58,7 @@ const ITEMS: NavItem[] = [
 ];
 
 export function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = navigationPath(usePathname());
   const { user } = useAuth();
 
   const visible = ITEMS.filter((item) => hasPermission(user, item.permission));

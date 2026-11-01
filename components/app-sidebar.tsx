@@ -19,7 +19,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
-import { adminNav, mainNav, masterNav, type NavItem } from "@/lib/navigation";
+import {
+  adminNav,
+  mainNav,
+  masterNav,
+  navigationPath,
+  type NavItem,
+} from "@/lib/navigation";
 import { useBranding } from "@/components/branding/branding-provider";
 import { BoxesIcon } from "lucide-react";
 
@@ -38,7 +44,7 @@ function NavItems({
   items: NavItem[];
   user: ReturnType<typeof useAuth>["user"];
 }) {
-  const pathname = usePathname();
+  const pathname = navigationPath(usePathname());
   const { setOpenMobile } = useSidebar();
   const visible = filterNav(items, user);
 
@@ -112,7 +118,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             label: "Daily operations",
             paths: [
-              "/items",
               "/inventory",
               "/sales-orders",
               "/purchase-orders",

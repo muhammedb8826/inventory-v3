@@ -36,6 +36,8 @@ for (const width of [1280, 390]) {
       itemType: "RAW",
       isActive: true,
       stockUnitLocked: true,
+      stock: { onHand: "0", reserved: "0", available: "0", stockValue: "0" },
+      stockBalances: [],
       salesPrice: "1.0000000000",
       effectiveSalesPrice: "1.0000000000",
       imageUrl: "/uploads/items/item-101d4fcd.png",
@@ -87,9 +89,65 @@ for (const width of [1280, 390]) {
       }),
     );
     await page.goto("/items");
+    await page.waitForURL("**/inventory");
+    await expect(
+      page.getByRole("navigation", { name: "Inventory views" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Item catalog", exact: true }),
+    ).toHaveCount(0);
     await page
-      .getByRole("textbox", { name: "Search item catalog" })
+      .getByRole("textbox", { name: "Search products" })
       .fill("CC-CRM-001");
+    const productRow =
+      width >= 768
+        ? page.getByRole("row").filter({ hasText: "Cinema Cloth (Cream)" })
+        : page.getByRole("article").filter({ hasText: "Cinema Cloth (Cream)" });
+    await expect(productRow.getByText("0 cm", { exact: true })).toBeVisible();
+    if (width < 768) {
+      await expect(
+        productRow
+          .locator(":scope > div")
+          .first()
+          .getByRole("link", { name: "Cinema Cloth (Cream)", exact: true }),
+      ).toBeVisible();
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      )
+      .toBe(true);
+    await page.screenshot({
+      path: `test-results/inventory-products-${width}.png`,
+      fullPage: true,
+    });
+    const listAudit = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(listAudit.violations).toEqual([]);
+    await productRow
+      .getByRole("checkbox", { name: `Select record ${id}` })
+      .check();
+    await page
+      .getByRole("button", { name: "Archive selected", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Confirm action", exact: true })
+      .click();
+    await expect.poll(() => item.isActive).toBe(false);
+    await expect(
+      productRow.getByText("Archived", { exact: true }),
+    ).toBeVisible();
+    await productRow
+      .getByRole("checkbox", { name: `Select record ${id}` })
+      .check();
+    await page
+      .getByRole("button", { name: "Restore selected", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Confirm action", exact: true })
+      .click();
+    await expect.poll(() => item.isActive).toBe(true);
     await page
       .getByRole("link", { name: "Cinema Cloth (Cream)", exact: true })
       .click();
@@ -102,6 +160,11 @@ for (const width of [1280, 390]) {
     });
     await expect(image).toBeVisible();
     await expect(image).toHaveCSS("object-fit", "contain");
+    await expect(
+      page.getByText("No stock held at your permitted locations.", {
+        exact: false,
+      }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Edit item", exact: true }).click();
     await page
       .getByRole("textbox", { name: "Item name", exact: true })

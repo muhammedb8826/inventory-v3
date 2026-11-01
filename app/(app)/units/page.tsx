@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { UnitGroups } from "@/components/inventory/unit-groups";
 import { useState } from "react";
 import { PlusIcon, PencilIcon } from "lucide-react";
@@ -68,7 +69,14 @@ export default function UnitsPage() {
     <AppShell
       title="Unit categories"
       subtitle="Configure categories once and reuse their units across your inventory."
+      breadcrumbs={[
+        { label: "Inventory", href: "/inventory" },
+        { label: "Units & conversions" },
+      ]}
     >
+      <Button variant="outline" asChild className="mb-4">
+        <Link href="/inventory">Back to inventory</Link>
+      </Button>
       <UnitGroups units={data ?? []} onCreateUnit={() => setEditing(null)} />
       <details className="mt-8 rounded-xl border bg-card p-4 sm:p-6">
         <summary className="cursor-pointer font-medium">

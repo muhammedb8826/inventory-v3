@@ -123,6 +123,7 @@ export default function ProductAttributesPage() {
       subtitle="Reusable options such as Colour, Material, Finish and Size."
       actions={<Button onClick={() => setEditing(null)}>New attribute</Button>}
       breadcrumbs={[
+        { label: "Inventory", href: "/inventory" },
         { label: "Product families", href: "/products" },
         { label: "Attributes" },
       ]}

@@ -25,10 +25,23 @@ import {
 } from "@/lib/inventory-media";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
-import { errorMessage } from "@/lib/format";
-import type { Item, ItemType, UnitGroup, UnitOfMeasure } from "@/lib/types";
+import { formatQty, formatMoney, errorMessage } from "@/lib/format";
+import type {
+  Item,
+  ItemType,
+  UnitGroup,
+  UnitOfMeasure,
+  StockRecord,
+} from "@/lib/types";
 import { toast } from "sonner";
 type CatalogItem = Item & {
+  stock?: {
+    onHand: string;
+    reserved: string;
+    available: string;
+    stockValue: string;
+  };
+  stockBalances?: StockRecord[];
   salesPrice: string | null;
   isActive: boolean;
   stockUnitLocked: boolean;
@@ -50,11 +63,15 @@ export default function ItemPage({
   return (
     <AppShell
       title={data?.description ?? "Item details"}
-      subtitle="Edit the catalog independently of warehouse stock balances."
+      subtitle="Product details, stock, units and pricing."
+      breadcrumbs={[
+        { label: "Inventory", href: "/inventory" },
+        { label: data?.description ?? "Product" },
+      ]}
     >
       <PermissionGate permission="inventory.read" showDenied>
         <Button asChild variant="outline" className="mb-5">
-          <Link href="/items">Back to item catalog</Link>
+          <Link href="/inventory">Back to inventory</Link>
         </Button>
         {error ? (
           <p role="alert">{error}</p>
@@ -123,6 +140,22 @@ function ItemEditor({
   }
   return (
     <div className="mx-auto max-w-6xl space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          [
+            "On hand",
+            `${formatQty(item.stock?.onHand ?? 0)} ${item.stockUnit?.symbol ?? item.unit ?? ""}`,
+          ],
+          ["Available", formatQty(item.stock?.available ?? 0)],
+          ["Reserved", formatQty(item.stock?.reserved ?? 0)],
+          ["Stock value", formatMoney(item.stock?.stockValue ?? 0)],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl border bg-card p-4">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="mt-2 text-xl font-semibold tabular-nums">{value}</p>
+          </div>
+        ))}
+      </div>
       <RecordActivity record={item} />
       <div className="flex flex-wrap gap-2">
         {canWrite && (
@@ -351,6 +384,45 @@ function ItemEditor({
           </PageFormCard>
         </div>
       </div>
+      <PageFormCard>
+        <PageFormSection
+          title="Stock by location"
+          description="Quantities are shown in this product's stock unit. Receive a purchase or complete production to add stock."
+        >
+          {item.stockBalances?.length ? (
+            <div className="space-y-3">
+              {item.stockBalances.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {s.location?.name ?? "Location"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatQty(s.quantity)} on hand ?{" "}
+                      {formatQty(s.reserved ?? 0)} reserved
+                    </p>
+                  </div>
+                  <PermissionGate permission="inventory.write">
+                    <Button variant="outline" asChild>
+                      <Link href={`/inventory/${s.id}/edit`}>
+                        Location settings
+                      </Link>
+                    </Button>
+                  </PermissionGate>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No stock held at your permitted locations. This product is ready
+              to use in purchases, sales and production.
+            </p>
+          )}
+        </PageFormSection>
+      </PageFormCard>
       {!item.unitGroupId && !item.productFamilyId && canWrite && (
         <PageFormCard>
           <ItemUnitSettings itemId={item.id} onSaved={() => void reload()} />

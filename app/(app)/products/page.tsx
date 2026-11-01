@@ -27,6 +27,10 @@ export default function ProductsPage() {
     <AppShell
       title="Product families"
       subtitle="Configure products once, then manage each variant's stock, cost and manufacturing separately."
+      breadcrumbs={[
+        { label: "Inventory", href: "/inventory" },
+        { label: "Variants" },
+      ]}
       actions={
         canWrite && (
           <Button asChild>
@@ -35,6 +39,9 @@ export default function ProductsPage() {
         )
       }
     >
+      <Button variant="outline" asChild className="mb-4">
+        <Link href="/inventory">Back to inventory</Link>
+      </Button>
       <PermissionGate permission="inventory.read">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Input
