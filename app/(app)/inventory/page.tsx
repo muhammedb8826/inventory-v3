@@ -97,11 +97,7 @@ type InventoryTab = "stock" | "adjustments" | "movements";
 export default function InventoryPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
-  return tab === "stock" || tab === "adjustments" || tab === "movements" ? (
-    <InventoryOperations />
-  ) : (
-    <InventoryProducts />
-  );
+  return tab === "products" ? <InventoryProducts /> : <InventoryOperations />;
 }
 
 function InventoryOperations() {
@@ -232,6 +228,16 @@ function InventoryOperations() {
       <PermissionGate permission="inventory.read" showDenied>
         <div className="space-y-4">
           <InventoryNavigation active={activeTab} />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/products">Variants</Link>
+            </Button>
+            <PermissionGate permission="inventory.write">
+              <Button variant="outline" asChild>
+                <Link href="/units">Units & conversions</Link>
+              </Button>
+            </PermissionGate>
+          </div>
           {activeTab === "stock" && (
             <div className="space-y-0">
               {!isLowStockView ? (
@@ -287,7 +293,7 @@ function InventoryOperations() {
                 emptyDescription={
                   isLowStockView
                     ? "Items at or below their reorder point will appear here."
-                    : undefined
+                    : "Products without a warehouse balance are available in the All products tab."
                 }
                 filters={
                   <ListSearchField

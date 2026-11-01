@@ -89,7 +89,7 @@ for (const width of [1280, 390]) {
       }),
     );
     await page.goto("/items");
-    await page.waitForURL("**/inventory");
+    await page.waitForURL("**/inventory?tab=products");
     await expect(
       page.getByRole("navigation", { name: "Inventory views" }),
     ).toBeVisible();

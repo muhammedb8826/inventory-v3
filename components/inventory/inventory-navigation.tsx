@@ -3,8 +3,8 @@
 import Link from "next/link";
 
 const views = [
-  { key: "products", label: "Products", href: "/inventory" },
-  { key: "stock", label: "Stock by location", href: "/inventory?tab=stock" },
+  { key: "stock", label: "Stock", href: "/inventory" },
+  { key: "products", label: "All products", href: "/inventory?tab=products" },
   {
     key: "adjustments",
     label: "Adjustments",
