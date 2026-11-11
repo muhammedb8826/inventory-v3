@@ -282,9 +282,10 @@ export function ItemUnitSettings({
               {data?.baseUnit.category === "COUNT" &&
                 unit?.category === "AREA" && (
                   <p className="text-xs text-muted-foreground sm:col-span-2">
-                    This legacy conversion mixes categories. Remove it; area
-                    measurements require an area stock unit. Use an explicit
-                    packaging profile for fixed-size pieces.
+                    This legacy conversion mixes categories. Remove it. Use
+                    length-based stock with usable width, or an area stock unit
+                    for sheet goods. Packaging profiles are for fixed-size
+                    pieces only.
                   </p>
                 )}
               <label className="flex min-h-11 items-center gap-2 text-sm">

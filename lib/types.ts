@@ -150,6 +150,10 @@ export interface StockLot extends RecordMetadata {
   itemId: string;
   lotNumber: string;
   expiryDate?: string | null;
+  /** Actual roll usable width (m). */
+  widthMetres?: string | null;
+  /** Dye-lot / shade band. */
+  shade?: string | null;
   quantity: string;
   item?: Item;
   location?: Location;
@@ -198,6 +202,8 @@ export interface Item extends RecordMetadata {
   unitConversions?: ItemConversion[];
   unitId?: string;
   stockUnit?: UnitOfMeasure;
+  /** Usable fabric width (m) when stocked in LENGTH. */
+  defaultWidthMetres?: string | null;
   id: string;
   sku?: string | null;
   barcode?: string | null;
@@ -1127,13 +1133,16 @@ export interface ItemConversion {
   salesDefault?: boolean;
 }
 export interface AreaDimensions {
-  widthMetres: number;
+  /** Optional for LENGTH fabric when the item has defaultWidthMetres. */
+  widthMetres?: number;
   lengthMetres: number;
   count: number;
 }
 export interface UnitSnapshot {
   category?: UnitOfMeasure["category"];
   squareMetreFactor?: string;
+  cutMode?: "AREA" | "LENGTH";
+  areaSquareMetres?: string;
   dimensions?: AreaDimensions;
   unitId: string;
   code: string;
@@ -1150,6 +1159,12 @@ export interface ItemUnitOptions {
   canChangeBaseUnit?: boolean;
   baseUnitLockReason?: string | null;
   baseUnit: UnitOfMeasure;
+  /** True when width×length dimension entry is supported (LENGTH or AREA). */
+  dimensionEntry?: boolean;
+  /** @deprecated use dimensionEntry */
+  fabricCutEntry?: boolean;
+  cutMode?: "AREA" | "LENGTH" | null;
+  defaultWidthMetres?: string | null;
   conversions: ItemConversion[];
   options: {
     unit: UnitOfMeasure;

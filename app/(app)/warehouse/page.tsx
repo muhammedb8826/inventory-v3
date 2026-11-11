@@ -281,6 +281,8 @@ function LotsPanel() {
               <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
                 <th className="px-4 py-2.5">Item</th>
                 <th className="px-4 py-2.5">Lot</th>
+                <th className="px-4 py-2.5">Shade / mark</th>
+                <th className="px-4 py-2.5">Lot width (m)</th>
                 <th className="px-4 py-2.5">Location</th>
                 <th className="px-4 py-2.5">Expiry</th>
                 <th className="px-4 py-2.5 text-right">Qty</th>
@@ -289,13 +291,13 @@ function LotsPanel() {
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-6 text-muted-foreground">
                     Loading…
                   </td>
                 </tr>
               ) : (lots ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-6 text-muted-foreground">
                     No lots with quantity.
                   </td>
                 </tr>
@@ -307,6 +309,12 @@ function LotsPanel() {
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs">
                       {lot.lotNumber}
+                    </td>
+                    <td className="px-4 py-2.5">{lot.shade ?? "—"}</td>
+                    <td className="px-4 py-2.5 tabular-nums">
+                      {lot.widthMetres != null && lot.widthMetres !== ""
+                        ? formatQty(lot.widthMetres)
+                        : "—"}
                     </td>
                     <td className="px-4 py-2.5">
                       {lot.location?.name ?? "—"}

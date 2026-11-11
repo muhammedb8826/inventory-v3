@@ -1,8 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  resolveStockCategory,
+  supportsUsableWidth,
+} from "@/lib/usable-width";
 import {
   PageForm,
   PageFormCard,
@@ -43,6 +47,9 @@ export function ProductFamilyForm({ family }: { family?: ProductFamily }) {
   );
   const [unitId, setUnitId] = useState(family?.unitId ?? "");
   const [groupId, setGroupId] = useState(family?.unitGroupId ?? "");
+  const [defaultWidth, setDefaultWidth] = useState(
+    family?.defaultWidthMetres ?? "",
+  );
   const [attributes, setAttributes] = useState<FamilyAttribute[]>(
     family?.attributes ?? [],
   );
@@ -50,6 +57,16 @@ export function ProductFamilyForm({ family }: { family?: ProductFamily }) {
   const [saving, setSaving] = useState(false);
   const locked = !!family?.variants?.length;
   const baseId = unitId || units?.find((u) => u.code === "PCS")?.id || "";
+  const stockCategory = resolveStockCategory({
+    unitId: baseId,
+    groupId,
+    units,
+    groups,
+  });
+  const showUsableWidth = supportsUsableWidth(stockCategory);
+  useEffect(() => {
+    if (!showUsableWidth && defaultWidth) setDefaultWidth("");
+  }, [showUsableWidth, defaultWidth]);
   const chosenValues = new Set(
     family?.variants?.flatMap((v) =>
       v.variantValues.map((value) => `${value.attributeId}:${value.value}`),
@@ -86,6 +103,11 @@ export function ProductFamilyForm({ family }: { family?: ProductFamily }) {
             itemType,
             unitId: baseId,
             unitGroupId: groupId || null,
+            defaultWidthMetres: showUsableWidth
+              ? defaultWidth.trim() === ""
+                ? null
+                : Number(defaultWidth)
+              : null,
             attributes,
             isActive: active,
           },
@@ -202,6 +224,21 @@ export function ProductFamilyForm({ family }: { family?: ProductFamily }) {
                 disabled={locked || !!groupId}
               />
             </FormField>
+            {showUsableWidth && (
+              <FormField
+                label="Usable width (m)"
+                hint="Copied to new variants. Applies to length-based stock only."
+              >
+                <Input
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={defaultWidth}
+                  placeholder="e.g. 1.5"
+                  onChange={(e) => setDefaultWidth(e.target.value)}
+                />
+              </FormField>
+            )}
           </FormGrid>
           <Link className="text-sm text-primary underline" href="/units">
             Manage units and conversions

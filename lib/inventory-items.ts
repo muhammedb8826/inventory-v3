@@ -71,6 +71,8 @@ export interface DocumentLineInput {
   unitPrice?: string | number;
   lotNumber?: string;
   expiryDate?: string;
+  lotWidthMetres?: string | number;
+  lotShade?: string;
 }
 
 export interface DocumentLineBody {
@@ -82,6 +84,8 @@ export interface DocumentLineBody {
   unitPrice: number;
   lotNumber?: string;
   expiryDate?: string;
+  lotWidthMetres?: number;
+  lotShade?: string;
 }
 
 export function parseDocumentLines(
@@ -121,6 +125,18 @@ export function parseDocumentLines(
     if (lotNumber) row.lotNumber = lotNumber;
     const expiryDate = line.expiryDate?.trim();
     if (expiryDate) row.expiryDate = expiryDate;
+    const lotShade = line.lotShade?.trim();
+    if (lotShade) row.lotShade = lotShade;
+    if (line.lotWidthMetres != null && String(line.lotWidthMetres).trim()) {
+      const width =
+        typeof line.lotWidthMetres === "number"
+          ? line.lotWidthMetres
+          : parseFloat(String(line.lotWidthMetres));
+      if (Number.isNaN(width) || width < 0.001) {
+        return { error: "Enter a valid lot width in metres, or leave blank." };
+      }
+      row.lotWidthMetres = width;
+    }
     parsed.push(row);
   }
 

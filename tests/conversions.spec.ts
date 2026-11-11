@@ -129,7 +129,7 @@ test("purchase unit selection previews stock quantity and adjusts the suggested 
   });
 });
 
-test("fabric area calculator fills quantity and retains dimensions in the purchase request", async ({
+test("area dimension calculator fills quantity and retains dimensions in the purchase request", async ({
   page,
 }) => {
   await login(page);
@@ -176,7 +176,7 @@ test("fabric area calculator fills quantity and retains dimensions in the purcha
   await page.getByRole("combobox", { name: "Item", exact: true }).click();
   await page.getByRole("button", { name: /Oak writing desk/ }).click();
   await page
-    .getByRole("button", { name: "Calculate width x length", exact: true })
+    .getByRole("button", { name: "Calculate width × length", exact: true })
     .click();
   await page.getByLabel("Width (m)", { exact: true }).fill("1.5");
   await page.getByLabel("Length (m)", { exact: true }).fill("2");
@@ -206,6 +206,92 @@ test("fabric area calculator fills quantity and retains dimensions in the purcha
     unitId: unit.id,
     quantity: 6,
     unitPrice: 15,
+    dimensions: { widthMetres: 1.5, lengthMetres: 2, count: 2 },
+  });
+});
+
+test("length dimension entry fills quantity from length not area", async ({
+  page,
+}) => {
+  await login(page);
+  const itemId = "20000000-0000-4000-8000-000000000002";
+  const unit = {
+    id: "10000000-0000-4000-8000-000000000004",
+    code: "M",
+    name: "Metre",
+    symbol: "m",
+    category: "LENGTH",
+    decimalPlaces: 3,
+    isActive: true,
+    requiresReview: false,
+  };
+  await page.route(/\/api\/backend\/inventory(?:\?|$)/, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.data[0].itemId = itemId;
+    body.data[0].item.id = itemId;
+    await route.fulfill({ json: body });
+  });
+  await page.route("**/api/backend/units/items/*", (route) =>
+    route.fulfill({
+      json: {
+        baseUnit: unit,
+        dimensionEntry: true,
+        cutMode: "LENGTH",
+        defaultWidthMetres: "1.5",
+        conversions: [],
+        options: [
+          { unit, factor: "1", purchaseDefault: false, salesDefault: false },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/backend/purchase-orders", (route) =>
+    route.fulfill({ status: 201, json: { id: "length-cut-test" } }),
+  );
+  await page.goto("/purchases/new");
+  await page.getByRole("combobox", { name: "Supplier", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Acacia supplies", exact: true })
+    .click();
+  await page.getByRole("combobox", { name: "Location", exact: true }).click();
+  await page
+    .getByRole("button", { name: /Main warehouse/ })
+    .last()
+    .click();
+  await page.getByRole("combobox", { name: "Item", exact: true }).click();
+  await page.getByRole("button", { name: /Oak writing desk/ }).click();
+  await page
+    .getByRole("button", { name: "Calculate width × length", exact: true })
+    .click();
+  await expect(page.getByLabel("Width (m)", { exact: true })).toHaveValue("1.5");
+  await page.getByLabel("Length (m)", { exact: true }).fill("2");
+  await page.getByLabel("Number of pieces", { exact: true }).fill("2");
+  await page
+    .getByRole("button", { name: "Use calculated length", exact: true })
+    .click();
+  await expect(page.getByLabel("Quantity", { exact: true })).toHaveValue("4");
+  await page.getByLabel("Unit price", { exact: true }).fill("12");
+  await page
+    .getByRole("combobox", { name: "Payment method", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Credit", exact: true }).click();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.url().endsWith("/api/backend/purchase-orders") &&
+        r.request().method() === "POST",
+    ),
+    page
+      .getByRole("button", { name: "Save purchase request", exact: true })
+      .click(),
+  ]);
+  expect(response.status()).toBe(201);
+  expect(response.request().postDataJSON().lines[0]).toMatchObject({
+    itemId,
+    unitId: unit.id,
+    quantity: 4,
+    unitPrice: 12,
     dimensions: { widthMetres: 1.5, lengthMetres: 2, count: 2 },
   });
 });

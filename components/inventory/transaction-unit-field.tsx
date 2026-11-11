@@ -124,6 +124,16 @@ export function TransactionUnitField({
   const squareMetre = options.find(
     (o) => o.unit.code === "M2" && o.unit.category === "AREA",
   );
+  const cutMode: "AREA" | "LENGTH" | null =
+    selected?.unit.category === "LENGTH"
+      ? "LENGTH"
+      : selected?.unit.category === "AREA" && squareMetre
+        ? "AREA"
+        : null;
+  const defaultWidthMetres =
+    data?.defaultWidthMetres != null && data.defaultWidthMetres !== ""
+      ? Number(data.defaultWidthMetres)
+      : null;
   const resolvedRef = useRef(onResolved);
   useEffect(() => {
     resolvedRef.current = onResolved;
@@ -229,19 +239,41 @@ export function TransactionUnitField({
             Editing this line applies the current factor.
           </p>
         )}
-      {selected?.unit.category === "AREA" && squareMetre && onAreaChange && (
+      {cutMode && onAreaChange && (
         <AreaCalculator
           value={dimensions}
           onApply={onAreaChange}
+          mode={cutMode}
+          defaultWidthMetres={defaultWidthMetres}
+          lengthCode={selected!.unit.code}
           areaFactor={
-            Number(
-              (frozenActive ? frozenSnapshot?.squareMetreFactor : undefined) ??
-                squareMetre.factor,
-            ) / Number(selected.factor)
+            cutMode === "AREA" && squareMetre
+              ? Number(
+                  (frozenActive
+                    ? frozenSnapshot?.squareMetreFactor
+                    : undefined) ?? squareMetre.factor,
+                ) / Number(selected!.factor)
+              : 1
           }
-          symbol={selected.unit.symbol}
+          symbol={selected!.unit.symbol}
         />
       )}
+      {cutMode === "LENGTH" &&
+        dimensions &&
+        Number.isFinite(Number(dimensions.widthMetres)) && (
+          <p className="text-xs text-muted-foreground">
+            Coverage ≈{" "}
+            {(
+              Number(dimensions.widthMetres) *
+              Number(dimensions.lengthMetres) *
+              Number(dimensions.count)
+            ).toFixed(3)}{" "}
+            m²
+            {defaultWidthMetres != null
+              ? ` (usable width ${defaultWidthMetres} m)`
+              : ""}
+          </p>
+        )}
     </div>
   );
 }

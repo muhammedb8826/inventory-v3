@@ -82,6 +82,8 @@ interface LineRow {
   unitPrice: string;
   lotNumber?: string;
   expiryDate?: string;
+  lotWidthMetres?: string;
+  lotShade?: string;
   item?: Item;
 }
 
@@ -97,6 +99,8 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
       unitPrice: l.unitSnapshot?.unitPrice ?? l.unitPrice,
       lotNumber: "",
       expiryDate: "",
+      lotWidthMetres: "",
+      lotShade: "",
       item: l.item ? resolveItem(itemId, l.item) : undefined,
     };
   });
@@ -109,6 +113,8 @@ function linesFromPurchase(purchase: Purchase): LineRow[] {
           unitPrice: "",
           lotNumber: "",
           expiryDate: "",
+          lotWidthMetres: "",
+          lotShade: "",
         },
       ];
 }
@@ -159,6 +165,9 @@ export function PurchaseForm({
           unitPrice: String(l.unitPrice),
           lotNumber: l.lotNumber ?? "",
           expiryDate: l.expiryDate ?? "",
+          lotWidthMetres:
+            l.lotWidthMetres != null ? String(l.lotWidthMetres) : "",
+          lotShade: l.lotShade ?? "",
         }))
       : purchase
         ? linesFromPurchase(purchase)
@@ -169,6 +178,8 @@ export function PurchaseForm({
               unitPrice: "",
               lotNumber: "",
               expiryDate: "",
+              lotWidthMetres: "",
+              lotShade: "",
             },
           ],
   );
@@ -218,6 +229,8 @@ export function PurchaseForm({
           unitPrice: "",
           lotNumber: "",
           expiryDate: "",
+          lotWidthMetres: "",
+          lotShade: "",
           item: {
             id: l.componentItemId,
             sku: l.sku ?? undefined,
@@ -806,6 +819,37 @@ export function PurchaseForm({
                         }
                       />
                     </FormField>
+                    <FormField
+                      label="Lot width (m)"
+                      className="form-line-field"
+                      hint="Optional actual width for this lot/batch"
+                    >
+                      <Input
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        className="h-10"
+                        placeholder="e.g. 1.5"
+                        value={line.lotWidthMetres ?? ""}
+                        onChange={(e) =>
+                          updateLine(i, { lotWidthMetres: e.target.value })
+                        }
+                      />
+                    </FormField>
+                    <FormField
+                      label="Lot shade / mark"
+                      className="form-line-field"
+                      hint="Optional batch characteristic"
+                    >
+                      <Input
+                        className="h-10"
+                        placeholder="Shade / mark"
+                        value={line.lotShade ?? ""}
+                        onChange={(e) =>
+                          updateLine(i, { lotShade: e.target.value })
+                        }
+                      />
+                    </FormField>
                     <Button
                       type="button"
                       size="icon"
@@ -837,6 +881,8 @@ export function PurchaseForm({
                         unitPrice: "",
                         lotNumber: "",
                         expiryDate: "",
+                        lotWidthMetres: "",
+                        lotShade: "",
                       },
                     ])
                   }

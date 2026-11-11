@@ -1,7 +1,11 @@
 "use client";
 import { use } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  resolveStockCategory,
+  supportsUsableWidth,
+} from "@/lib/usable-width";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
 import { RecordActivity } from "@/components/shared/record-metadata";
@@ -15,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ItemUnitSettings } from "@/components/inventory/item-unit-settings";
+import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { UnitSelect } from "@/components/inventory/unit-select";
 import { useFetch } from "@/hooks/use-fetch";
 import { api } from "@/lib/api";
@@ -29,6 +34,7 @@ import { formatQty, formatMoney, errorMessage } from "@/lib/format";
 import type {
   Item,
   ItemType,
+  ItemUnitOptions,
   UnitGroup,
   UnitOfMeasure,
   StockRecord,
@@ -107,12 +113,49 @@ function ItemEditor({
     [type, setType] = useState<ItemType>(item.itemType ?? "OTHER");
   const [unitId, setUnitId] = useState(item.unitId ?? ""),
     [groupId, setGroupId] = useState(item.unitGroupId ?? ""),
+    [defaultWidth, setDefaultWidth] = useState(
+      item.defaultWidthMetres ?? "",
+    ),
     [price, setPrice] = useState(item.salesPrice ?? "");
   const { data: units } = useFetch<UnitOfMeasure[]>(() => api("/units"), []);
   const { data: groups } = useFetch<UnitGroup[]>(
     () => api("/units/groups"),
     [],
   );
+  const { data: unitPolicy } = useFetch<ItemUnitOptions>(
+    () => api(`/units/items/${item.id}`),
+    [item.id, item.updatedAt],
+  );
+  const selectedUnit =
+    units?.find((u) => u.id === unitId) ?? item.stockUnit ?? null;
+  const stockCategory = resolveStockCategory({
+    unitId,
+    groupId,
+    units,
+    groups,
+    fallbackCategory: item.stockUnit?.category,
+  });
+  const showUsableWidth = supportsUsableWidth(stockCategory);
+  useEffect(() => {
+    if (!showUsableWidth && defaultWidth) setDefaultWidth("");
+  }, [showUsableWidth, defaultWidth]);
+  const onHand = Number(item.stock?.onHand ?? 0);
+  const unitLocked =
+    !!item.productFamilyId ||
+    !!(item.unitConversions?.length) ||
+    unitPolicy?.canChangeBaseUnit === false ||
+    (unitPolicy == null && item.stockUnitLocked);
+  const unitLockHint =
+    unitPolicy?.baseUnitLockReason ??
+    (item.productFamilyId
+      ? "This variant inherits its stock unit from the product family."
+      : onHand > 0
+        ? "Reduce on-hand quantity to zero, then you can correct a mistaken stock unit."
+        : "Stock unit is locked by related documents or alternative unit settings.");
+  const adjustTarget =
+    item.stockBalances?.find((s) => Number(s.quantity) > 0) ??
+    item.stockBalances?.[0] ??
+    null;
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -124,6 +167,11 @@ function ItemEditor({
           sku: sku || null,
           barcode: barcode || null,
           isActive: active,
+          defaultWidthMetres: showUsableWidth
+            ? defaultWidth.trim() === ""
+              ? null
+              : Number(defaultWidth)
+            : null,
           ...(!item.productFamilyId
             ? { itemType: type, unitId, unitGroupId: groupId || null }
             : {}),
@@ -233,18 +281,68 @@ function ItemEditor({
             <PageFormSection
               title="Units of measure"
               description={
-                item.stockUnitLocked
-                  ? "Stock unit is locked by existing documents, transactions or family configuration. Same-category conversions remain available."
-                  : "Choose the stock unit and a reusable conversion configuration."
+                unitLocked
+                  ? unitLockHint
+                  : "You can correct the stock unit while on-hand is zero and the item is unused on documents. Review cost after changing."
               }
             >
+              {unitLocked && onHand > 0 && !item.productFamilyId && (
+                <div
+                  role="status"
+                  className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100"
+                >
+                  <p className="font-medium">
+                    Stock unit is locked while quantity remains on hand (
+                    {formatQty(onHand)} {item.stockUnit?.symbol ?? item.unit}).
+                  </p>
+                  <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
+                    Adjust quantity to zero first, then edit this item and change
+                    the stock unit. This matches common ERP practice for
+                    correcting a mistaken opening unit.
+                  </p>
+                  {canWrite && adjustTarget && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <StockAdjustDialog
+                        record={adjustTarget}
+                        onSuccess={() => void reload()}
+                        trigger={
+                          <Button type="button" variant="outline" size="sm">
+                            Adjust stock to zero
+                          </Button>
+                        }
+                      />
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/inventory/${adjustTarget.id}/edit`}>
+                          Open location stock
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!unitLocked && (
+                <p
+                  role="status"
+                  className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100"
+                >
+                  Stock unit can be corrected. Choose the right unit, save, then
+                  receive stock again in that unit.
+                </p>
+              )}
               <FormGrid>
-                <FormField label="Base stock unit">
+                <FormField
+                  label="Base stock unit"
+                  hint={
+                    unitLocked
+                      ? undefined
+                      : "Mistaken stock units can be corrected here when quantity is zero."
+                  }
+                >
                   <UnitSelect
                     units={units ?? []}
                     value={unitId}
                     onChange={setUnitId}
-                    disabled={!editing || item.stockUnitLocked || !!groupId}
+                    disabled={!editing || unitLocked || !!groupId}
                   />
                 </FormField>
                 <FormField label="Reusable unit configuration">
@@ -262,8 +360,7 @@ function ItemEditor({
                       ?.filter(
                         (g) =>
                           g.isActive &&
-                          (!item.stockUnitLocked ||
-                            g.baseUnitId === item.unitId),
+                          (!unitLocked || g.baseUnitId === item.unitId),
                       )
                       .map((g) => (
                         <option key={g.id} value={g.id}>
@@ -272,6 +369,22 @@ function ItemEditor({
                       ))}
                   </NativeSelect>
                 </FormField>
+                {showUsableWidth && (
+                  <FormField
+                    label="Usable width (m)"
+                    hint="Product characteristic for length-based stock when entering width × length. Inventory quantity stays in the length unit."
+                  >
+                    <Input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      value={defaultWidth}
+                      disabled={!editing}
+                      placeholder="e.g. 1.5"
+                      onChange={(e) => setDefaultWidth(e.target.value)}
+                    />
+                  </FormField>
+                )}
               </FormGrid>
               <p className="mt-3 text-sm text-muted-foreground">
                 Purchases, sales and BOM quantities convert to this stock unit.{" "}
@@ -401,16 +514,29 @@ function ItemEditor({
                       {s.location?.name ?? "Location"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatQty(s.quantity)} on hand ?{" "}
+                      {formatQty(s.quantity)} on hand ·{" "}
                       {formatQty(s.reserved ?? 0)} reserved
                     </p>
                   </div>
                   <PermissionGate permission="inventory.write">
-                    <Button variant="outline" asChild>
-                      <Link href={`/inventory/${s.id}/edit`}>
-                        Location settings
-                      </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {Number(s.quantity) > 0 && (
+                        <StockAdjustDialog
+                          record={s}
+                          onSuccess={() => void reload()}
+                          trigger={
+                            <Button type="button" variant="outline">
+                              Adjust qty
+                            </Button>
+                          }
+                        />
+                      )}
+                      <Button variant="outline" asChild>
+                        <Link href={`/inventory/${s.id}/edit`}>
+                          Location settings
+                        </Link>
+                      </Button>
+                    </div>
                   </PermissionGate>
                 </div>
               ))}

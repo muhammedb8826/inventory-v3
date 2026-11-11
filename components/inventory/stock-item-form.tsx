@@ -44,8 +44,13 @@ import { skuConflictMessage } from "@/lib/inventory-movements";
 import { requestNotificationsRefresh } from "@/lib/notification-events";
 import type { ItemType, StockRecord } from "@/lib/types";
 import { useFetch } from "@/hooks/use-fetch";
+import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
 import { UnitSelect } from "@/components/inventory/unit-select";
 import type { UnitOfMeasure } from "@/lib/types";
+import {
+  resolveStockCategory,
+  supportsUsableWidth,
+} from "@/lib/usable-width";
 import { useLocations } from "@/hooks/use-locations";
 import { toast } from "sonner";
 import { ImageIcon, Trash2Icon, UploadIcon } from "lucide-react";
@@ -82,9 +87,13 @@ export function StockItemForm({
   >(
     () =>
       record ? api(`/units/items/${record.itemId}`) : Promise.resolve(null),
-    [record?.itemId],
+    [record?.itemId, record?.quantity, record?.updatedAt],
     { enabled: !!record },
   );
+  const [liveQuantity, setLiveQuantity] = useState(record?.quantity ?? "0");
+  useEffect(() => {
+    setLiveQuantity(record?.quantity ?? "0");
+  }, [record?.quantity]);
   const { data: unitGroups } = useFetch<import("@/lib/types").UnitGroup[]>(() =>
     api("/units/groups"),
   );
@@ -92,9 +101,23 @@ export function StockItemForm({
     record?.item.unitGroupId ?? "",
   );
   const [unitId, setUnitId] = useState(record?.item.unitId ?? "");
+  const [defaultWidth, setDefaultWidth] = useState(
+    record?.item.defaultWidthMetres ?? "",
+  );
   const effectiveUnitId =
     unitId || (!record ? units?.find((u) => u.code === "PCS")?.id : "") || "";
   const selectedUnit = units?.find((u) => u.id === effectiveUnitId);
+  const stockCategory = resolveStockCategory({
+    unitId: effectiveUnitId,
+    groupId: unitGroupId,
+    units,
+    groups: unitGroups,
+    fallbackCategory: record?.item.stockUnit?.category,
+  });
+  const showUsableWidth = supportsUsableWidth(stockCategory);
+  useEffect(() => {
+    if (!showUsableWidth && defaultWidth) setDefaultWidth("");
+  }, [showUsableWidth, defaultWidth]);
   const quantityStep =
     selectedUnit?.decimalPlaces === 0
       ? "1"
@@ -188,6 +211,11 @@ export function StockItemForm({
             itemType: itemType || null,
             isPhantom,
             reorderPoint: reorderValue,
+            defaultWidthMetres: showUsableWidth
+              ? defaultWidth.trim() === ""
+                ? null
+                : Number(defaultWidth)
+              : null,
           },
         });
         requestNotificationsRefresh();
@@ -207,6 +235,11 @@ export function StockItemForm({
           unitId: effectiveUnitId,
           unitGroupId: unitGroupId || null,
           isPhantom,
+          defaultWidthMetres: showUsableWidth
+            ? defaultWidth.trim() === ""
+              ? null
+              : Number(defaultWidth)
+            : null,
         };
         if (itemType) body.itemType = itemType;
         if (reorderValue !== null) body.reorderPoint = reorderValue;
@@ -558,7 +591,8 @@ export function StockItemForm({
                 value={effectiveUnitId}
                 onChange={setUnitId}
                 disabled={
-                  isVariant || !!unitGroupId ||
+                  isVariant ||
+                  !!unitGroupId ||
                   unitsLoading ||
                   (isEdit && !unitPolicy?.canChangeBaseUnit)
                 }
@@ -566,13 +600,58 @@ export function StockItemForm({
               <p className="text-xs text-muted-foreground">
                 {isEdit
                   ? unitPolicy?.canChangeBaseUnit
-                    ? "This item has no stock or transaction history. You can correct its base unit; review the unit cost and reorder point before saving."
+                    ? "On-hand is zero and the item is unused on documents. You can correct a mistaken stock unit; review cost and reorder point before saving."
                     : (unitPolicy?.baseUnitLockReason ??
                       "Checking whether the stock unit can be corrected...")
                   : unitGroupId
                     ? "The selected category supplies the stock unit and all conversions."
-                    : "All stock balances and unit costs use this unit."}
+                    : "All stock balances and unit costs use this unit. Prefer quantity 0 if you are unsure of the unit — you can correct it before receiving stock."}
               </p>
+              {isEdit &&
+                record &&
+                !isVariant &&
+                unitPolicy?.canChangeBaseUnit === false &&
+                Number(liveQuantity) > 0 && (
+                  <div
+                    role="status"
+                    className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100"
+                  >
+                    <p>
+                      Current quantity: {formatQty(liveQuantity)}{" "}
+                      {selectedUnit?.symbol ?? record.item.unit}. Reduce it to
+                      zero to unlock a stock-unit correction.
+                    </p>
+                    <StockAdjustDialog
+                      record={{ ...record, quantity: liveQuantity }}
+                      onSuccess={async () => {
+                        const fresh = await api<StockRecord>(
+                          `/inventory/${record.id}`,
+                        );
+                        setLiveQuantity(fresh.quantity);
+                        await reloadUnitPolicy();
+                        toast.message(
+                          Number(fresh.quantity) === 0
+                            ? "Quantity is zero. You can change the stock unit now."
+                            : "Stock adjusted. Reduce remaining quantity to unlock the unit.",
+                        );
+                      }}
+                      trigger={
+                        <Button type="button" variant="outline" size="sm">
+                          Adjust stock to zero
+                        </Button>
+                      }
+                    />
+                  </div>
+                )}
+              {isEdit && unitPolicy?.canChangeBaseUnit && (
+                <p
+                  role="status"
+                  className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100"
+                >
+                  Stock unit can be corrected. Change it above, save, then
+                  receive stock in the new unit.
+                </p>
+              )}
               {selectedUnit?.requiresReview && (
                 <p
                   role="status"
@@ -595,6 +674,22 @@ export function StockItemForm({
                 </div>
               )}
             </FormField>
+            {showUsableWidth && (
+              <FormField
+                label="Usable width (m)"
+                hint="For length-based stock when entering width × length. Inventory quantity stays in the length unit."
+              >
+                <Input
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={defaultWidth}
+                  disabled={isVariant}
+                  placeholder="e.g. 1.5"
+                  onChange={(e) => setDefaultWidth(e.target.value)}
+                />
+              </FormField>
+            )}
 
           </FormGrid>
         </PageFormSection>

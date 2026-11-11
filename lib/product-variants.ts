@@ -40,6 +40,8 @@ export interface ProductFamily extends RecordMetadata {
   stockUnit: UnitOfMeasure;
   unitGroupId: string | null;
   unitGroup: UnitGroup | null;
+  /** Usable fabric width (m); copied to new variants. */
+  defaultWidthMetres?: string | null;
   attributes: FamilyAttribute[];
   isActive: boolean;
   variantCount?: number;

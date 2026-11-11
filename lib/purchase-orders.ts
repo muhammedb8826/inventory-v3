@@ -28,6 +28,8 @@ export interface PurchaseOrder {
       unitId?: string;
       lotNumber?: string;
       expiryDate?: string;
+      lotWidthMetres?: number;
+      lotShade?: string;
       dimensions?: UnitSnapshot["dimensions"];
     }[];
   };
