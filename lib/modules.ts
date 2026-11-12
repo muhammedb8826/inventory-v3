@@ -103,6 +103,25 @@ export const appModules: AppModule[] = [
     permissions: ["inventory.read", "stock_transfer.read", "stocktake.read"],
     menus: [
       {
+        label: "Products",
+        links: [
+          {
+            title: "Products",
+            href: "/inventory/products",
+            icon: Boxes,
+            permission: "inventory.read",
+            description: "SKU catalog, including zero stock",
+          },
+          {
+            title: "Product variants",
+            href: "/products",
+            icon: Layers,
+            permission: "inventory.read",
+            description: "Families and attribute combinations",
+          },
+        ],
+      },
+      {
         label: "Transfers",
         links: [
           {
@@ -151,25 +170,6 @@ export const appModules: AppModule[] = [
             icon: Trash2,
             permission: "inventory.write",
             description: "Write off damaged or unusable stock",
-          },
-        ],
-      },
-      {
-        label: "Products",
-        links: [
-          {
-            title: "Products",
-            href: "/inventory/products",
-            icon: Boxes,
-            permission: "inventory.read",
-            description: "SKU catalog, including zero stock",
-          },
-          {
-            title: "Product variants",
-            href: "/products",
-            icon: Layers,
-            permission: "inventory.read",
-            description: "Families and attribute combinations",
           },
         ],
       },
