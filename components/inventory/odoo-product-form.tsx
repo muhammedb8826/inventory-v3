@@ -386,7 +386,7 @@ export function OdooProductForm({
       </div>
 
       <PageFormCard>
-        <div className="flex flex-col gap-5 border-b border-[var(--frappe-border)] bg-[var(--frappe-section-head)] px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+        <div className="flex flex-col gap-5 border-b border-border px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
           <FormField
             label="Product name"
             required
