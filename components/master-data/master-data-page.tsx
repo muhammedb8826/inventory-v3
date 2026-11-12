@@ -11,14 +11,7 @@ import { FormField, FormGrid } from "@/components/shared/page-form";
 import { ListSearchField } from "@/components/shared/list-search-field";
 import { TableFiltersSheet } from "@/components/shared/table-filters-sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { AppModal } from "@/components/shared/app-modal";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -353,36 +346,25 @@ function CreateDialog({
     }
   }
 
+  const formId = "master-create-form";
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button">
-          <PlusIcon className="size-3.5" />
-          New
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
-          <DialogTitle>New {title}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
-            <div className="app-surface overflow-hidden">
-              <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
-                <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
-                  Details
-                </h2>
-              </div>
-              <div className="p-4">
-                <MasterFieldsForm
-                  fields={fields}
-                  values={values}
-                  setValues={setValues}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        <PlusIcon className="size-3.5" />
+        New
+      </Button>
+      <AppModal
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setValues({});
+        }}
+        title={`New ${title}`}
+        description="Fill in the details below. Fields marked with * are required."
+        size="md"
+        footer={
+          <>
             <Button
               type="button"
               variant="outline"
@@ -390,13 +372,21 @@ function CreateDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
-              Save
+            <Button type="submit" form={formId} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
             </Button>
-          </DialogFooter>
+          </>
+        }
+      >
+        <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+          <MasterFieldsForm
+            fields={fields}
+            values={values}
+            setValues={setValues}
+          />
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppModal>
+    </>
   );
 }
 
@@ -448,61 +438,65 @@ function EditDialog<
     }
   }
 
+  const formId = `master-edit-form-${row.id}`;
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        onOpenChange?.(next);
-        if (next) setValues(rowToValues(row, fields));
-      }}
-    >
+    <>
       {!hideTrigger && (
-        <DialogTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" className="size-8">
-            <PencilIcon className="size-4" />
-            <span className="sr-only">Edit</span>
-          </Button>
-        </DialogTrigger>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={() => {
+            setValues(rowToValues(row, fields));
+            setOpen(true);
+            onOpenChange?.(true);
+          }}
+        >
+          <PencilIcon className="size-4" />
+          <span className="sr-only">Edit</span>
+        </Button>
       )}
-      <DialogContent className="flex max-h-[calc(100dvh-1rem)] max-w-lg flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
-          <DialogTitle>Edit {row.name}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
-            <div className="app-surface overflow-hidden">
-              <div className="space-y-1 border-b border-[var(--frappe-border)] px-4 pt-4">
-                <h2 className="text-base font-semibold tracking-tight text-[var(--frappe-text)]">
-                  Details
-                </h2>
-              </div>
-              <div className="p-4">
-                <MasterFieldsForm
-                  fields={fields}
-                  values={values}
-                  setValues={setValues}
-                  supportsActive={supportsActive}
-                  isEdit
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
+      <AppModal
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          onOpenChange?.(next);
+          if (next) setValues(rowToValues(row, fields));
+        }}
+        title={`Edit ${row.name}`}
+        description="Update the details below, then save."
+        size="md"
+        footer={
+          <>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                onOpenChange?.(false);
+              }}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
-              Save
+            <Button type="submit" form={formId} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
             </Button>
-          </DialogFooter>
+          </>
+        }
+      >
+        <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+          <MasterFieldsForm
+            fields={fields}
+            values={values}
+            setValues={setValues}
+            supportsActive={supportsActive}
+            isEdit
+          />
         </form>
-      </DialogContent>
-    </Dialog>
+      </AppModal>
+    </>
   );
 }
 

@@ -254,19 +254,21 @@
 }
 
 .app-modal {
-  background: var(--frappe-surface);
-  border: 1px solid var(--frappe-border);
-  border-radius: 0.75rem; /* 12px */
-  box-shadow: var(--frappe-shadow-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 2px oklch(0.2 0.02 260 / 0.06),
+    0 24px 48px -12px oklch(0.2 0.02 260 / 0.28);
 }
 
 .app-modal-header {
-  padding: 1rem 1rem 0.875rem;
+  padding: 1.125rem 1.25rem 1rem;
 }
 
 .app-modal-body {
-  padding: 0.875rem 1rem;
-  background: var(--frappe-desk);
+  padding: 1.125rem 1.25rem;
+  background: color-mix(in oklab, var(--muted) 45%, var(--card));
 }
 
 .app-modal-footer {
@@ -276,22 +278,32 @@
   justify-content: flex-end;
   gap: 0.625rem;
   /* Extra inset so actions clear the radius + safe area */
-  padding: 1rem !important;
+  padding: 1rem 1.25rem !important;
   padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
   margin: 0 !important;
 }
 
 @media (min-width: 640px) {
   .app-modal-header {
-    padding: 1.25rem 1.5rem 1rem;
+    padding: 1.35rem 1.5rem 1.1rem;
   }
   .app-modal-body {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
   }
   .app-modal-footer {
     align-items: center;
-    padding: 1rem 1.5rem 1.5rem !important;
+    padding: 1rem 1.5rem 1.35rem !important;
   }
+}
+
+.dark .app-modal {
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.35),
+    0 28px 56px -12px oklch(0 0 0 / 0.55);
+}
+
+.dark .app-modal-body {
+  background: color-mix(in oklab, var(--muted) 35%, var(--card));
 }
 
 /* Mobile: stack modal actions full-width */

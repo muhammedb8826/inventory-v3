@@ -2,13 +2,10 @@
 
 import * as React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  AppModal,
+  bindAppModalTrigger,
+  useAppModal,
+} from "@/components/shared/app-modal";
 
 /**
  * Quick-create fields rendered inside a full-page form (e.g. purchase/sale).
@@ -18,38 +15,35 @@ export function QuickCreateDialogShell({
   open,
   onOpenChange,
   title,
+  description = "Enter the details below. Fields marked with * are required.",
   children,
   footer,
+  size = "sm",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  description?: string;
   children: React.ReactNode;
   footer: React.ReactNode;
+  size?: "sm" | "md" | "lg";
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-w-md">
-        <DialogHeader className="shrink-0 space-y-1 border-b border-[var(--frappe-border)] bg-[var(--frappe-surface)] px-6 pb-4 pt-5 text-left">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            Enter the details below. Fields marked with * are required.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="app-canvas min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
-          {children}
-        </div>
-        <DialogFooter className="app-modal-footer border-t border-[var(--frappe-border)] bg-[var(--frappe-surface)]">
-          {footer}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AppModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      footer={footer}
+      size={size}
+    >
+      {children}
+    </AppModal>
   );
 }
 
 export function useQuickCreateDialog() {
-  const [open, setOpen] = React.useState(false);
-  return { open, setOpen, onOpenChange: setOpen };
+  return useAppModal();
 }
 
 export function bindQuickCreateTrigger(
@@ -57,16 +51,5 @@ export function bindQuickCreateTrigger(
   openDialog: () => void,
   fallback: React.ReactNode,
 ) {
-  if (trigger) {
-    if (React.isValidElement<{ onClick?: React.MouseEventHandler }>(trigger)) {
-      return React.cloneElement(trigger, {
-        onClick: (e: React.MouseEvent) => {
-          trigger.props.onClick?.(e);
-          if (!e.defaultPrevented) openDialog();
-        },
-      });
-    }
-    return trigger;
-  }
-  return fallback;
+  return bindAppModalTrigger(trigger, openDialog, fallback);
 }

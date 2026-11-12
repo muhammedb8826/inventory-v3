@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FrappeButtonPrimary, FrappeButtonSecondary } from "@/components/frappe";
-import { QuickCreateTrigger } from "@/components/shared/quick-create-trigger";
 import {
-  QuickCreateDialogShell,
-  useQuickCreateDialog,
-  bindQuickCreateTrigger,
-} from "@/components/shared/quick-create-dialog-shell";
+  AppModal,
+  bindAppModalTrigger,
+  useAppModal,
+} from "@/components/shared/app-modal";
+import { QuickCreateTrigger } from "@/components/shared/quick-create-trigger";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,15 +30,11 @@ export function QuickLocationDialog({
   onCreated: (location: Location) => void;
   trigger?: React.ReactNode;
 }) {
-  const { open, setOpen, onOpenChange } = useQuickCreateDialog();
+  const { open, setOpen, openModal, onOpenChange } = useAppModal();
   const [name, setName] = useState("");
   const [type, setType] = useState<LocationType>("WAREHOUSE");
   const [address, setAddress] = useState("");
   const [saving, setSaving] = useState(false);
-
-  function openDialog() {
-    setOpen(true);
-  }
 
   async function handleSubmit() {
     if (!name.trim()) {
@@ -70,36 +66,43 @@ export function QuickLocationDialog({
 
   return (
     <>
-      {bindQuickCreateTrigger(
+      {bindAppModalTrigger(
         trigger,
-        openDialog,
-        <QuickCreateTrigger label="New location" onClick={openDialog} />
+        openModal,
+        <QuickCreateTrigger label="New location" onClick={openModal} />,
       )}
-      <QuickCreateDialogShell
+      <AppModal
         open={open}
         onOpenChange={onOpenChange}
         title="New location"
+        description="Warehouses and showrooms hold stock. Add bins later under a parent."
+        size="sm"
         footer={
           <>
-            <FrappeButtonSecondary type="button" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
-            </FrappeButtonSecondary>
-            <FrappeButtonPrimary type="button" disabled={saving} onClick={handleSubmit}>
-              Create
-            </FrappeButtonPrimary>
+            </Button>
+            <Button type="button" disabled={saving} onClick={handleSubmit}>
+              {saving ? "Creating…" : "Create"}
+            </Button>
           </>
         }
       >
-        <div className="grid gap-4 p-4">
+        <div className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="loc-name">
-              Name <span className="text-[var(--frappe-red)]">*</span>
+              Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="loc-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
+              placeholder="e.g. Main warehouse"
             />
           </div>
           <div className="grid gap-2">
@@ -124,10 +127,11 @@ export function QuickLocationDialog({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               rows={2}
+              placeholder="Optional"
             />
           </div>
         </div>
-      </QuickCreateDialogShell>
+      </AppModal>
     </>
   );
 }
