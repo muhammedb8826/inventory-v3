@@ -18,6 +18,7 @@ export default function EditProductFamilyPage() {
       title="Edit product family"
       variant="form"
       breadcrumbs={[
+        { label: "Configuration", href: "/products" },
         { label: "Product families", href: "/products" },
         { label: data?.name ?? "Family", href: `/products/${id}` },
         { label: "Edit" },

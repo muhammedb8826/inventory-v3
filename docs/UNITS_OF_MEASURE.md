@@ -17,7 +17,7 @@ The system uses a managed unit catalog and one base stock unit per item. Purchas
 1. Back up the production database using the existing backup procedure.
 2. Deploy the new API build and run `npm run migration:run` in the cPanel application Node environment **before restarting the API**. Do not enable DB_SYNCHRONIZE. Run `npm run build` first; the required dependencies must already be installed. The migrations are `1749130000000-StructuredUnits` (foundation) and `1749140000000-UnitConversions` (conversion settings, snapshots and cost precision), followed by `1749150000000-ItemUnitCorrections` (safe unused-item corrections). No separate seeding command is needed.
 3. Restart the API, then deploy/restart the frontend. Coordinate this rollout: the old item form can send a recognized unit code/symbol, but clients that omit the unit must be updated.
-4. Open **Masters > Units of measure** with `inventory.write` permission and review any flagged legacy definitions.
+4. Open **Configuration → Units of measure** with `inventory.write` permission and review any flagged legacy definitions.
 
 No production database is modified by local implementation or tests.
 

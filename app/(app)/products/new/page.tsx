@@ -9,6 +9,7 @@ export default function NewProductFamilyPage() {
       subtitle="Define shared details and attributes, then create the variants you offer."
       variant="form"
       breadcrumbs={[
+        { label: "Configuration", href: "/products" },
         { label: "Product families", href: "/products" },
         { label: "New" },
       ]}

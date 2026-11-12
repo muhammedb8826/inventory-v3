@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mainNav, masterNav, adminNav } from "@/lib/navigation";
+import { mainNav, configNav, adminNav } from "@/lib/navigation";
 import { hasPermission, hasAnyPermission } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
 export function WorkspaceSearch() {
@@ -21,7 +21,7 @@ export function WorkspaceSearch() {
   const [query, setQuery] = useState("");
   const items = useMemo(
     () =>
-      [...mainNav, ...masterNav, ...adminNav].filter(
+      [...mainNav, ...configNav, ...adminNav].filter(
         (item) =>
           (item.permission
             ? hasPermission(user, item.permission)

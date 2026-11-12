@@ -22,6 +22,9 @@ import {
   MessagesSquare,
   Warehouse,
   Palette,
+  Layers,
+  Tags,
+  Ruler,
 } from "lucide-react";
 
 export interface NavItem {
@@ -32,6 +35,10 @@ export interface NavItem {
   permissions?: string[];
 }
 
+/**
+ * Operational apps (Odoo/ERPNext style).
+ * Stock ops stay in Inventory; buying/selling/mfg are separate modules.
+ */
 export const mainNav: NavItem[] = [
   {
     title: "Dashboard",
@@ -44,18 +51,6 @@ export const mainNav: NavItem[] = [
     href: "/inventory",
     icon: Package,
     permission: "inventory.read",
-  },
-  {
-    title: "BOMs",
-    href: "/boms",
-    icon: ClipboardList,
-    permission: "bom.read",
-  },
-  {
-    title: "Production",
-    href: "/production-orders",
-    icon: Factory,
-    permission: "production.read",
   },
   {
     title: "Stock Transfers",
@@ -76,10 +71,16 @@ export const mainNav: NavItem[] = [
     permission: "inventory.write",
   },
   {
-    title: "Purchase orders",
-    href: "/purchase-orders",
-    icon: ShoppingCart,
-    permission: "purchase.read",
+    title: "BOMs",
+    href: "/boms",
+    icon: ClipboardList,
+    permission: "bom.read",
+  },
+  {
+    title: "Production",
+    href: "/production-orders",
+    icon: Factory,
+    permission: "production.read",
   },
   {
     title: "Sales orders",
@@ -92,6 +93,24 @@ export const mainNav: NavItem[] = [
     href: "/inquiries",
     icon: MessageSquare,
     permission: "inquiries.read",
+  },
+  {
+    title: "Customers",
+    href: "/customers",
+    icon: Users,
+    permission: "customers.read",
+  },
+  {
+    title: "Purchase orders",
+    href: "/purchase-orders",
+    icon: ShoppingCart,
+    permission: "purchase.read",
+  },
+  {
+    title: "Suppliers",
+    href: "/suppliers",
+    icon: Truck,
+    permission: "suppliers.read",
   },
   {
     title: "Messages",
@@ -131,7 +150,11 @@ export const mainNav: NavItem[] = [
   },
 ];
 
-export const masterNav: NavItem[] = [
+/**
+ * Configuration / masters (Odoo Inventory → Configuration, ERPNext Stock masters).
+ * Product families, attributes, and UoM do not belong under day-to-day Inventory.
+ */
+export const configNav: NavItem[] = [
   {
     title: "Locations",
     href: "/locations",
@@ -139,18 +162,27 @@ export const masterNav: NavItem[] = [
     permission: "locations.read",
   },
   {
-    title: "Suppliers",
-    href: "/suppliers",
-    icon: Truck,
-    permission: "suppliers.read",
+    title: "Product families",
+    href: "/products",
+    icon: Layers,
+    permission: "inventory.read",
   },
   {
-    title: "Customers",
-    href: "/customers",
-    icon: Users,
-    permission: "customers.read",
+    title: "Attributes",
+    href: "/product-attributes",
+    icon: Tags,
+    permission: "inventory.write",
+  },
+  {
+    title: "Units of measure",
+    href: "/units",
+    icon: Ruler,
+    permission: "inventory.write",
   },
 ];
+
+/** @deprecated Use configNav — kept for imports that still expect masterNav. */
+export const masterNav = configNav;
 
 export const adminNav: NavItem[] = [
   {
@@ -179,11 +211,52 @@ export const adminNav: NavItem[] = [
   },
 ];
 
-/** Product records and configuration belong to the Inventory workspace. */
+/** Sidebar group definitions — single source for module layout. */
+export const navGroups: { label: string; paths: string[] }[] = [
+  { label: "Overview", paths: ["/dashboard"] },
+  {
+    label: "Inventory",
+    paths: [
+      "/inventory",
+      "/stock-transfers",
+      "/stocktakes",
+      "/warehouse",
+    ],
+  },
+  {
+    label: "Manufacturing",
+    paths: ["/boms", "/production-orders"],
+  },
+  {
+    label: "Sales",
+    paths: ["/sales-orders", "/inquiries", "/customers"],
+  },
+  {
+    label: "Purchases",
+    paths: ["/purchase-orders", "/suppliers"],
+  },
+  {
+    label: "Finance",
+    paths: [
+      "/credits",
+      "/expenses",
+      "/banks",
+      "/profit-loss",
+      "/reports",
+    ],
+  },
+  { label: "Communication", paths: ["/messages"] },
+];
+
+/**
+ * Map legacy / nested paths to the nav item that should appear active.
+ * Config routes keep their own sidebar entries (not Inventory).
+ */
 export function navigationPath(path: string): string {
-  return ["/items", "/products", "/product-attributes", "/units"].some(
-    (root) => path === root || path.startsWith(`${root}/`),
-  )
-    ? "/inventory"
-    : path;
+  if (path === "/items" || path.startsWith("/items/")) return "/inventory";
+  if (path === "/sales" || path.startsWith("/sales/")) return "/sales-orders";
+  if (path === "/purchases" || path.startsWith("/purchases/")) {
+    return "/purchase-orders";
+  }
+  return path;
 }

@@ -21,8 +21,9 @@ import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
 import {
   adminNav,
+  configNav,
   mainNav,
-  masterNav,
+  navGroups,
   navigationPath,
   type NavItem,
 } from "@/lib/navigation";
@@ -35,6 +36,10 @@ function filterNav(items: NavItem[], user: ReturnType<typeof useAuth>["user"]) {
     if (item.permissions) return hasAnyPermission(user, item.permissions);
     return true;
   });
+}
+
+function isNavActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function NavItems({
@@ -54,8 +59,7 @@ function NavItems({
     <SidebarMenu className="gap-0.5">
       {visible.map((item) => {
         const Icon = item.icon;
-        const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = isNavActive(pathname, item.href);
         return (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton
@@ -83,6 +87,7 @@ function NavItems({
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const { appName } = useBranding();
+  const configVisible = filterNav(configNav, user);
   const adminVisible = filterNav(adminNav, user);
 
   return (
@@ -104,7 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {appName}
                   </span>
                   <span className="truncate text-[11px] text-slate-500 dark:text-muted-foreground">
-                    Inventory workspace
+                    Operations workspace
                   </span>
                 </div>
               </Link>
@@ -113,34 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="gap-1 px-2.5 py-3">
-        {[
-          { label: "Overview", paths: ["/dashboard"] },
-          {
-            label: "Daily operations",
-            paths: [
-              "/inventory",
-              "/sales-orders",
-              "/purchase-orders",
-              "/stock-transfers",
-              "/inquiries",
-            ],
-          },
-          {
-            label: "Warehouse & production",
-            paths: ["/warehouse", "/stocktakes", "/boms", "/production-orders"],
-          },
-          {
-            label: "Finance & insights",
-            paths: [
-              "/credits",
-              "/expenses",
-              "/banks",
-              "/profit-loss",
-              "/reports",
-            ],
-          },
-          { label: "Communication", paths: ["/messages"] },
-        ].map((group) => {
+        {navGroups.map((group) => {
           const items = group.paths.flatMap((path) =>
             mainNav.filter((item) => item.href === path),
           );
@@ -155,14 +133,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroup>
           ) : null;
         })}
-        <SidebarGroup className="mt-1 p-0">
-          <SidebarGroupLabel className="mb-1 px-3">
-            Master data
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <NavItems items={masterNav} user={user} />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {configVisible.length > 0 ? (
+          <SidebarGroup className="mt-1 p-0">
+            <SidebarGroupLabel className="mb-1 px-3">
+              Configuration
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <NavItems items={configNav} user={user} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
         {adminVisible.length > 0 ? (
           <SidebarGroup className="mt-1 p-0">
             <SidebarGroupLabel className="mb-1 px-3">

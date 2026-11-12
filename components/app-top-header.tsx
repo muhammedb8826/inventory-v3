@@ -7,11 +7,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { HeaderClock } from "@/components/header-clock";
 import { HeaderUserMenu } from "@/components/header-user-menu";
 import { WorkspaceSearch } from "@/components/workspace-search";
-import { mainNav, masterNav, adminNav, navigationPath } from "@/lib/navigation";
+import { mainNav, configNav, adminNav, navigationPath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 export function AppTopHeader({ className }: { className?: string }) {
   const path = navigationPath(usePathname());
-  const section = [...mainNav, ...masterNav, ...adminNav]
+  const section = [...mainNav, ...configNav, ...adminNav]
     .filter((item) => path === item.href || path.startsWith(item.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0];
   return (

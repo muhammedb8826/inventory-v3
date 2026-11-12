@@ -187,7 +187,7 @@ function InventoryOperations() {
   return (
     <AppShell
       title="Inventory"
-      subtitle="Products, quantities, and stock health across locations"
+      subtitle="Stock balances, adjustments, and movements across locations"
       breadcrumbs={[
         { label: "Operations", href: "/dashboard" },
         { label: "Inventory" },
@@ -228,16 +228,6 @@ function InventoryOperations() {
       <PermissionGate permission="inventory.read" showDenied>
         <div className="space-y-4">
           <InventoryNavigation active={activeTab} />
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/products">Variants</Link>
-            </Button>
-            <PermissionGate permission="inventory.write">
-              <Button variant="outline" asChild>
-                <Link href="/units">Units & conversions</Link>
-              </Button>
-            </PermissionGate>
-          </div>
           {activeTab === "stock" && (
             <div className="space-y-0">
               {!isLowStockView ? (

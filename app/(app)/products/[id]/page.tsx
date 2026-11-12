@@ -43,6 +43,7 @@ export default function ProductFamilyDetailPage() {
       title={data?.name ?? "Product family"}
       subtitle="Each variant has its own SKU, stock, cost and BOM."
       breadcrumbs={[
+        { label: "Configuration", href: "/products" },
         { label: "Product families", href: "/products" },
         { label: data?.name ?? "Details" },
       ]}

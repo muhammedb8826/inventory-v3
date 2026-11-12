@@ -2,7 +2,7 @@
 
 ## Operator setup
 
-1. Open **Product attributes** in Master data. Create reusable attributes such as Finish, Material or Size, with their allowed values.
+1. Open **Configuration → Attributes**. Create reusable attributes such as Finish, Material or Size, with their allowed values.
 2. Open **Product families → New product family**. Enter the shared name and item type, choose the unit configuration and select the applicable attribute values.
 3. On the family details page, select the values to combine and click **Preview combinations**. Review the generated SKUs, optionally supply barcodes and deselect combinations you do not offer. Previews and saves are limited to 100 combinations per batch; narrow the selected values for larger families.
 4. Choose the initial stock location and create the selected variants. Each is a separate normal item with a zero stock balance. Receive purchases, complete production or post an opening adjustment to add quantities and value.

@@ -67,16 +67,13 @@ export default function UnitsPage() {
   );
   return (
     <AppShell
-      title="Unit categories"
-      subtitle="Configure categories once and reuse their units across your inventory."
+      title="Units of measure"
+      subtitle="Configure units and conversions once, then reuse them across products and documents."
       breadcrumbs={[
-        { label: "Inventory", href: "/inventory" },
-        { label: "Units & conversions" },
+        { label: "Configuration", href: "/units" },
+        { label: "Units of measure" },
       ]}
     >
-      <Button variant="outline" asChild className="mb-4">
-        <Link href="/inventory">Back to inventory</Link>
-      </Button>
       <UnitGroups units={data ?? []} onCreateUnit={() => setEditing(null)} />
       <details className="mt-8 rounded-xl border bg-card p-4 sm:p-6">
         <summary className="cursor-pointer font-medium">

@@ -47,7 +47,7 @@ export function InventoryProducts() {
   return (
     <AppShell
       title="Inventory"
-      subtitle="Manage your products, stock, units and pricing in one place."
+      subtitle="SKU catalog and stock balances. Configure families, attributes, and units under Configuration."
       actions={
         <PermissionGate permission="inventory.write">
           <Button asChild>
@@ -58,19 +58,6 @@ export function InventoryProducts() {
     >
       <PermissionGate permission="inventory.read" showDenied>
         <InventoryNavigation active="products" />
-        <div className="my-5 flex flex-wrap items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/products">Variants</Link>
-          </Button>
-          <PermissionGate permission="inventory.write">
-            <Button variant="outline" asChild>
-              <Link href="/product-attributes">Variant attributes</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/units">Units & conversions</Link>
-            </Button>
-          </PermissionGate>
-        </div>
         {error && (
           <p role="alert" className="text-destructive">
             {error}
