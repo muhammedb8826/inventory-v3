@@ -1,37 +1,16 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
 import { OdooProductForm } from "@/components/inventory/odoo-product-form";
-import { PageLoading } from "@/components/shared/page-loading";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-function NewInventoryBody() {
-  const searchParams = useSearchParams();
-  const locationId = searchParams.get("locationId") ?? undefined;
-
-  return (
-    <PermissionGate
-      permission="inventory.write"
-      fallback={
-        <p className="text-sm text-muted-foreground">
-          You do not have permission to add inventory.
-        </p>
-      }
-    >
-      <OdooProductForm locationId={locationId} />
-    </PermissionGate>
-  );
-}
 
 export default function NewInventoryPage() {
   return (
     <AppShell
       title="New product"
-      subtitle="General information — Sales, Purchase and Inventory tabs come later."
+      subtitle="General information — stock location defaults to your warehouse."
       variant="form"
       actions={
         <Button variant="outline" asChild>
@@ -44,9 +23,16 @@ export default function NewInventoryPage() {
         { label: "New" },
       ]}
     >
-      <Suspense fallback={<PageLoading />}>
-        <NewInventoryBody />
-      </Suspense>
+      <PermissionGate
+        permission="inventory.write"
+        fallback={
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to add inventory.
+          </p>
+        }
+      >
+        <OdooProductForm />
+      </PermissionGate>
     </AppShell>
   );
 }

@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import {
   ArrowLeftRightIcon,
   BarChart3Icon,
-  FileTextIcon,
   FlaskConicalIcon,
   PackageIcon,
   RefreshCwIcon,
@@ -25,7 +24,6 @@ export type ProductSmartStats = {
   onHand: number;
   forecasted: number;
   bomCount: number;
-  documentCount: number;
   purchased: number;
   incoming: number;
   sold: number;
@@ -39,7 +37,6 @@ const EMPTY_STATS: ProductSmartStats = {
   onHand: 0,
   forecasted: 0,
   bomCount: 0,
-  documentCount: 0,
   purchased: 0,
   incoming: 0,
   sold: 0,
@@ -169,7 +166,6 @@ export function useProductSmartStats(
         onHand,
         forecasted: available + incoming,
         bomCount: boms?.meta.total ?? 0,
-        documentCount: 0,
         purchased,
         incoming,
         sold,
@@ -298,16 +294,6 @@ export function ProductSmartButtons({
           {
             value: String(stats.bomCount),
             label: "Bill of Materials",
-          },
-        ]}
-      />
-      <SmartButton
-        disabled
-        icon={<FileTextIcon />}
-        lines={[
-          {
-            value: String(stats.documentCount),
-            label: "Documents",
           },
         ]}
       />

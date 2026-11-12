@@ -2917,8 +2917,11 @@ export interface components {
             sku?: string;
             barcode?: string;
             description: string;
-            /** Format: uuid */
-            locationId: string;
+            /**
+             * Format: uuid
+             * Optional. Defaults to the first active warehouse (then showroom / any location).
+             */
+            locationId?: string;
             quantity: number;
             purchasePrice: number;
             unit?: string;
