@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -19,72 +19,212 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission, hasPermission } from "@/lib/permissions";
+import { isNavItemActive } from "@/lib/navigation";
 import {
-  adminNav,
-  configNav,
-  isNavItemActive,
-  mainNav,
-  navGroups,
-  type NavItem,
-} from "@/lib/navigation";
+  appModules,
+  resolveActiveApp,
+  type AppModule,
+  type ModuleLink,
+} from "@/lib/modules";
 import { useBranding } from "@/components/branding/branding-provider";
-import { BoxesIcon } from "lucide-react";
+import { BoxesIcon, LayoutGridIcon, ArrowLeftIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Suspense } from "react";
 
-function filterNav(items: NavItem[], user: ReturnType<typeof useAuth>["user"]) {
-  return items.filter((item) => {
-    if (item.permission) return hasPermission(user, item.permission);
-    if (item.permissions) return hasAnyPermission(user, item.permissions);
-    return true;
-  });
+function canSeeLink(
+  link: Pick<ModuleLink, "permission" | "permissions">,
+  user: ReturnType<typeof useAuth>["user"],
+) {
+  if (link.permission) return hasPermission(user, link.permission);
+  if (link.permissions) return hasAnyPermission(user, link.permissions);
+  return true;
 }
 
-function NavItems({
-  items,
+function canSeeApp(mod: AppModule, user: ReturnType<typeof useAuth>["user"]) {
+  return hasAnyPermission(user, mod.permissions);
+}
+
+function linkIsActive(
+  pathname: string,
+  search: string,
+  href: string,
+): boolean {
+  const [pathPart, queryPart] = href.split("?");
+  if (queryPart) {
+    if (pathname !== pathPart && !pathname.startsWith(`${pathPart}/`)) {
+      return false;
+    }
+    const want = new URLSearchParams(queryPart);
+    const have = new URLSearchParams(search);
+    for (const [key, value] of want.entries()) {
+      if (have.get(key) !== value) return false;
+    }
+    return true;
+  }
+  if (href === "/inventory") {
+    const tab = new URLSearchParams(search).get("tab");
+    if (tab === "adjustments" || tab === "movements") return false;
+    return (
+      pathname === "/inventory" ||
+      /^\/inventory\/[^/]+(\/edit)?$/.test(pathname)
+    );
+  }
+  return isNavItemActive(pathname, href);
+}
+
+function AppsSwitcherNav({
   user,
 }: {
-  items: NavItem[];
   user: ReturnType<typeof useAuth>["user"];
 }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const visible = filterNav(items, user);
-
-  if (visible.length === 0) return null;
+  const visible = appModules.filter((m) => canSeeApp(m, user));
 
   return (
-    <SidebarMenu className="gap-0.5">
-      {visible.map((item) => {
-        const Icon = item.icon;
-        const active = isNavItemActive(pathname, item.href);
-        return (
-          <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton
-              asChild
-              isActive={active}
-              tooltip={item.title}
-              className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
-            >
-              <Link
-                href={item.href}
-                onClick={() => setOpenMobile(false)}
-                aria-current={active ? "page" : undefined}
+    <SidebarGroup className="px-0 pb-1 pt-2">
+      <SidebarGroupLabel className="mb-1 px-3">Applications</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu className="gap-0.5">
+          {visible.map((mod) => {
+            const Icon = mod.icon;
+            const active =
+              pathname === mod.href ||
+              (mod.href !== "/apps" &&
+                (pathname === mod.href ||
+                  pathname.startsWith(`${mod.href}/`)));
+            return (
+              <SidebarMenuItem key={mod.id}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={active && pathname !== "/apps"}
+                  tooltip={mod.name}
+                  className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
+                >
+                  <Link
+                    href={mod.href}
+                    onClick={() => setOpenMobile(false)}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <Icon className="size-4 opacity-90" style={{ color: mod.color }} />
+                    <span>{mod.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
+function InAppNav({
+  app,
+  user,
+}: {
+  app: AppModule;
+  user: ReturnType<typeof useAuth>["user"];
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const { setOpenMobile } = useSidebar();
+
+  return (
+    <>
+      <SidebarGroup className="px-0 pb-1 pt-2">
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="All apps"
+                className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
               >
-                <Icon className="size-4 opacity-90" />
-                <span>{item.title}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+                <Link href="/apps" onClick={() => setOpenMobile(false)}>
+                  <ArrowLeftIcon className="size-4 opacity-90" />
+                  <span>All apps</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === app.href}
+                tooltip={`${app.name} home`}
+                className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
+              >
+                <Link href={app.href} onClick={() => setOpenMobile(false)}>
+                  <LayoutGridIcon className="size-4 opacity-90" />
+                  <span>{app.name} overview</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      {app.menus.map((group) => {
+        const links = group.links.filter((link) => canSeeLink(link, user));
+        if (links.length === 0) return null;
+        return (
+          <SidebarGroup key={group.label} className="px-0 pb-1 pt-2">
+            <SidebarGroupLabel className="mb-1 px-3">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {links.map((link) => {
+                  const Icon = link.icon;
+                  const active = linkIsActive(pathname, search, link.href);
+                  return (
+                    <SidebarMenuItem key={link.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={link.title}
+                        className="workspace-nav-link h-10 rounded-xl px-3 text-[13px] font-medium"
+                      >
+                        <Link
+                          href={link.href}
+                          onClick={() => setOpenMobile(false)}
+                          aria-current={active ? "page" : undefined}
+                        >
+                          <Icon className="size-4 opacity-90" />
+                          <span>{link.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         );
       })}
-    </SidebarMenu>
+    </>
   );
+}
+
+function SidebarBody() {
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const activeApp = resolveActiveApp(pathname);
+
+  if (!activeApp) {
+    return <AppsSwitcherNav user={user} />;
+  }
+
+  return <InAppNav app={activeApp} user={user} />;
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const { appName } = useBranding();
-  const configVisible = filterNav(configNav, user);
-  const adminVisible = filterNav(adminNav, user);
+  const pathname = usePathname();
+  const activeApp = resolveActiveApp(pathname);
+  const HeaderIcon = activeApp?.icon ?? BoxesIcon;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -96,16 +236,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               size="lg"
               className="h-12 rounded-xl px-2.5 data-[slot=sidebar-menu-button]:p-2!"
             >
-              <Link href="/dashboard">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 ring-1 ring-primary/20">
-                  <BoxesIcon className="size-5" />
+              <Link href={activeApp ? activeApp.href : "/apps"}>
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-xl text-primary-foreground shadow-sm ring-1 ring-primary/20",
+                    activeApp ? "" : "bg-primary shadow-primary/20",
+                  )}
+                  style={
+                    activeApp
+                      ? {
+                          backgroundColor: activeApp.color,
+                          boxShadow: `0 4px 14px ${activeApp.color}44`,
+                        }
+                      : undefined
+                  }
+                >
+                  <HeaderIcon className="size-5" />
                 </span>
                 <div className="grid min-w-0 flex-1 text-left leading-tight">
                   <span className="truncate text-[15px] font-semibold tracking-tight text-slate-800 dark:text-sidebar-foreground">
-                    {appName}
+                    {activeApp ? activeApp.name : appName}
                   </span>
                   <span className="truncate text-[11px] text-slate-500 dark:text-muted-foreground">
-                    Operations workspace
+                    {activeApp ? "Application" : "All applications"}
                   </span>
                 </div>
               </Link>
@@ -114,41 +267,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="gap-1 px-2.5 py-3">
-        {navGroups.map((group) => {
-          const items = group.paths.flatMap((path) =>
-            mainNav.filter((item) => item.href === path),
-          );
-          return filterNav(items, user).length > 0 ? (
-            <SidebarGroup key={group.label} className="px-0 pb-1 pt-2">
-              <SidebarGroupLabel className="mb-1 px-3">
-                {group.label}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <NavItems items={items} user={user} />
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null;
-        })}
-        {configVisible.length > 0 ? (
-          <SidebarGroup className="mt-1 p-0">
-            <SidebarGroupLabel className="mb-1 px-3">
-              Configuration
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <NavItems items={configNav} user={user} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
-        {adminVisible.length > 0 ? (
-          <SidebarGroup className="mt-1 p-0">
-            <SidebarGroupLabel className="mb-1 px-3">
-              Administration
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <NavItems items={adminNav} user={user} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
+        <Suspense fallback={null}>
+          <SidebarBody />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-2">
         {user ? (

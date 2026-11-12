@@ -32,13 +32,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const requestedRedirect = searchParams.get("redirect") ?? "/dashboard";
+  const requestedRedirect = searchParams.get("redirect") ?? "/apps";
   const redirectTo =
     requestedRedirect.startsWith("/") &&
     !requestedRedirect.startsWith("//") &&
     !requestedRedirect.includes("\\")
       ? requestedRedirect
-      : "/dashboard";
+      : "/apps";
   const loginMessage =
     searchParams.get("message") === "password-changed"
       ? "Password updated. Sign in with your new password."

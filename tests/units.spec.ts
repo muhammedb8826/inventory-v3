@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 async function login(page:import('@playwright/test').Page){
-  await page.goto('/login');await page.getByLabel(/email/i).fill('test@example.test');await page.getByLabel('Password',{exact:true}).fill('TestPassword123!');await page.getByRole('button',{name:/sign in|log in|login/i}).click();await page.waitForURL('**/dashboard');
+  await page.goto('/login');await page.getByLabel(/email/i).fill('test@example.test');await page.getByLabel('Password',{exact:true}).fill('TestPassword123!');await page.getByRole('button',{name:/sign in|log in|login/i}).click();await page.waitForURL('**/apps');
 }
 test('stock unit selection is searchable and controls quantity precision',async({page})=>{
   await login(page);await page.goto('/inventory/new');

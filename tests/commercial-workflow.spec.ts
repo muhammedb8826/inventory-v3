@@ -16,7 +16,7 @@ async function login(page: Page) {
   await page.getByLabel(/email/i).fill("test@example.test");
   await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/apps");
 }
 for (const width of [1280, 390]) {
   test(`historical catalog item stays editable without stock at ${width}px`, async ({

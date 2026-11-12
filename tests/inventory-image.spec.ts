@@ -11,7 +11,7 @@ for (const viewport of [
     await page.getByLabel(/email/i).fill("test@example.test");
     await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
     await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-    await page.waitForURL("**/dashboard");
+    await page.waitForURL("**/apps");
     let width = 400,
       height = 1000;
     await page.route("**/api/backend/inventory/stock-a", async (route) => {

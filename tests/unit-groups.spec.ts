@@ -20,7 +20,7 @@ test("configure a reusable group once and select it on a new item", async ({
   await page.getByLabel(/email/i).fill("test@example.test");
   await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/apps");
   await page.goto("/units");
   await page.getByRole("button", { name: "New category", exact: true }).click();
   const dialog = page.getByRole("dialog");
@@ -165,7 +165,7 @@ test("measurement categories reject unrelated units while explicit profiles allo
   await page.getByLabel(/email/i).fill("test@example.test");
   await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/apps");
   await page.goto("/units");
   await page.getByRole("button", { name: "New category", exact: true }).click();
   let dialog = page.getByRole("dialog");
@@ -293,7 +293,7 @@ test("invalid existing standard ratios require explicit review before saving", a
   await page.getByLabel(/email/i).fill("test@example.test");
   await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/apps");
   await page.goto("/units");
   await expect(
     page.getByText("Review required", { exact: true }).filter({ visible: true }),

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard,
+  LayoutGrid,
   Package,
   Plus,
   Receipt,
@@ -19,20 +19,19 @@ type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  permission: string;
+  permission?: string;
   fab?: boolean;
 };
 
 const ITEMS: NavItem[] = [
   {
-    href: "/dashboard",
-    label: "Home",
-    icon: LayoutDashboard,
-    permission: "dashboard.read",
+    href: "/apps",
+    label: "Apps",
+    icon: LayoutGrid,
   },
   {
-    href: "/inventory",
-    label: "Stock",
+    href: "/apps/inventory",
+    label: "Inventory",
     icon: Package,
     permission: "inventory.read",
   },
@@ -44,13 +43,13 @@ const ITEMS: NavItem[] = [
     fab: true,
   },
   {
-    href: "/sales",
+    href: "/apps/sales",
     label: "Sales",
     icon: Receipt,
     permission: "sales.read",
   },
   {
-    href: "/purchases",
+    href: "/apps/purchases",
     label: "Buy",
     icon: ShoppingCart,
     permission: "purchase.read",
@@ -61,7 +60,9 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const visible = ITEMS.filter((item) => hasPermission(user, item.permission));
+  const visible = ITEMS.filter(
+    (item) => !item.permission || hasPermission(user, item.permission),
+  );
 
   if (visible.length === 0) return null;
 

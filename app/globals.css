@@ -1031,3 +1031,70 @@
   :is(input, textarea, select, button[role="combobox"]) {
   scroll-margin-block: 6rem;
 }
+
+/* Odoo-style apps launcher — explicit grid so it never collapses to 1 column */
+.apps-launcher {
+  width: 100%;
+}
+.apps-launcher-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: 2rem;
+  width: 100%;
+  align-items: start;
+  justify-items: center;
+}
+@media (min-width: 480px) {
+  .apps-launcher-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+  .apps-launcher-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .apps-launcher-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.apps-launcher-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  max-width: 7rem;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+}
+.apps-launcher-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+}
+.apps-launcher-icon {
+  display: flex;
+  width: 4.25rem;
+  height: 4.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 0.08);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.apps-launcher-item:hover .apps-launcher-icon {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgb(15 23 42 / 0.12);
+}
+.apps-launcher-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--foreground);
+}

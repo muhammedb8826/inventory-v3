@@ -18,7 +18,7 @@ async function login(page: Page) {
   await page.getByLabel(/email/i).fill("test@example.test");
   await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
   await page.getByRole("button", { name: /sign in|log in|login/i }).click();
-  await page.waitForURL("**/dashboard");
+  await page.waitForURL("**/apps");
 }
 async function fixture(page: Page, existingFamily = false) {
   let attributes: Record<string, unknown>[] = existingFamily
