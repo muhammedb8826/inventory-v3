@@ -4,13 +4,14 @@ import Link from "next/link";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { AppModuleNav } from "@/components/apps/app-module-nav";
+import { InventoryOverview } from "@/components/apps/inventory-overview";
 import { ModuleMenuGrid } from "@/components/apps/apps-home";
 import { Button } from "@/components/ui/button";
 import { getAppModule } from "@/lib/modules";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission } from "@/lib/permissions";
 import { AccessDenied } from "@/components/shared/access-denied";
-import { cn } from "@/lib/utils";
 
 export default function AppModulePage({
   params,
@@ -33,12 +34,14 @@ export default function AppModulePage({
     );
   }
 
-  const Icon = mod.icon;
-
   return (
     <AppShell
       title={mod.name}
-      subtitle={mod.description}
+      subtitle={
+        mod.id === "inventory"
+          ? "Operations at a glance — open a card to work the queue"
+          : mod.description
+      }
       breadcrumbs={[
         { label: "Apps", href: "/apps" },
         { label: mod.name },
@@ -49,23 +52,12 @@ export default function AppModulePage({
         </Button>
       }
     >
-      <div className="mb-6 flex items-center gap-3">
-        <span
-          className={cn(
-            "flex size-12 items-center justify-center rounded-2xl",
-            mod.tint,
-          )}
-        >
-          <Icon className="size-6" style={{ color: mod.color }} />
-        </span>
-        <div>
-          <p className="text-sm font-medium">{mod.name}</p>
-          <p className="text-xs text-muted-foreground">
-            Menus are grouped so operations stay separate from configuration.
-          </p>
-        </div>
-      </div>
-      <ModuleMenuGrid module={mod} />
+      <AppModuleNav module={mod} />
+      {mod.id === "inventory" ? (
+        <InventoryOverview />
+      ) : (
+        <ModuleMenuGrid module={mod} />
+      )}
     </AppShell>
   );
 }
