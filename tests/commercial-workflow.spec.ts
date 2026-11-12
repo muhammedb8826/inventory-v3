@@ -89,12 +89,12 @@ for (const width of [1280, 390]) {
       }),
     );
     await page.goto("/items");
-    await page.waitForURL("**/inventory?tab=products");
+    await page.waitForURL("**/inventory/products");
     await expect(
-      page.getByRole("navigation", { name: "Inventory views" }),
+      page.getByRole("heading", { name: "Products", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Item catalog", exact: true }),
+      page.getByRole("navigation", { name: "Stock views" }),
     ).toHaveCount(0);
     await page
       .getByRole("textbox", { name: "Search products" })

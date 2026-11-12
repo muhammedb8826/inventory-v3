@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { InventoryNavigation } from "@/components/inventory/inventory-navigation";
 import { NativeSelect } from "@/components/ui/native-select";
 import { useLocations } from "@/hooks/use-locations";
 import { AppShell } from "@/components/app-shell";
@@ -46,18 +45,21 @@ export function InventoryProducts() {
   );
   return (
     <AppShell
-      title="Inventory"
-      subtitle="SKU catalog and stock balances. Configure families, attributes, and units under Configuration."
+      title="Products"
+      subtitle="SKU catalog — every product, including zero stock. Warehouse quantities live under Stock balances."
+      breadcrumbs={[
+        { label: "Inventory", href: "/inventory" },
+        { label: "Products" },
+      ]}
       actions={
         <PermissionGate permission="inventory.write">
           <Button asChild>
-            <Link href="/inventory/new">Add item</Link>
+            <Link href="/inventory/new">Add product</Link>
           </Button>
         </PermissionGate>
       }
     >
       <PermissionGate permission="inventory.read" showDenied>
-        <InventoryNavigation active="products" />
         {error && (
           <p role="alert" className="text-destructive">
             {error}
@@ -69,8 +71,8 @@ export function InventoryProducts() {
           onBulkComplete={reload}
           rows={data?.data}
           loading={loading}
-          emptyTitle="No items found"
-          emptyDescription="Try a name, SKU or barcode. Products remain here even when their on-hand quantity is zero."
+          emptyTitle="No products found"
+          emptyDescription="Try a name, SKU or barcode. Products stay listed here even when on-hand quantity is zero."
           filters={
             <div className="flex w-full flex-col gap-3 sm:flex-row">
               <Input
@@ -83,7 +85,7 @@ export function InventoryProducts() {
                 }}
               />
               <NativeSelect
-                aria-label="Stock location"
+                aria-label="Balance location"
                 value={locationId}
                 onChange={(e) => {
                   setLocationId(e.target.value);
@@ -103,7 +105,7 @@ export function InventoryProducts() {
           columns={[
             {
               key: "name",
-              header: "Item",
+              header: "Product",
               mobilePriority: 0,
               className: "min-w-[16rem] max-w-[22rem]",
               hideable: false,
@@ -199,7 +201,7 @@ export function InventoryProducts() {
         />
         <div className="mt-4 flex items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>
-            {data?.meta.total ?? 0} items · Page {page} of{" "}
+            {data?.meta.total ?? 0} products · Page {page} of{" "}
             {data?.meta.totalPages ?? 1}
           </span>
           <div className="flex gap-2">

@@ -26,8 +26,8 @@ export default function EditInventoryPage({
       subtitle={loading ? "Loading…" : "Edit"}
       variant="form"
       breadcrumbs={[
-        { label: "Operations", href: "/dashboard" },
         { label: "Inventory", href: "/inventory" },
+        { label: "Stock balances", href: "/inventory" },
         { label: "Edit" },
       ]}
     >

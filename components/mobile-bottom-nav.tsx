@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
-import { navigationPath } from "@/lib/navigation";
+import { isNavItemActive } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -32,7 +32,7 @@ const ITEMS: NavItem[] = [
   },
   {
     href: "/inventory",
-    label: "Inventory",
+    label: "Stock",
     icon: Package,
     permission: "inventory.read",
   },
@@ -58,7 +58,7 @@ const ITEMS: NavItem[] = [
 ];
 
 export function MobileBottomNav() {
-  const pathname = navigationPath(usePathname());
+  const pathname = usePathname();
   const { user } = useAuth();
 
   const visible = ITEMS.filter((item) => hasPermission(user, item.permission));
@@ -73,11 +73,7 @@ export function MobileBottomNav() {
       <div className="mx-auto flex max-w-lg items-end justify-between gap-1 rounded-[1.75rem] border border-[var(--frappe-border)] bg-[var(--frappe-surface)]/95 px-2 py-2 shadow-[var(--frappe-shadow-lg)] backdrop-blur-xl dark:bg-[var(--frappe-surface)]/90">
         {visible.map((item) => {
           const Icon = item.icon;
-          const active =
-            pathname === item.href ||
-            (item.href !== "/dashboard" &&
-              !item.fab &&
-              pathname.startsWith(`${item.href}/`));
+          const active = !item.fab && isNavItemActive(pathname, item.href);
 
           if (item.fab) {
             return (

@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Package,
+  Boxes,
   ArrowLeftRight,
   ShoppingCart,
   Receipt,
@@ -47,9 +48,15 @@ export const mainNav: NavItem[] = [
     permission: "dashboard.read",
   },
   {
-    title: "Inventory",
+    title: "Stock balances",
     href: "/inventory",
     icon: Package,
+    permission: "inventory.read",
+  },
+  {
+    title: "Products",
+    href: "/inventory/products",
+    icon: Boxes,
     permission: "inventory.read",
   },
   {
@@ -218,6 +225,7 @@ export const navGroups: { label: string; paths: string[] }[] = [
     label: "Inventory",
     paths: [
       "/inventory",
+      "/inventory/products",
       "/stock-transfers",
       "/stocktakes",
       "/warehouse",
@@ -250,13 +258,32 @@ export const navGroups: { label: string; paths: string[] }[] = [
 
 /**
  * Map legacy / nested paths to the nav item that should appear active.
- * Config routes keep their own sidebar entries (not Inventory).
+ * Product catalog ≠ stock balances (Odoo Products vs stock quants).
  */
 export function navigationPath(path: string): string {
-  if (path === "/items" || path.startsWith("/items/")) return "/inventory";
+  if (
+    path === "/items" ||
+    path.startsWith("/items/") ||
+    path === "/inventory/new" ||
+    path.startsWith("/inventory/new/")
+  ) {
+    return "/inventory/products";
+  }
   if (path === "/sales" || path.startsWith("/sales/")) return "/sales-orders";
   if (path === "/purchases" || path.startsWith("/purchases/")) {
     return "/purchase-orders";
   }
   return path;
+}
+
+/** Active state for sidebar links when `/inventory` must not match `/inventory/products`. */
+export function isNavItemActive(pathname: string, href: string): boolean {
+  const path = navigationPath(pathname);
+  if (href === "/inventory") {
+    return (
+      path === "/inventory" ||
+      /^\/inventory\/[^/]+(\/edit)?$/.test(path)
+    );
+  }
+  return path === href || path.startsWith(`${href}/`);
 }

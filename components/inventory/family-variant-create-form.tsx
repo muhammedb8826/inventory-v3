@@ -468,7 +468,7 @@ export function FamilyVariantCreateForm({
       </PageFormCard>
 
       <PageFormActions>
-        <PageFormCancel href="/inventory" />
+        <PageFormCancel href="/inventory/products" />
         <Button type="submit" disabled={saving || !family} className="min-w-28">
           {saving ? (
             <Spinner className="size-4" />

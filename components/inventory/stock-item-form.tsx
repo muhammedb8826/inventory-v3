@@ -260,8 +260,8 @@ export function StockItemForm({
         await clearStockItemImage(stockId);
       }
 
-      toast.success(record ? "Stock updated" : "Stock added");
-      router.push("/inventory");
+      toast.success(record ? "Stock updated" : "Product saved");
+      router.push(record ? "/inventory" : "/inventory/products");
       router.refresh();
     } catch (err) {
       const skuMsg = skuConflictMessage(err);
@@ -761,7 +761,7 @@ export function StockItemForm({
           </PageFormSection>
         </PageFormCard>
         <PageFormActions>
-          <PageFormCancel href="/inventory" />
+          <PageFormCancel href="/inventory/products" />
           <Button type="submit" disabled={saving} className="min-w-28">
             {saving ? <Spinner className="size-4" /> : "Add product"}
           </Button>
@@ -1050,7 +1050,7 @@ export function StockItemForm({
         </PageFormCard>
       )}
       <PageFormActions>
-        <PageFormCancel href="/inventory" />
+        <PageFormCancel href={isEdit ? "/inventory" : "/inventory/products"} />
         <Button type="submit" disabled={saving} className="min-w-28">
           {saving ? (
             <Spinner className="size-4" />

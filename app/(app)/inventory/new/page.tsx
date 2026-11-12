@@ -39,8 +39,8 @@ export default function NewInventoryPage() {
         </Button>
       }
       breadcrumbs={[
-        { label: "Operations", href: "/dashboard" },
         { label: "Inventory", href: "/inventory" },
+        { label: "Products", href: "/inventory/products" },
         { label: "New" },
       ]}
     >

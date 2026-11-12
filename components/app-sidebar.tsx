@@ -22,9 +22,9 @@ import { hasAnyPermission, hasPermission } from "@/lib/permissions";
 import {
   adminNav,
   configNav,
+  isNavItemActive,
   mainNav,
   navGroups,
-  navigationPath,
   type NavItem,
 } from "@/lib/navigation";
 import { useBranding } from "@/components/branding/branding-provider";
@@ -38,10 +38,6 @@ function filterNav(items: NavItem[], user: ReturnType<typeof useAuth>["user"]) {
   });
 }
 
-function isNavActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 function NavItems({
   items,
   user,
@@ -49,7 +45,7 @@ function NavItems({
   items: NavItem[];
   user: ReturnType<typeof useAuth>["user"];
 }) {
-  const pathname = navigationPath(usePathname());
+  const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const visible = filterNav(items, user);
 
@@ -59,7 +55,7 @@ function NavItems({
     <SidebarMenu className="gap-0.5">
       {visible.map((item) => {
         const Icon = item.icon;
-        const active = isNavActive(pathname, item.href);
+        const active = isNavItemActive(pathname, item.href);
         return (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton

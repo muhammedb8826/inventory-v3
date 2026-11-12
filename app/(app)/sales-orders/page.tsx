@@ -42,7 +42,7 @@ export default function OrdersPage() {
             <Link href="/sales">Posted sales & invoices</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/inventory">Product pricing</Link>
+            <Link href="/inventory/products">Product pricing</Link>
           </Button>
         </div>
         {error && <p role="alert">{error}</p>}

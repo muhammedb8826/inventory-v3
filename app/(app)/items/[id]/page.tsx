@@ -71,13 +71,13 @@ export default function ItemPage({
       title={data?.description ?? "Item details"}
       subtitle="Product details, stock, units and pricing."
       breadcrumbs={[
-        { label: "Inventory", href: "/inventory" },
+        { label: "Products", href: "/inventory/products" },
         { label: data?.description ?? "Product" },
       ]}
     >
       <PermissionGate permission="inventory.read" showDenied>
         <Button asChild variant="outline" className="mb-5">
-          <Link href="/inventory">Back to inventory</Link>
+          <Link href="/inventory/products">Back to products</Link>
         </Button>
         {error ? (
           <p role="alert">{error}</p>

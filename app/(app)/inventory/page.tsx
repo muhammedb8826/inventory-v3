@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { InventoryProducts } from "@/components/inventory/inventory-products";
+import { redirect } from "next/navigation";
 import { InventoryNavigation } from "@/components/inventory/inventory-navigation";
 import { AppShell } from "@/components/app-shell";
 import { RowActionsMenu } from "@/components/shared/row-actions-menu";
@@ -97,7 +97,10 @@ type InventoryTab = "stock" | "adjustments" | "movements";
 export default function InventoryPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
-  return tab === "products" ? <InventoryProducts /> : <InventoryOperations />;
+  if (tab === "products") {
+    redirect("/inventory/products");
+  }
+  return <InventoryOperations />;
 }
 
 function InventoryOperations() {
@@ -186,11 +189,11 @@ function InventoryOperations() {
 
   return (
     <AppShell
-      title="Inventory"
-      subtitle="Stock balances, adjustments, and movements across locations"
+      title="Stock balances"
+      subtitle="On-hand quantity by location. Product catalog is under Products."
       breadcrumbs={[
-        { label: "Operations", href: "/dashboard" },
-        { label: "Inventory" },
+        { label: "Inventory", href: "/inventory" },
+        { label: "Stock balances" },
       ]}
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -204,7 +207,7 @@ function InventoryOperations() {
                 }
               >
                 <PlusIcon className="size-3.5" />
-                Add item
+                Add product
               </Link>
             </FrappeButtonPrimary>
           </PermissionGate>
@@ -283,7 +286,7 @@ function InventoryOperations() {
                 emptyDescription={
                   isLowStockView
                     ? "Items at or below their reorder point will appear here."
-                    : "Products without a warehouse balance are available in the All products tab."
+                    : "Products without a warehouse balance are listed under Products."
                 }
                 filters={
                   <ListSearchField

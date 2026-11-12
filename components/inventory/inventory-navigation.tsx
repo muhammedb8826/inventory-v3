@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 
+/** Stock ops views only — product catalog lives at /inventory/products. */
 const views = [
-  { key: "stock", label: "Stock", href: "/inventory" },
-  { key: "products", label: "All products", href: "/inventory?tab=products" },
+  { key: "stock", label: "Stock balances", href: "/inventory" },
   {
     key: "adjustments",
     label: "Adjustments",
@@ -16,7 +16,7 @@ const views = [
 export function InventoryNavigation({ active }: { active: string }) {
   return (
     <nav
-      aria-label="Inventory views"
+      aria-label="Stock views"
       className="mb-5 flex max-w-full gap-1 overflow-x-auto rounded-xl border bg-muted/40 p-1"
     >
       {views.map((view) => (

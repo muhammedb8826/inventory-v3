@@ -186,7 +186,7 @@ test("product submission preserves its API fields and shows connected validation
     purchasePrice: 10,
     unitId: "10000000-0000-4000-8000-000000000001",
   });
-  await page.waitForURL("**/inventory");
+  await page.waitForURL("**/inventory/products");
 });
 
 
@@ -201,5 +201,5 @@ test("new products can start at zero without entering a purchase price", async (
   const pending = page.waitForRequest(r => r.url().endsWith("/api/backend/inventory") && r.method() === "POST");
   await page.getByRole("button", { name: "Add product", exact: true }).click();
   expect((await pending).postDataJSON()).toMatchObject({ quantity: 0, purchasePrice: 0, itemType: "FINISHED" });
-  await page.waitForURL("**/inventory");
+  await page.waitForURL("**/inventory/products");
 });
