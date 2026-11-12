@@ -31,6 +31,7 @@ export interface SalesOrder {
   createdById: string | null;
   approvedById: string | null;
   createdAt: string;
+  updatedAt?: string;
   priceExceptions: string[];
   payload: {
     customerId?: string;

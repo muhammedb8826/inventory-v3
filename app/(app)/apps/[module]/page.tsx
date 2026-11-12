@@ -4,6 +4,7 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { InventoryOverview } from "@/components/apps/inventory-overview";
+import { SalesOverview } from "@/components/apps/sales-overview";
 import { ModuleMenuGrid } from "@/components/apps/apps-home";
 import { getAppModule } from "@/lib/modules";
 import { useAuth } from "@/lib/auth";
@@ -31,11 +32,26 @@ export default function AppModulePage({
     );
   }
 
-  // Inventory overview: cards only — navigation lives in the sidebar.
+  // Inventory / Sales overview: cards only — navigation lives in the sidebar.
   if (mod.id === "inventory") {
     return (
       <AppShell title="Inventory Overview">
         <InventoryOverview />
+      </AppShell>
+    );
+  }
+
+  if (mod.id === "sales") {
+    return (
+      <AppShell
+        title="Sales"
+        subtitle="Quotations, orders, and customers"
+        breadcrumbs={[
+          { label: "Apps", href: "/apps" },
+          { label: "Sales" },
+        ]}
+      >
+        <SalesOverview />
       </AppShell>
     );
   }

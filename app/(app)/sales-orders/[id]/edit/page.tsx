@@ -1,35 +1,26 @@
 "use client";
-import { use } from "react";
+
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { SaleForm } from "@/components/sales/sale-form";
-import { PermissionGate } from "@/components/permission-gate";
-import { api } from "@/lib/api";
-import { useFetch } from "@/hooks/use-fetch";
-import type { SalesOrder } from "@/lib/sales-orders";
-export default function EditQuotation({
+import { PageLoading } from "@/components/shared/page-loading";
+
+/** Edit is handled on the order workspace (same page). */
+export default function EditQuotationRedirect({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { data, error } = useFetch<SalesOrder>(
-    () => api(`/sales-orders/${id}`),
-    [id],
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(`/sales-orders/${id}`);
+  }, [id, router]);
+
   return (
-    <AppShell
-      title="Revise quotation"
-      subtitle="Any revision resets prior price approval."
-    >
-      <PermissionGate permission="sales.write" showDenied>
-        {error ? (
-          <p role="alert">{error}</p>
-        ) : data ? (
-          <SaleForm quotation={data} />
-        ) : (
-          <p>Loading…</p>
-        )}
-      </PermissionGate>
+    <AppShell title="Opening order…" variant="form">
+      <PageLoading />
     </AppShell>
   );
 }
