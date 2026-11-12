@@ -19,7 +19,7 @@ export default function OperationTypesPage() {
   return (
     <AppShell
       title="Operation types"
-      subtitle="Each flow has a clear purpose — like Odoo’s receipt, delivery, internal, and manufacture types."
+      subtitle="Each flow has a clear purpose: receipt, delivery, internal transfer, and manufacture."
       breadcrumbs={[
         { label: "Apps", href: "/apps" },
         { label: "Inventory", href: "/apps/inventory" },

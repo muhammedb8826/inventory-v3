@@ -5,9 +5,9 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
 import {
-  OdooProductForm,
-  type OdooCatalogItem,
-} from "@/components/inventory/odoo-product-form";
+  ProductForm,
+  type CatalogItem,
+} from "@/components/inventory/product-form";
 import { Button } from "@/components/ui/button";
 import { useFetch } from "@/hooks/use-fetch";
 import { api } from "@/lib/api";
@@ -18,7 +18,7 @@ export default function ItemPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { data, error, loading, reload } = useFetch<OdooCatalogItem>(
+  const { data, error, loading, reload } = useFetch<CatalogItem>(
     () => api(`/items/${id}`),
     [id],
   );
@@ -44,7 +44,7 @@ export default function ItemPage({
         ) : loading ? (
           <p>Loading product…</p>
         ) : data ? (
-          <OdooProductForm
+          <ProductForm
             key={`${id}:${data.updatedAt}`}
             item={data}
             reload={reload}

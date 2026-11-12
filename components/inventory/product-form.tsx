@@ -52,7 +52,7 @@ import { hasPermission } from "@/lib/permissions";
 import type { Item, ItemType, StockRecord, UnitOfMeasure } from "@/lib/types";
 import { toast } from "sonner";
 
-export type OdooCatalogItem = Item & {
+export type CatalogItem = Item & {
   stock?: {
     onHand: string;
     reserved: string;
@@ -67,7 +67,7 @@ export type OdooCatalogItem = Item & {
   unitGroupId?: string;
 };
 
-function averageCost(item?: OdooCatalogItem | null): string {
+function averageCost(item?: CatalogItem | null): string {
   const balances = item?.stockBalances ?? [];
   if (!balances.length) return "0";
   let qty = 0;
@@ -141,11 +141,11 @@ function AuditLogPanel({ record }: { record?: RecordMetadata | null }) {
   );
 }
 
-export function OdooProductForm({
+export function ProductForm({
   item,
   reload,
 }: {
-  item?: OdooCatalogItem;
+  item?: CatalogItem;
   reload?: () => unknown;
 }) {
   const router = useRouter();

@@ -77,7 +77,7 @@ export default function MovesAnalysisPage() {
   return (
     <AppShell
       title="Moves analysis"
-      subtitle="Recent stock moves grouped by type — a simple Odoo-style analysis view."
+      subtitle="Recent stock moves grouped by type."
       breadcrumbs={[
         { label: "Apps", href: "/apps" },
         { label: "Inventory", href: "/apps/inventory" },

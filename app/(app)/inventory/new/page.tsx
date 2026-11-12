@@ -2,7 +2,7 @@
 
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
-import { OdooProductForm } from "@/components/inventory/odoo-product-form";
+import { ProductForm } from "@/components/inventory/product-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -10,7 +10,7 @@ export default function NewInventoryPage() {
   return (
     <AppShell
       title="New product"
-      subtitle="General information — stock location defaults to your warehouse."
+      subtitle="General information — stock opens at your default warehouse."
       variant="form"
       actions={
         <Button variant="outline" asChild>
@@ -31,7 +31,7 @@ export default function NewInventoryPage() {
           </p>
         }
       >
-        <OdooProductForm />
+        <ProductForm />
       </PermissionGate>
     </AppShell>
   );

@@ -34,7 +34,7 @@ export default function InventoryOperationsPage() {
     >
       <SectionHub
         title="Operations"
-        subtitle="Same layout as Odoo Inventory: Transfers first, then Adjustments. Replenishment comes later."
+        subtitle="Transfers first, then adjustments. Replenishment comes later."
         accent={mod.color}
         sections={[
           {

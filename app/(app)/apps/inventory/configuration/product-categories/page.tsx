@@ -27,7 +27,7 @@ export default function ProductCategoriesPage() {
     >
       <ComingSoonPanel
         title="Categories are next"
-        body="Odoo keeps product categories under Inventory → Configuration. They are for browsing and reporting, not manufacturing rules (that is item type). The master list will land here; until then use product families for variants and the product catalog for SKUs."
+        body="Product categories are for browsing and reporting, not manufacturing rules (that is item type). The master list will land here; until then use product families for variants and the product catalog for SKUs."
         actions={[
           { label: "Product catalog", href: "/inventory/products" },
           { label: "Product variants", href: "/products" },

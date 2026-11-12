@@ -45,11 +45,11 @@ export default function LocationsPage() {
 
   return (
     <MasterDataPage<Location>
-      title="Locations"
+      title="Warehouses & locations"
       endpoint="/locations"
       readPermission="locations.read"
       writePermission="locations.write"
-      emptyDescription="Create warehouse, showroom, and bin locations."
+      emptyDescription="Add a warehouse or showroom first, then bins under a parent for putaway."
       listParams={{
         type: type === ALL_TYPES ? undefined : (type as LocationType),
         includeInactive: includeInactive || undefined,
@@ -105,9 +105,10 @@ export default function LocationsPage() {
         { name: "address", label: "Address", type: "textarea" },
         {
           name: "parentId",
-          label: "Parent (required for Bin)",
+          label: "Parent warehouse / showroom",
           type: "select",
           options: parentOptions,
+          hint: "Required when type is Bin — stock bins sit under a warehouse or showroom.",
         },
       ]}
       columns={[
