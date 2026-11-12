@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
-import { ProductCreateWizard } from "@/components/inventory/product-create-wizard";
+import { OdooProductForm } from "@/components/inventory/odoo-product-form";
 import { PageLoading } from "@/components/shared/page-loading";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ function NewInventoryBody() {
         </p>
       }
     >
-      <ProductCreateWizard locationId={locationId} />
+      <OdooProductForm locationId={locationId} />
     </PermissionGate>
   );
 }
@@ -30,8 +30,8 @@ function NewInventoryBody() {
 export default function NewInventoryPage() {
   return (
     <AppShell
-      title="Add product"
-      subtitle="Create a simple product, or pick attributes from a product family."
+      title="New product"
+      subtitle="General information — Sales, Purchase and Inventory tabs come later."
       variant="form"
       actions={
         <Button variant="outline" asChild>
