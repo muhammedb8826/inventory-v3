@@ -194,9 +194,9 @@ test("new products can start at zero without entering a purchase price", async (
   await login(page);
   await page.goto("/inventory/new");
   await page.getByRole("textbox", { name: "Product name", exact: true }).fill("New finished product");
+  await page.getByText("More options", { exact: false }).click();
   await page.getByRole("combobox", { name: "Item type", exact: true }).click();
   await page.getByRole("option", { name: "Finished good", exact: true }).click();
-  await expect(page.getByText("Final product sold to customers.", { exact: false })).toBeVisible();
   await expect(page.getByLabel(/Opening unit cost per/)).toBeDisabled();
   const pending = page.waitForRequest(r => r.url().endsWith("/api/backend/inventory") && r.method() === "POST");
   await page.getByRole("button", { name: "Add product", exact: true }).click();

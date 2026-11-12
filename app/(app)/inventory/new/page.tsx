@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PermissionGate } from "@/components/permission-gate";
-import { StockItemForm } from "@/components/inventory/stock-item-form";
+import { ProductCreateWizard } from "@/components/inventory/product-create-wizard";
 import { PageLoading } from "@/components/shared/page-loading";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ function NewInventoryBody() {
         </p>
       }
     >
-      <StockItemForm locationId={locationId} />
+      <ProductCreateWizard locationId={locationId} />
     </PermissionGate>
   );
 }
@@ -31,11 +31,11 @@ export default function NewInventoryPage() {
   return (
     <AppShell
       title="Add product"
-      subtitle="Create a product, choose its stock unit, and set opening inventory."
+      subtitle="Create a simple product, or pick attributes from a product family."
       variant="form"
       actions={
         <Button variant="outline" asChild>
-          <Link href="/products">Configure product variants</Link>
+          <Link href="/products">Product families</Link>
         </Button>
       }
       breadcrumbs={[

@@ -92,19 +92,14 @@ test("configure a reusable group once and select it on a new item", async ({
     page.getByRole("button", { name: "Boxes of ten", exact: true }),
   ).toBeVisible();
   await page.goto("/inventory/new");
+  await page.getByText("More options", { exact: false }).click();
   await page
-    .getByRole("combobox", { name: "Unit configuration", exact: true })
+    .getByRole("combobox", { name: "Unit category", exact: true })
     .click();
   await page.getByRole("option", { name: /Boxes of ten/ }).click();
   await expect(
     page.getByRole("combobox", { name: "Stock unit", exact: true }),
   ).toBeDisabled();
-  await expect(
-    page.getByText(
-      "The selected category supplies the stock unit and all conversions.",
-      { exact: true },
-    ),
-  ).toBeVisible();
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     expect(
