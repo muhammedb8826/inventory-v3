@@ -4,81 +4,80 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, isForbiddenError } from "@/lib/api";
 import { buildListPath } from "@/lib/list-query";
-import { formatMoney, errorMessage } from "@/lib/format";
-import type {
-  DashboardData,
-  PaginatedResponse,
-  ProductionOrder,
-  StockTransfer,
-  Stocktake,
-} from "@/lib/types";
+import { errorMessage } from "@/lib/format";
+import type { PaginatedResponse, ProductionOrder } from "@/lib/types";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/shared/page-loading";
-import { cn } from "@/lib/utils";
 
 type OverviewCard = {
   id: string;
   title: string;
-  href: string;
-  accent: string;
-  primary?: { label: string; value: number };
-  bars?: number[];
-  emptyHint: string;
+  count: number;
+  listHref: string;
+  createHref: string;
+  waitingLabel: string;
+  bars: number[];
+  statusLabel?: string;
 };
 
-function MiniBars({ values, color }: { values: number[]; color: string }) {
+function MiniBars({ values }: { values: number[] }) {
   const max = Math.max(...values, 1);
   return (
-    <div
-      className="mt-4 flex h-16 items-end gap-1.5"
-      aria-hidden="true"
-    >
+    <div className="mt-auto flex h-[4.5rem] items-end gap-1.5 pt-4" aria-hidden>
       {values.map((v, i) => (
         <span
           key={i}
-          className="min-w-0 flex-1 rounded-t-sm opacity-80"
-          style={{
-            height: `${Math.max(8, (v / max) * 100)}%`,
-            background: color,
-          }}
+          className="min-w-0 flex-1 rounded-t-sm bg-muted-foreground/35"
+          style={{ height: `${Math.max(10, (v / max) * 100)}%` }}
         />
       ))}
     </div>
   );
 }
 
-function StatusRow({
-  label,
-  value,
-  color,
+function OverviewAction({
+  count,
+  waitingLabel,
+  listHref,
+  createHref,
 }: {
-  label: string;
-  value: number;
-  color: string;
+  count: number;
+  waitingLabel: string;
+  listHref: string;
+  createHref: string;
 }) {
+  if (count > 0) {
+    return (
+      <Link
+        href={listHref}
+        className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold text-white"
+        style={{ backgroundColor: "#714B67" }}
+      >
+        {count} {waitingLabel}
+      </Link>
+    );
+  }
   return (
-    <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-      <span style={{ color }} className="font-medium">
-        {label}
-      </span>
-      <span className="tabular-nums font-semibold text-foreground">{value}</span>
-    </div>
+    <Link
+      href={createHref}
+      className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold text-white"
+      style={{ backgroundColor: "#714B67" }}
+    >
+      Open
+    </Link>
   );
 }
 
 export function InventoryOverview() {
   const [loading, setLoading] = useState(true);
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [receiptsOpen, setReceiptsOpen] = useState(0);
   const [deliveriesOpen, setDeliveriesOpen] = useState(0);
-  const [transfersActive, setTransfersActive] = useState(0);
   const [productionActive, setProductionActive] = useState(0);
-  const [stocktakesActive, setStocktakesActive] = useState(0);
-  const [lowStock, setLowStock] = useState(0);
-  const [receiptBars, setReceiptBars] = useState<number[]>([2, 3, 1, 4, 2, 3]);
-  const [deliveryBars, setDeliveryBars] = useState<number[]>([1, 2, 2, 3, 1, 2]);
-  const [transferBars, setTransferBars] = useState<number[]>([1, 1, 2, 1, 3, 2]);
+  const [receiptBars, setReceiptBars] = useState<number[]>([1, 2, 1, 3, 2, 2]);
+  const [deliveryBars, setDeliveryBars] = useState<number[]>([1, 1, 2, 1, 2, 1]);
+  const [productionBars, setProductionBars] = useState<number[]>([
+    1, 1, 1, 2, 1, 1,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +85,6 @@ export function InventoryOverview() {
       setLoading(true);
       try {
         const settled = await Promise.allSettled([
-          api<DashboardData>(buildListPath("/dashboard", { params: {} })),
           api<PaginatedResponse<unknown>>(
             buildListPath("/purchase-orders", {
               params: { status: "CONFIRMED" },
@@ -109,20 +107,11 @@ export function InventoryOverview() {
               buildListPath("/sales", { page: 1, limit: 1 }),
             ),
           ),
-          api<PaginatedResponse<StockTransfer>>(
-            buildListPath("/stock-transfers", { page: 1, limit: 50 }),
-          ),
           api<PaginatedResponse<ProductionOrder>>(
             buildListPath("/production-orders", { page: 1, limit: 50 }),
           ),
-          api<PaginatedResponse<Stocktake>>(
-            buildListPath("/stocktakes", { page: 1, limit: 50 }),
-          ),
-          api<PaginatedResponse<unknown>>(
-            buildListPath("/inventory/low-stock", { page: 1, limit: 1 }),
-          ),
-          api<PaginatedResponse<{ createdAt?: string }>>(
-            buildListPath("/inventory/movements", { page: 1, limit: 40 }),
+          api<PaginatedResponse<{ createdAt?: string; type?: string }>>(
+            buildListPath("/inventory/movements", { page: 1, limit: 60 }),
           ),
         ]);
 
@@ -133,49 +122,32 @@ export function InventoryOverview() {
           return r.status === "fulfilled" ? (r.value as T) : null;
         };
 
-        const dash = val<DashboardData>(0);
-        if (dash) setDashboard(dash);
+        setReceiptsOpen(val<PaginatedResponse<unknown>>(0)?.meta?.total ?? 0);
+        setDeliveriesOpen(val<PaginatedResponse<unknown>>(1)?.meta?.total ?? 0);
 
-        const po = val<PaginatedResponse<unknown>>(1);
-        setReceiptsOpen(po?.meta?.total ?? 0);
-
-        const so = val<PaginatedResponse<unknown>>(2);
-        setDeliveriesOpen(so?.meta?.total ?? 0);
-
-        const transfers = val<PaginatedResponse<StockTransfer>>(3);
-        const activeTransfers =
-          transfers?.data?.filter(
-            (t) => t.status === "PENDING" || t.status === "IN_TRANSIT",
-          ).length ?? 0;
-        setTransfersActive(activeTransfers);
-        if (transfers?.data?.length) {
-          setTransferBars(bucketLastDays(transfers.data.map((t) => t.createdAt)));
-        }
-
-        const production = val<PaginatedResponse<ProductionOrder>>(4);
+        const production = val<PaginatedResponse<ProductionOrder>>(2);
         const activeProd =
           production?.data?.filter(
             (p) => p.status === "RELEASED" || p.status === "IN_PROGRESS",
           ).length ?? 0;
         setProductionActive(activeProd);
+        if (production?.data?.length) {
+          setProductionBars(
+            bucketLastDays(production.data.map((p) => p.createdAt)),
+          );
+        }
 
-        const stocktakes = val<PaginatedResponse<Stocktake>>(5);
-        const activeTakes =
-          stocktakes?.data?.filter(
-            (s) => s.status === "DRAFT" || s.status === "IN_PROGRESS",
-          ).length ?? 0;
-        setStocktakesActive(activeTakes);
-
-        const low = val<PaginatedResponse<unknown>>(6);
-        setLowStock(low?.meta?.total ?? 0);
-
-        const moves = val<PaginatedResponse<{ createdAt?: string; type?: string }>>(7);
+        const moves =
+          val<PaginatedResponse<{ createdAt?: string; type?: string }>>(3);
         if (moves?.data?.length) {
           const purchases = moves.data.filter((m) =>
             String(m.type ?? "").includes("PURCHASE"),
           );
           const sales = moves.data.filter((m) =>
             String(m.type ?? "").includes("SALE"),
+          );
+          const mfg = moves.data.filter((m) =>
+            String(m.type ?? "").includes("PRODUCTION"),
           );
           setReceiptBars(
             bucketLastDays(
@@ -187,6 +159,9 @@ export function InventoryOverview() {
               (sales.length ? sales : moves.data).map((m) => m.createdAt),
             ),
           );
+          if (mfg.length) {
+            setProductionBars(bucketLastDays(mfg.map((m) => m.createdAt)));
+          }
         }
       } catch (e) {
         if (!isForbiddenError(e)) toast.error(errorMessage(e));
@@ -204,138 +179,71 @@ export function InventoryOverview() {
       {
         id: "receipts",
         title: "Receipts",
-        href: "/purchase-orders",
-        accent: "#0d9488",
-        primary: { label: "To receive", value: receiptsOpen },
+        count: receiptsOpen,
+        listHref: "/purchase-orders",
+        createHref: "/purchases/new",
+        waitingLabel: "To Receive",
         bars: receiptBars,
-        emptyHint: "No open receipts",
       },
       {
         id: "deliveries",
-        title: "Delivery orders",
-        href: "/sales-orders",
-        accent: "#0d9488",
-        primary: { label: "To deliver", value: deliveriesOpen },
+        title: "Delivery Orders",
+        count: deliveriesOpen,
+        listHref: "/sales-orders",
+        createHref: "/sales/new",
+        waitingLabel: "To Deliver",
         bars: deliveryBars,
-        emptyHint: "No open deliveries",
-      },
-      {
-        id: "transfers",
-        title: "Internal transfers",
-        href: "/stock-transfers",
-        accent: "#714B67",
-        primary: { label: "In progress", value: transfersActive },
-        bars: transferBars,
-        emptyHint: "No transfers in progress",
       },
       {
         id: "manufacturing",
         title: "Manufacturing",
-        href: "/production-orders",
-        accent: "#0d9488",
-        primary: { label: "In progress", value: productionActive },
-        emptyHint: "No production in progress",
-      },
-      {
-        id: "stocktakes",
-        title: "Stocktakes",
-        href: "/stocktakes",
-        accent: "#f59e0b",
-        primary: { label: "Open", value: stocktakesActive },
-        emptyHint: "No open stocktakes",
-      },
-      {
-        id: "low-stock",
-        title: "Low stock",
-        href: "/inventory",
-        accent: "#e11d48",
-        primary: { label: "Items below reorder", value: lowStock },
-        emptyHint: "Stock levels look healthy",
+        count: productionActive,
+        listHref: "/production-orders",
+        createHref: "/production-orders/new",
+        waitingLabel: "In Progress",
+        bars: productionBars,
+        statusLabel: "In Progress",
       },
     ],
-    [
-      receiptsOpen,
-      deliveriesOpen,
-      transfersActive,
-      productionActive,
-      stocktakesActive,
-      lowStock,
-      receiptBars,
-      deliveryBars,
-      transferBars,
-    ],
+    [receiptsOpen, deliveriesOpen, productionActive, receiptBars, deliveryBars, productionBars],
   );
 
   if (loading) return <PageLoading />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            Inventory Overview
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Live operations across receipts, deliveries, transfers, and production.
-          </p>
-        </div>
-        {dashboard ? (
-          <div className="rounded-xl border bg-card px-4 py-2.5 text-right shadow-sm">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Stock value
-            </p>
-            <p className="text-lg font-semibold tabular-nums">
-              {formatMoney(dashboard.totalInventoryValue)}
-            </p>
-          </div>
-        ) : null}
-      </div>
+    <div className="space-y-5">
+      <h2 className="text-xl font-semibold tracking-tight">Inventory Overview</h2>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         {cards.map((card) => (
           <article
             key={card.id}
-            className="flex flex-col rounded-2xl border bg-card p-4 shadow-sm"
+            className="flex min-h-[11.5rem] flex-col rounded-2xl border bg-card p-4 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
-              <h3
-                className="text-sm font-semibold"
-                style={{ color: card.accent }}
-              >
+              <h3 className="text-sm font-semibold text-teal-700 dark:text-teal-300">
                 {card.title}
               </h3>
-              <Button
-                asChild
-                size="sm"
-                className="h-7 rounded-md px-2.5 text-xs"
-                style={{ backgroundColor: "#714B67" }}
-              >
-                <Link href={card.href}>Open</Link>
-              </Button>
+              <OverviewAction
+                count={card.count}
+                waitingLabel={card.waitingLabel}
+                listHref={card.listHref}
+                createHref={card.createHref}
+              />
             </div>
 
-            {card.primary && card.primary.value > 0 ? (
-              <StatusRow
-                label={card.primary.label}
-                value={card.primary.value}
-                color={card.accent}
-              />
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">
-                {card.emptyHint}
-              </p>
-            )}
+            {card.id === "manufacturing" && card.count > 0 ? (
+              <div className="mt-3 flex items-center justify-end gap-2 text-sm">
+                <span className="font-medium text-teal-700 dark:text-teal-300">
+                  {card.statusLabel}
+                </span>
+                <span className="tabular-nums font-semibold text-teal-700 dark:text-teal-300">
+                  {card.count}
+                </span>
+              </div>
+            ) : null}
 
-            {card.bars ? (
-              <MiniBars values={card.bars} color={`${card.accent}99`} />
-            ) : (
-              <div
-                className={cn(
-                  "mt-4 h-16 rounded-lg",
-                  "bg-gradient-to-br from-muted/80 to-muted/30",
-                )}
-              />
-            )}
+            <MiniBars values={card.bars} />
           </article>
         ))}
       </div>
@@ -357,6 +265,6 @@ function bucketLastDays(dates: (string | undefined)[], days = 6): number[] {
       buckets[days - 1 - diff] += 1;
     }
   }
-  if (buckets.every((n) => n === 0)) return [1, 2, 1, 3, 2, 2];
+  if (buckets.every((n) => n === 0)) return [1, 2, 1, 2, 1, 2];
   return buckets;
 }

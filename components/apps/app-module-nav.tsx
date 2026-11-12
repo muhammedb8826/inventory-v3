@@ -21,12 +21,16 @@ function inventoryTabs(app: AppModule): NavTab[] {
     },
     {
       label: "Operations",
-      href: "/inventory",
+      href: "/apps/inventory/operations",
       match: (path, tab) =>
+        path.startsWith("/apps/inventory/operations") ||
         path.startsWith("/stock-transfers") ||
         path.startsWith("/stocktakes") ||
+        path.startsWith("/purchase-orders") ||
+        path.startsWith("/sales-orders") ||
+        path.startsWith("/production-orders") ||
         path.startsWith("/warehouse") ||
-        (path === "/inventory" && tab !== "movements" && tab !== "products"),
+        tab === "adjustments",
     },
     {
       label: "Products",
@@ -35,19 +39,23 @@ function inventoryTabs(app: AppModule): NavTab[] {
         path.startsWith("/inventory/products") ||
         path.startsWith("/items") ||
         path === "/inventory/new" ||
+        path.startsWith("/products") ||
         tab === "products",
     },
     {
       label: "Reporting",
-      href: "/inventory?tab=movements",
-      match: (_path, tab) => tab === "movements",
+      href: "/apps/inventory/reporting",
+      match: (path, tab) =>
+        path.startsWith("/apps/inventory/reporting") ||
+        (path === "/inventory" && tab !== "adjustments" && tab !== "products") ||
+        tab === "movements",
     },
     {
       label: "Configuration",
-      href: "/locations",
+      href: "/apps/inventory/configuration",
       match: (path) =>
+        path.startsWith("/apps/inventory/configuration") ||
         path.startsWith("/locations") ||
-        path.startsWith("/products") ||
         path.startsWith("/product-attributes") ||
         path.startsWith("/units"),
     },

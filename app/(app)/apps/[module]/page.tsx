@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { AppModuleNav } from "@/components/apps/app-module-nav";
 import { InventoryOverview } from "@/components/apps/inventory-overview";
 import { ModuleMenuGrid } from "@/components/apps/apps-home";
-import { Button } from "@/components/ui/button";
 import { getAppModule } from "@/lib/modules";
 import { useAuth } from "@/lib/auth";
 import { hasAnyPermission } from "@/lib/permissions";
@@ -34,30 +31,25 @@ export default function AppModulePage({
     );
   }
 
+  // Inventory overview: cards only — navigation lives in the sidebar.
+  if (mod.id === "inventory") {
+    return (
+      <AppShell title="Inventory Overview">
+        <InventoryOverview />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
       title={mod.name}
-      subtitle={
-        mod.id === "inventory"
-          ? "Operations at a glance — open a card to work the queue"
-          : mod.description
-      }
+      subtitle={mod.description}
       breadcrumbs={[
         { label: "Apps", href: "/apps" },
         { label: mod.name },
       ]}
-      actions={
-        <Button variant="outline" asChild>
-          <Link href="/apps">All apps</Link>
-        </Button>
-      }
     >
-      <AppModuleNav module={mod} />
-      {mod.id === "inventory" ? (
-        <InventoryOverview />
-      ) : (
-        <ModuleMenuGrid module={mod} />
-      )}
+      <ModuleMenuGrid module={mod} />
     </AppShell>
   );
 }

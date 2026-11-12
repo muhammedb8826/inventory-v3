@@ -17,9 +17,15 @@ Existing posted sales and purchases stay posted; they are not reconstructed as p
 
 Open **Inventory → Products** (`/inventory/products`) to find every SKU, including archived products and products with zero on-hand stock. The old `/items` and `/inventory?tab=products` links redirect here. On-hand, reserved, available and stock value are calculated from permitted warehouse balances, with zero shown when no balance exists. Filtering a location changes the quantities without hiding the product. Open an item to view it, then choose **Edit item**. Editing its name, SKU, barcode, image or active status does not create stock or rewrite historical quantities. Use stock adjustments, receipts or production for quantity changes.
 
-**Stock balances** (`/inventory`) is the warehouse quantity list (one row per product at a location), with **Adjustments** and **Movements** as related stock views — same idea as Odoo stock quants / ERPNext Stock Balance, separate from the product catalog.
+Inventory follows the Odoo app map:
 
-**Configuration** (sidebar) holds masters that should not sit inside day-to-day Inventory ops: **Locations**, **Product families**, **Attributes**, and **Units of measure**. Bulk archive/restore preserves history.
+- **Overview** (`/apps/inventory`) — live cards for receipts, deliveries, manufacturing, transfers, physical inventory, scrap
+- **Operations** — **Transfers** (Receipts, Deliveries, Internal transfers, Manufacturing) and **Adjustments** (Physical inventory, Scrap). Replenishment is deferred
+- **Products** — product catalog and product variants/families
+- **Reporting** — Stock, Moves history, Moves analysis, Returns
+- **Configuration** — Settings, Warehouse management (Warehouses, Operation types), Product categories (placeholder), Attributes, Units
+
+**Stock** (`/inventory`) remains the on-hand-by-location list. Bulk archive/restore preserves history.
 
 An item with transactions, documents, conversions or family membership keeps its historical base stock unit. For example, CC-CRM-001 remains in cm after its DAMAGE adjustment. Use a same-category metre conversion (1 m = 100 cm), rather than redefining its history.
 

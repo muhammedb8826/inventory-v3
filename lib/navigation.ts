@@ -300,6 +300,7 @@ export const navGroups: { label: string; paths: string[] }[] = [
 
 /** Map a route to the Odoo-style app that owns it (for sidebar highlight). */
 const APP_ROUTE_OWNERS: { prefix: string; appHref: string }[] = [
+  { prefix: "/apps/inventory", appHref: "/apps/inventory" },
   { prefix: "/inventory", appHref: "/apps/inventory" },
   { prefix: "/items", appHref: "/apps/inventory" },
   { prefix: "/stock-transfers", appHref: "/apps/inventory" },
@@ -309,13 +310,13 @@ const APP_ROUTE_OWNERS: { prefix: string; appHref: string }[] = [
   { prefix: "/products", appHref: "/apps/inventory" },
   { prefix: "/product-attributes", appHref: "/apps/inventory" },
   { prefix: "/units", appHref: "/apps/inventory" },
+  { prefix: "/purchase-orders", appHref: "/apps/inventory" },
+  { prefix: "/sales-orders", appHref: "/apps/inventory" },
+  { prefix: "/production-orders", appHref: "/apps/inventory" },
   { prefix: "/boms", appHref: "/apps/manufacturing" },
-  { prefix: "/production-orders", appHref: "/apps/manufacturing" },
-  { prefix: "/sales-orders", appHref: "/apps/sales" },
   { prefix: "/sales", appHref: "/apps/sales" },
   { prefix: "/inquiries", appHref: "/apps/sales" },
   { prefix: "/customers", appHref: "/apps/sales" },
-  { prefix: "/purchase-orders", appHref: "/apps/purchases" },
   { prefix: "/purchases", appHref: "/apps/purchases" },
   { prefix: "/suppliers", appHref: "/apps/purchases" },
   { prefix: "/credits", appHref: "/apps/finance" },
